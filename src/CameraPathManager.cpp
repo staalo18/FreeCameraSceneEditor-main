@@ -158,7 +158,11 @@ namespace FCSE {
         }
     }
 
-    void CameraPathManager::AddPathPoint(TimelineType type) {
+    void CameraPathManager::AddPathPoint(TimelineType a_type) {
+        AddPathPoint(a_type, 1.0f, true, true);
+    }
+
+    void CameraPathManager::AddPathPoint(TimelineType a_type, float a_time, bool a_easeIn, bool a_easeOut) {
         auto* playerCamera = RE::PlayerCamera::GetSingleton();
         if (!playerCamera) {
             return;
@@ -176,20 +180,19 @@ namespace FCSE {
             RE::NiPoint3 currentPos = cameraState->translation;
             RE::BSTPoint2<float> currentRot = cameraState->rotation;
             
-            float time = 1.0f;
             Transition translationTrans;
             Transition rotationTrans;
             
-            if (type == TimelineType::Translation) {
-                translationTrans = Transition(InterpolationType::kOn, time, true, true);
+            if (a_type == TimelineType::Translation) {
+                translationTrans = Transition(InterpolationType::kOn, a_time, a_easeIn, a_easeOut);
                 rotationTrans = Transition(InterpolationType::kInvalid, 0.0f, false, false);
-                log::info("FCSE - CameraPathManager: Adding translation point at: ({}, {}, {})", 
-                         currentPos.x, currentPos.y, currentPos.z);
+log::info("FCSE - CameraPathManager: Adding translation point at: ({}, {}, {}), time={}, easeIn={}, easeOut={}", 
+currentPos.x, currentPos.y, currentPos.z, a_time, a_easeIn, a_easeOut);
             } else {
                 translationTrans = Transition(InterpolationType::kInvalid, 0.0f, false, false);
-                rotationTrans = Transition(InterpolationType::kOn, time, false, false);
-                log::info("FCSE - CameraPathManager: Adding rotation point, pitch: {}, yaw: {}", 
-                         180.f/PI*currentRot.x, 180.f/PI*currentRot.y);
+                rotationTrans = Transition(InterpolationType::kOn, a_time, a_easeIn, a_easeOut);
+log::info("FCSE - CameraPathManager: Adding rotation point, pitch: {}, yaw: {}, time={}, easeIn={}, easeOut={}", 
+180.f/PI*currentRot.x, 180.f/PI*currentRot.y, a_time, a_easeIn, a_easeOut);
             }
             
             CameraPathPoint point(translationTrans, rotationTrans, currentPos, currentRot);

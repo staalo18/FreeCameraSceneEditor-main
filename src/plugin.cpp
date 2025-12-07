@@ -2,15 +2,34 @@
 #include "Hooks.h"
 #include "ControlsManager.h"
 #include "APIManager.h"
+#include "CameraPathManager.h"
 
 namespace FCSE {
     namespace Interface {
         int GetFCSEPluginVersion(RE::StaticFunctionTag*) {
             return 1;
         }
+        
+        void AddCameraPathPoint(RE::StaticFunctionTag*, RE::BSFixedString typeStr, float time, bool easeIn, bool easeOut) {
+            FCSE::TimelineType type;
+            
+            if (typeStr == "translation" || typeStr == "t") {
+                type = FCSE::TimelineType::Translation;
+            } else if (typeStr == "rotation" || typeStr == "r") {
+                type = FCSE::TimelineType::Rotation;
+            } else {
+                log::error("FCSE - AddCameraPathPoint: Invalid type '{}'. Use 'translation' or 'rotation'", typeStr.c_str());
+                return;
+            }
+            
+            FCSE::CameraPathManager::GetSingleton().AddPathPoint(type, time, easeIn, easeOut);
+            log::info("FCSE - AddCameraPathPoint: Added {} point with time={}, easeIn={}, easeOut={}", 
+                     typeStr.c_str(), time, easeIn, easeOut);
+        }
 
         bool FCSEFunctions(RE::BSScript::Internal::VirtualMachine * a_vm){
             a_vm->RegisterFunction("GetFCSEPluginVersion", "_ts_FCSE_PapyrusFunctions", GetFCSEPluginVersion);
+            a_vm->RegisterFunction("AddCameraPathPoint", "_ts_FCSE_PapyrusFunctions", AddCameraPathPoint);
             return true;
         }
     } // namespace Interface

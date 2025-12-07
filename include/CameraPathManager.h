@@ -70,7 +70,9 @@ namespace FCSE {
             void Update();
 
             // Add a new point to the end of the path
-            void AddPathPoint(TimelineType type);
+            void AddPathPoint(TimelineType a_type);
+
+            void AddPathPoint(TimelineType a_type, float a_time, bool a_easeIn, bool a_easeOut);
             
             // Insert point at specific index
             void InsertPoint(size_t a_index, const CameraPathPoint& a_point);
