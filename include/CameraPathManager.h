@@ -3,16 +3,40 @@
 
 namespace FCSE {
     
-    struct CameraPathPoint {
-        RE::NiPoint3 position;
-        RE::BSTPoint2<float> rotation;
-        float time;  // Duration to reach this point from previous, or timestamp?
+    enum InterpolationType {
+        kSet,
+        kTranslate,
+        kRotate,
+        kInvalid
     };
 
     enum class InterpolationMode {
-        Linear,
-        CatmullRom,
-        Bezier
+        kNone,
+        kLinear,
+        kCatmullRom,
+        kBezier
+    };
+    
+    class CameraPathPoint {
+    public:
+            CameraPathPoint()
+            : type(kInvalid), position({0.f, 0.f, 0.f}), rotation({0.f, 0.f}), time(0.f), easeIn(false), easeOut(false) {}
+
+            CameraPathPoint(InterpolationType a_type,
+                        const RE::NiPoint3& a_position,
+                        const RE::BSTPoint2<float>& a_rotation,
+                        float a_time,
+                        bool a_easeIn,
+                        bool a_easeOut)
+            : type(a_type), position(a_position), rotation(a_rotation), time(a_time), easeIn(a_easeIn), easeOut(a_easeOut) {}
+       
+        // members
+        InterpolationType type;  // How the camera should approach this point
+        RE::NiPoint3 position; // target position after time seconds
+        RE::BSTPoint2<float> rotation; // target rotation after time seconds
+        float time; // duration to reach this point from the previous point
+        bool easeIn; // whether to ease in (ie accelerate from 0) the transition from the previous point
+        bool easeOut; // whether to ease out (ie decelerate to 0) the transition to this point
     };
 
 
@@ -32,9 +56,7 @@ namespace FCSE {
             void StartCameraMovement();
 
             // Add a new point to the end of the path
-            void AddPoint();
-            void AddPoint(const CameraPathPoint& point);
-            void AddPoint(const RE::NiPoint3& pos, const RE::BSTPoint2<float>& rot, float time);
+            void AddPoint(InterpolationType a_type);
             
             // Insert point at specific index
             void InsertPoint(size_t index, const CameraPathPoint& point);
@@ -58,6 +80,8 @@ namespace FCSE {
             CameraPathManager() = default;
             ~CameraPathManager() = default;
 
+            void AddPoint(const CameraPathPoint& point);
+
             void DrawPath();
              
             void TraverseCamera();
@@ -68,7 +92,7 @@ namespace FCSE {
             
             // Path data
             std::vector<CameraPathPoint> m_pathPoints;
-            InterpolationMode m_interpolationMode = InterpolationMode::CatmullRom;
+            InterpolationMode m_interpolationMode = InterpolationMode::kCatmullRom;
             
             // Traversal state
             bool m_isTraversing = false;

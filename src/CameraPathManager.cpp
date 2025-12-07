@@ -33,7 +33,7 @@ namespace FCSE {
         float deltaTime = _ts_SKSEFunctions::GetRealTimeDeltaTime();
         
         // Get current segment
-        if (m_currentIndex >= m_pathPoints.size() - 1) {
+        if (m_currentIndex >= m_pathPoints.size() - 1 || m_currentIndex < 0) {
             // Reached end
             StopTraversal();
             return;
@@ -43,11 +43,13 @@ namespace FCSE {
         
         // Progress through segment based on time
         float segmentDuration = nextPoint.time;
-        if (segmentDuration <= 0.0f) segmentDuration = 1.0f;
+        if (segmentDuration <= deltaTime) {
+            m_currentSegmentProgress = 1.0f;
+        } else {
+            m_currentSegmentProgress += deltaTime / segmentDuration;
+        }
         
-        m_currentSegmentProgress += deltaTime / segmentDuration;
-        
-        if (m_currentSegmentProgress >= 1.0f) {
+        if (m_currentSegmentProgress >= 1.0f || nextPoint.type == InterpolationType::kInvalid) {
             // Move to next segment
             m_currentIndex++;
             m_currentSegmentProgress = 0.0f;
@@ -109,7 +111,7 @@ namespace FCSE {
         }
     }
 
-    void CameraPathManager::AddPoint() {
+    void CameraPathManager::AddPoint(InterpolationType a_type) {
         auto* playerCamera = RE::PlayerCamera::GetSingleton();
         if (!playerCamera) {
             return;
@@ -130,17 +132,15 @@ namespace FCSE {
 log::info("FCSE - CameraPathManager: Adding point at current camera position: ({}, {}, {}), pitch: {}, yaw {}", position.x, position.y, position.z, 180.f/PI*rotation.x, 180.f/PI*rotation.y);
 
             float time = 1.0f;
+
+            CameraPathPoint point(a_type, position, rotation, time, false, false);
         
-            AddPoint(position, rotation, time);
+            AddPoint(point);
         }
     }
 
     void CameraPathManager::AddPoint(const CameraPathPoint& point) {
         m_pathPoints.push_back(point);
-    }
-
-    void CameraPathManager::AddPoint(const RE::NiPoint3& pos, const RE::BSTPoint2<float>& rot, float time) {
-            m_pathPoints.push_back({pos, rot, time});
     }
 
     void CameraPathManager::InsertPoint(size_t index, const CameraPathPoint& point) {
@@ -204,9 +204,11 @@ log::info("FCSE - CameraPathManager: Adding point at current camera position: ({
     }
     CameraPathPoint CameraPathManager::GetCurrentPoint() const {
         switch (m_interpolationMode) {
-            case InterpolationMode::Linear:
+            case InterpolationMode::kNone:
+                return m_pathPoints[m_currentIndex];
+            case InterpolationMode::kLinear:
                 return GetPointLinear();
-            case InterpolationMode::CatmullRom:
+            case InterpolationMode::kCatmullRom:
                 return GetPointCatmullRom();
             default:
                 return GetPointLinear();
@@ -215,7 +217,7 @@ log::info("FCSE - CameraPathManager: Adding point at current camera position: ({
 
     CameraPathPoint CameraPathManager::GetPointLinear() const {
         if (m_pathPoints.empty()) {
-            return {{0, 0, 0}, {0, 0}, 0.0f};
+            return {kInvalid, {0.f, 0.f, 0.f}, {0.f, 0.f}, 0.0f, false, false};
         }
         
         if (m_currentIndex >= m_pathPoints.size() - 1) {
@@ -244,7 +246,7 @@ log::info("FCSE - CameraPathManager: Adding point at current camera position: ({
 
     CameraPathPoint CameraPathManager::GetPointCatmullRom() const {
         if (m_pathPoints.empty()) {
-            return {{0, 0, 0}, {0, 0}, 0.0f};
+            return {InterpolationType::kInvalid, {0.f, 0.f, 0.f}, {0.f, 0.f}, 0.0f, false, false};
         }
         
         if (m_pathPoints.size() == 1) {

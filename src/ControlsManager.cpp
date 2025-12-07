@@ -18,11 +18,13 @@ namespace FCSE {
                 
                 const uint32_t key = buttonEvent->GetIDCode();
                 if (key == 4) {
-                    FCSE::CameraPathManager::GetSingleton().AddPoint();
-                    // Future use
+                    FCSE::CameraPathManager::GetSingleton().AddPoint(InterpolationType::kSet);
                 } else if (key == 5) {
+                    FCSE::CameraPathManager::GetSingleton().AddPoint(InterpolationType::kTranslate);
+                } else if (key == 6) {
+                    FCSE::CameraPathManager::GetSingleton().AddPoint(InterpolationType::kRotate);
+                } else if (key == 7) {
                     FCSE::CameraPathManager::GetSingleton().StartTraversal();
-                    // Future use
                 }
             }
         }
