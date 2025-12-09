@@ -17,13 +17,13 @@ namespace FCSE {
     };
     
     enum class TimelineType {
-        Translation,
-        Rotation
+        kTranslation,
+        kRotation
     };
     
     struct Transition {
         InterpolationType m_interpolationType;   // How should the transition interpolate between initial and target path points
-        float m_time;             // Duration for this transition, ie until next point is reached
+        float m_time;             // Absolute time at which this point is reached (0 = start of traversal)
         bool m_easeIn;            // Ease in (accelerate from 0 at initial point
         bool m_easeOut;           // Ease out (decelerate to 0 at target point)
         
@@ -33,28 +33,36 @@ namespace FCSE {
         Transition(InterpolationType a_type, float a_time, bool a_easeIn, bool a_easeOut) 
             : m_interpolationType(a_type), m_time(a_time), m_easeIn(a_easeIn), m_easeOut(a_easeOut) {}
     };
-    
-    class CameraPathPoint {
-    public:
-        CameraPathPoint()
-            : m_transitionTranslate(kInvalid, 0.0f, false, false)
-            , m_transitionRotate(kInvalid, 0.0f, false, false)
-            , m_position({0.f, 0.f, 0.f})
-            , m_rotation({0.f, 0.f}) {}
 
-        CameraPathPoint(const Transition& a_translation,
-                        const Transition& a_rotation,
-                        const RE::NiPoint3& a_position,
-                        const RE::BSTPoint2<float>& a_rotationValue)
+    class CameraTranslationPoint {
+    public:
+        CameraTranslationPoint()
+            : m_transitionTranslate(kInvalid, 0.0f, false, false)
+            , m_position({0.f, 0.f, 0.f}) {}
+
+        CameraTranslationPoint(const Transition& a_translation,
+                        const RE::NiPoint3& a_position)
             : m_transitionTranslate(a_translation)
-            , m_transitionRotate(a_rotation)
-            , m_position(a_position)
-            , m_rotation(a_rotationValue) {}
+            , m_position(a_position) {}
        
         // Members
         Transition m_transitionTranslate;
-        Transition m_transitionRotate;
         RE::NiPoint3 m_position;
+    };
+    
+    class CameraRotationPoint {
+    public:
+        CameraRotationPoint()
+            : m_transitionRotate(kInvalid, 0.0f, false, false)
+            , m_rotation({0.f, 0.f}) {}
+
+        CameraRotationPoint(const Transition& a_rotation,
+                        const RE::BSTPoint2<float>& a_rotationValue)
+            : m_transitionRotate(a_rotation)
+            , m_rotation(a_rotationValue) {}
+       
+        // Members
+        Transition m_transitionRotate;
         RE::BSTPoint2<float> m_rotation;
     };
 
@@ -69,40 +77,78 @@ namespace FCSE {
 
             void Update();
 
-            // Add a new point to the end of the path
-            void AddPathPoint(TimelineType a_type);
+            void StartRecording();
+            
+            void StopRecording();
 
-            void AddPathPoint(TimelineType a_type, float a_time, bool a_easeIn, bool a_easeOut);
+            // Add a new point to the end of the path
+            void AddTranslationPoint(float a_time, bool a_easeIn, bool a_easeOut);
+            void AddRotationPoint(float a_time, bool a_easeIn, bool a_easeOut);
             
             // Insert point at specific index
-            void InsertPoint(size_t a_index, const CameraPathPoint& a_point);
+            void InsertTranslationPoint(size_t a_index, const CameraTranslationPoint& a_point);
+            void InsertRotationPoint(size_t a_index, const CameraRotationPoint& a_point);
             
             // Remove point
-            void RemovePoint(size_t a_index);
-            void ClearPath();
+            void RemoveTranslationPoint(size_t a_index);
+            void RemoveRotationPoint(size_t a_index);
+
+            void ClearPath(bool a_notify = true);
             
             // Access points
-            const CameraPathPoint* GetPoint(size_t a_index) const;
-            size_t GetPointCount() const { return m_pathPoints.size(); }
+            const CameraTranslationPoint* GetTranslationPoint(size_t a_index) const;
+            const CameraRotationPoint* GetRotationPoint(size_t a_index) const;
+            size_t GetTranslationPointCount() const { return m_translationPoints.size(); }
+            size_t GetRotationPointCount() const { return m_rotationPoints.size(); }
             
             // Traversal
             void StartTraversal();
             void StopTraversal();
             bool IsTraversing() const { return m_isTraversing; }
+            
+            // Import/Export camera path from/to file
+            bool ImportCameraPath(const char* a_filePath);
+            bool ExportCameraPath(const char* a_filePath) const;
 
         private:
             CameraPathManager() = default;
             ~CameraPathManager() = default;
 
-            void AddPoint(const CameraPathPoint& a_point);
+            void AddTranslationPoint(const CameraTranslationPoint& a_point);
+            void AddRotationPoint(const CameraRotationPoint& a_point);
+            
+            // Template helper for validating and inserting points in sorted order
+            template<typename PointType>
+            void InsertPointSorted(
+                std::vector<PointType>& a_points,
+                Transition PointType::* a_transitionMember,
+                const PointType& a_point);
+            
+            // Template helper for adding points with absolute time calculation
+            template<typename PointType, typename ValueType>
+            void AddPoint(
+                void (CameraPathManager::*a_addFunction)(const PointType&),
+                const ValueType& a_value,
+                float a_time,
+                bool a_easeIn,
+                bool a_easeOut);
 
             void SetHUDMenuVisible(bool a_visible);
 
             void DrawPath();
              
+            void RecordPath();
+            
             void TraverseCamera();
             
-            void ProcessTimeline(TimelineType a_timelineType, float a_deltaTime);
+            void ProcessTimeline(TimelineType a_timelineType);
+            
+            template<typename PointType>
+            void ProcessTimeline(
+                const std::vector<PointType>& a_points,
+                size_t& a_currentIndex,
+                float& a_progress,
+                Transition PointType::* a_transitionMember);
 
             // Get current interpolated position
             RE::NiPoint3 GetCurrentPosition() const;
@@ -119,11 +165,21 @@ namespace FCSE {
             RE::BSTPoint2<float> GetRotationCubicHermite() const;
             
             // Path data
-            std::vector<CameraPathPoint> m_pathPoints;
+//            std::vector<CameraPathPoint> m_pathPoints;
+            std::vector<CameraTranslationPoint> m_translationPoints;
+            std::vector<CameraRotationPoint> m_rotationPoints;
+
             InterpolationMode m_interpolationMode = InterpolationMode::kCatmullRom;
             
-            // Traversal state - separate timelines for translation and rotation
-            bool m_isTraversing = false;
+            // Recording
+            bool m_isRecording = false;
+            float m_currentRecordingTime = 0.0f;
+            float m_recordingInterval = 1.0f;  // Time between recorded points
+            float m_lastRecordedPointTime = 0.0f;
+
+            // Traversal
+            bool m_isTraversing = false;            
+            float m_currentTraversalTime = 0.0f;  // Absolute time since start of traversal
             
             size_t m_currentTranslationIndex = 0;
             float m_transitionTranslateProgress = 0.0f;  // 0.0 to 1.0 within current segment

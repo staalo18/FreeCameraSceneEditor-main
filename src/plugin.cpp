@@ -10,26 +10,24 @@ namespace FCSE {
             return 1;
         }
         
-        void AddCameraPathPoint(RE::StaticFunctionTag*, RE::BSFixedString typeStr, float time, bool easeIn, bool easeOut) {
-            FCSE::TimelineType type;
+        void AddCameraTranslationPoint(RE::StaticFunctionTag*, float a_time, bool a_easeIn, bool a_easeOut) {
+                        
+            FCSE::CameraPathManager::GetSingleton().AddTranslationPoint( a_time, a_easeIn, a_easeOut);
+log::info("FCSE - AddCameraPathPoint: Added translation point with time={}, easeIn={}, easeOut={}", 
+                     a_time, a_easeIn, a_easeOut);
+        }
+
+        void AddCameraRotationPoint(RE::StaticFunctionTag*, float a_time, bool a_easeIn, bool a_easeOut) {
             
-            if (typeStr == "translation" || typeStr == "t") {
-                type = FCSE::TimelineType::Translation;
-            } else if (typeStr == "rotation" || typeStr == "r") {
-                type = FCSE::TimelineType::Rotation;
-            } else {
-                log::error("FCSE - AddCameraPathPoint: Invalid type '{}'. Use 'translation' or 'rotation'", typeStr.c_str());
-                return;
-            }
-            
-            FCSE::CameraPathManager::GetSingleton().AddPathPoint(type, time, easeIn, easeOut);
-            log::info("FCSE - AddCameraPathPoint: Added {} point with time={}, easeIn={}, easeOut={}", 
-                     typeStr.c_str(), time, easeIn, easeOut);
+            FCSE::CameraPathManager::GetSingleton().AddRotationPoint( a_time, a_easeIn, a_easeOut);
+log::info("FCSE - AddCameraPathPoint: Added rotation point with time={}, easeIn={}, easeOut={}", 
+                     a_time, a_easeIn, a_easeOut);
         }
 
         bool FCSEFunctions(RE::BSScript::Internal::VirtualMachine * a_vm){
             a_vm->RegisterFunction("GetFCSEPluginVersion", "_ts_FCSE_PapyrusFunctions", GetFCSEPluginVersion);
-            a_vm->RegisterFunction("AddCameraPathPoint", "_ts_FCSE_PapyrusFunctions", AddCameraPathPoint);
+            a_vm->RegisterFunction("AddCameraTranslationPoint", "_ts_FCSE_PapyrusFunctions", AddCameraTranslationPoint);
+            a_vm->RegisterFunction("AddCameraRotationPoint", "_ts_FCSE_PapyrusFunctions", AddCameraRotationPoint);
             return true;
         }
     } // namespace Interface
@@ -73,7 +71,7 @@ SKSEPluginInfo(
 )
 
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* skse) {
-    long logLevel = _ts_SKSEFunctions::GetValueFromINI(nullptr, 0, "LogLevel:Log", "SKSE/Plugins/IntuitiveDragonRideControl.ini", 3L);
+    long logLevel = _ts_SKSEFunctions::GetValueFromINI(nullptr, 0, "LogLevel:Log", "SKSE/Plugins/FreeCameraSceneEditor.ini", 3L);
     bool isLogLevelValid = true;
     if (logLevel < 0 || logLevel > 6) {
         logLevel = 2L; // info
@@ -81,16 +79,17 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* sks
     }
 
 	_ts_SKSEFunctions::InitializeLogging(static_cast<spdlog::level::level_enum>(logLevel));
-    if (!isLogLevelValid) {
-        log::warn("FCSE - {}: LogLevel in INI file is invalid. Defaulting to info level.", __func__);
-    }
-    log::info("FCSE - {}: FCSE Plugin version: {}", __func__, FCSE::Interface::GetFCSEPluginVersion(nullptr));
 
     Init(skse);
     auto messaging = SKSE::GetMessagingInterface();
 	if (!messaging->RegisterListener("SKSE", MessageHandler)) {
 		return false;
 	}
+
+    if (!isLogLevelValid) {
+        log::warn("FCSE - {}: LogLevel in INI file is invalid. Defaulting to info level.", __func__);
+    }
+    log::info("FCSE - {}: LogLevel: {}, FCSE Plugin version: {}", __func__, logLevel, FCSE::Interface::GetFCSEPluginVersion(nullptr));
 
     if (!SKSE::GetPapyrusInterface()->Register(FCSE::Interface::FCSEFunctions)) {
         log::error("FCSE - {}: Failed to register Papyrus functions.", __func__);
