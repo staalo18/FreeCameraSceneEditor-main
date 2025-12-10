@@ -1,8 +1,7 @@
-#include "_ts_SKSEFunctions.h"
 #include "Hooks.h"
 #include "ControlsManager.h"
 #include "APIManager.h"
-#include "CameraPathManager.h"
+#include "TimelineManager.h"
 
 namespace FCSE {
     namespace Interface {
@@ -10,24 +9,24 @@ namespace FCSE {
             return 1;
         }
         
-        void AddCameraTranslationPoint(RE::StaticFunctionTag*, float a_time, bool a_easeIn, bool a_easeOut) {
+        void AddTranslationPoint(RE::StaticFunctionTag*, float a_time, bool a_easeIn, bool a_easeOut) {
                         
-            FCSE::CameraPathManager::GetSingleton().AddTranslationPoint( a_time, a_easeIn, a_easeOut);
-log::info("FCSE - AddCameraPathPoint: Added translation point with time={}, easeIn={}, easeOut={}", 
+            FCSE::TimelineManager::GetSingleton().AddTranslationPoint( a_time, a_easeIn, a_easeOut);
+log::info("FCSE - AddTranslationPoint: Added translation point with time={}, easeIn={}, easeOut={}", 
                      a_time, a_easeIn, a_easeOut);
         }
 
-        void AddCameraRotationPoint(RE::StaticFunctionTag*, float a_time, bool a_easeIn, bool a_easeOut) {
+        void AddRotationPoint(RE::StaticFunctionTag*, float a_time, bool a_easeIn, bool a_easeOut) {
             
-            FCSE::CameraPathManager::GetSingleton().AddRotationPoint( a_time, a_easeIn, a_easeOut);
-log::info("FCSE - AddCameraPathPoint: Added rotation point with time={}, easeIn={}, easeOut={}", 
+            FCSE::TimelineManager::GetSingleton().AddRotationPoint( a_time, a_easeIn, a_easeOut);
+log::info("FCSE - AddRotationPoint: Added rotation point with time={}, easeIn={}, easeOut={}", 
                      a_time, a_easeIn, a_easeOut);
         }
 
         bool FCSEFunctions(RE::BSScript::Internal::VirtualMachine * a_vm){
             a_vm->RegisterFunction("GetFCSEPluginVersion", "_ts_FCSE_PapyrusFunctions", GetFCSEPluginVersion);
-            a_vm->RegisterFunction("AddCameraTranslationPoint", "_ts_FCSE_PapyrusFunctions", AddCameraTranslationPoint);
-            a_vm->RegisterFunction("AddCameraRotationPoint", "_ts_FCSE_PapyrusFunctions", AddCameraRotationPoint);
+            a_vm->RegisterFunction("AddTranslationPoint", "_ts_FCSE_PapyrusFunctions", AddTranslationPoint);
+            a_vm->RegisterFunction("AddRotationPoint", "_ts_FCSE_PapyrusFunctions", AddRotationPoint);
             return true;
         }
     } // namespace Interface

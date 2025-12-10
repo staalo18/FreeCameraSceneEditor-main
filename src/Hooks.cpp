@@ -1,5 +1,5 @@
 #include "Hooks.h"
-#include "CameraPathManager.h"
+#include "TimelineManager.h"
 
 namespace Hooks
 {
@@ -16,6 +16,6 @@ namespace Hooks
 	{
 		_Nullsub();
 
-		FCSE::CameraPathManager::GetSingleton().Update();
+		FCSE::TimelineManager::GetSingleton().Update();
 	}
 } // namespace Hooks
