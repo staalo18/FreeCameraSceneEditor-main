@@ -9,17 +9,17 @@ namespace FCSE {
             return 1;
         }
         
-        void AddTranslationPoint(RE::StaticFunctionTag*, float a_time, bool a_easeIn, bool a_easeOut) {
+        size_t AddTranslationPoint(RE::StaticFunctionTag*, float a_time, bool a_easeIn, bool a_easeOut) {
                         
-            FCSE::TimelineManager::GetSingleton().AddTranslationPoint( a_time, a_easeIn, a_easeOut);
-log::info("FCSE - AddTranslationPoint: Added translation point with time={}, easeIn={}, easeOut={}", 
+            return FCSE::TimelineManager::GetSingleton().AddTranslationPoint( a_time, a_easeIn, a_easeOut);
+log::info("{}: Added translation point with time={}, easeIn={}, easeOut={}", __FUNCTION__, 
                      a_time, a_easeIn, a_easeOut);
         }
 
-        void AddRotationPoint(RE::StaticFunctionTag*, float a_time, bool a_easeIn, bool a_easeOut) {
+        size_t AddRotationPoint(RE::StaticFunctionTag*, float a_time, bool a_easeIn, bool a_easeOut) {
             
-            FCSE::TimelineManager::GetSingleton().AddRotationPoint( a_time, a_easeIn, a_easeOut);
-log::info("FCSE - AddRotationPoint: Added rotation point with time={}, easeIn={}, easeOut={}", 
+            return FCSE::TimelineManager::GetSingleton().AddRotationPoint( a_time, a_easeIn, a_easeOut);
+log::info("{}: Added rotation point with time={}, easeIn={}, easeOut={}", __FUNCTION__, 
                      a_time, a_easeIn, a_easeOut);
         }
 
@@ -52,10 +52,9 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_msg)
 	case SKSE::MessagingInterface::kNewGame:
 		APIs::RequestAPIs();
         if (auto input = RE::BSInputDeviceManager::GetSingleton()) {
-            log::info("FCSE - {}: BSInputDeviceManager available", __func__);
             input->AddEventSink(&FCSE::ControlsManager::GetSingleton());
         } else {
-                log::warn("FCSE - {}: BSInputDeviceManager not available", __func__);
+                log::warn("{}: BSInputDeviceManager not available", __FUNCTION__);
         }   
 		break;
 	}
@@ -86,20 +85,20 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* sks
 	}
 
     if (!isLogLevelValid) {
-        log::warn("FCSE - {}: LogLevel in INI file is invalid. Defaulting to info level.", __func__);
+        log::warn("{}: LogLevel in INI file is invalid. Defaulting to info level.", __FUNCTION__);
     }
-    log::info("FCSE - {}: LogLevel: {}, FCSE Plugin version: {}", __func__, logLevel, FCSE::Interface::GetFCSEPluginVersion(nullptr));
+    log::info("{}: LogLevel: {}, FCSE Plugin version: {}", __FUNCTION__, logLevel, FCSE::Interface::GetFCSEPluginVersion(nullptr));
 
     if (!SKSE::GetPapyrusInterface()->Register(FCSE::Interface::FCSEFunctions)) {
-        log::error("FCSE - {}: Failed to register Papyrus functions.", __func__);
+        log::warn("{}: Failed to register Papyrus functions.", __FUNCTION__);
         return false;
     } else {
-        log::info("FCSE - {}: Registered Papyrus functions", __func__);
+        log::info("{}: Registered Papyrus functions", __FUNCTION__);
     }
 
     SKSE::AllocTrampoline(64);
         
-    log::info("FCSE - {}: Calling Install Hooks", __func__);
+    log::info("{}: Calling Install Hooks", __FUNCTION__);
 
     Hooks::Install();
 

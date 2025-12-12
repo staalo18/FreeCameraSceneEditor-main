@@ -6,7 +6,7 @@ namespace FCSE {
     
     // ===== TranslationPath implementations =====
 
-    TranslationPoint TranslationPath::GetCurrentPoint(float a_time, bool a_easeIn, bool a_easeOut) {
+    TranslationPoint TranslationPath::GetPointAtCameraPos(float a_time, bool a_easeIn, bool a_easeOut) {
         TranslationPoint point;
         auto* playerCamera = RE::PlayerCamera::GetSingleton();
         RE::FreeCameraState* cameraState = nullptr;
@@ -24,17 +24,24 @@ namespace FCSE {
     }
 
     bool TranslationPath::ImportPath(std::ifstream& a_file, float a_conversionFactor) {
+        if (!a_file.is_open()) {
+            log::error("{}: File is not open", __FUNCTION__);
+            return false;
+        }
+        
+        ClearPath();
+        
         return ParseFCSETimelineFileSections(a_file, "TranslatePoint", [this](const auto& data) {
             if (data.find("Time") != data.end()) {
-                double posX = data.count("PositionX") ? std::stod(data.at("PositionX")) : 0.0;
-                double posY = data.count("PositionY") ? std::stod(data.at("PositionY")) : 0.0;
-                double posZ = data.count("PositionZ") ? std::stod(data.at("PositionZ")) : 0.0;
-                double time = std::stod(data.at("Time"));
+                float posX = data.count("PositionX") ? std::stof(data.at("PositionX")) : 0.0f;
+                float posY = data.count("PositionY") ? std::stof(data.at("PositionY")) : 0.0f;
+                float posZ = data.count("PositionZ") ? std::stof(data.at("PositionZ")) : 0.0f;
+                float time = std::stof(data.at("Time"));
                 bool easeIn = data.count("EaseIn") ? (std::stoi(data.at("EaseIn")) != 0) : true;
                 bool easeOut = data.count("EaseOut") ? (std::stoi(data.at("EaseOut")) != 0) : true;
                 
-                RE::NiPoint3 position(static_cast<float>(posX), static_cast<float>(posY), static_cast<float>(posZ));
-                Transition translationTrans(InterpolationType::kOn, static_cast<float>(time), easeIn, easeOut);
+                RE::NiPoint3 position(posX, posY, posZ);
+                Transition translationTrans(InterpolationType::kOn, time, easeIn, easeOut);
                 TranslationPoint point(translationTrans, position);
                 AddPoint(point);
             }
@@ -43,6 +50,7 @@ namespace FCSE {
 
     bool TranslationPath::ExportPath(std::ofstream& a_file, float a_conversionFactor) const {
         if (!a_file.is_open()) {
+            log::error("{}: File is not open", __FUNCTION__);
             return false;
         }
 
@@ -55,6 +63,11 @@ namespace FCSE {
             a_file << "EaseIn=" << (point.m_transition.m_easeIn ? 1 : 0) << "\n";
             a_file << "EaseOut=" << (point.m_transition.m_easeOut ? 1 : 0) << "\n";
             a_file << "\n";
+            
+            if (!a_file.good()) {
+                log::error("{}: Write error", __FUNCTION__);
+                return false;
+            }
         }
         
         return true;
@@ -62,7 +75,7 @@ namespace FCSE {
 
     // ===== RotationPath implementations =====
     
-    RotationPoint RotationPath::GetCurrentPoint(float a_time, bool a_easeIn, bool a_easeOut) {
+    RotationPoint RotationPath::GetPointAtCameraPos(float a_time, bool a_easeIn, bool a_easeOut) {
         RotationPoint point;
         auto* playerCamera = RE::PlayerCamera::GetSingleton();
         RE::FreeCameraState* cameraState = nullptr;
@@ -80,16 +93,23 @@ namespace FCSE {
     }
 
     bool RotationPath::ImportPath(std::ifstream& a_file, float a_conversionFactor) {
+        if (!a_file.is_open()) {
+            log::error("{}: File is not open", __FUNCTION__);
+            return false;
+        }
+        
+        ClearPath();
+        
         return ParseFCSETimelineFileSections(a_file, "RotatePoint", [this, a_conversionFactor](const auto& data) {
             if (data.find("Time") != data.end()) {
-                double pitch = (data.count("Pitch") ? std::stod(data.at("Pitch")) : 0.0) * a_conversionFactor;
-                double yaw = (data.count("Yaw") ? std::stod(data.at("Yaw")) : 0.0) * a_conversionFactor;
-                double time = std::stod(data.at("Time"));
+                float pitch = (data.count("Pitch") ? std::stof(data.at("Pitch")) : 0.0f) * a_conversionFactor;
+                float yaw = (data.count("Yaw") ? std::stof(data.at("Yaw")) : 0.0f) * a_conversionFactor;
+                float time = std::stof(data.at("Time"));
                 bool easeIn = data.count("EaseIn") ? (std::stoi(data.at("EaseIn")) != 0) : true;
                 bool easeOut = data.count("EaseOut") ? (std::stoi(data.at("EaseOut")) != 0) : true;
                 
-                RE::BSTPoint2<float> rotation({static_cast<float>(pitch), static_cast<float>(yaw)});
-                Transition rotationTrans(InterpolationType::kOn, static_cast<float>(time), easeIn, easeOut);
+                RE::BSTPoint2<float> rotation({pitch, yaw});
+                Transition rotationTrans(InterpolationType::kOn, time, easeIn, easeOut);
                 RotationPoint point(rotationTrans, rotation);
                 AddPoint(point);
             }
@@ -98,6 +118,7 @@ namespace FCSE {
 
     bool RotationPath::ExportPath(std::ofstream& a_file, float a_conversionFactor) const {
         if (!a_file.is_open()) {
+            log::error("{}: File is not open", __FUNCTION__);
             return false;
         }
      
@@ -109,6 +130,11 @@ namespace FCSE {
             a_file << "EaseIn=" << (point.m_transition.m_easeIn ? 1 : 0) << "\n";
             a_file << "EaseOut=" << (point.m_transition.m_easeOut ? 1 : 0) << "\n";
             a_file << "\n";
+            
+            if (!a_file.good()) {
+                log::error("{}: Write error", __FUNCTION__);
+                return false;
+            }
         }
 
         return true;

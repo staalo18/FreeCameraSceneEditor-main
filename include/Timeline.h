@@ -13,8 +13,9 @@ namespace FCSE {
         Timeline() = default;
         ~Timeline() = default;
         
-        void AddPoint(const PointType& a_point) { m_path.AddPoint(a_point); }
+        size_t AddPoint(const PointType& a_point) { return m_path.AddPoint(a_point); }
         const PointType& GetPoint(size_t a_index) const { return m_path.GetPoint(a_index); }
+        size_t UpdatePoint(size_t a_index, const PointType& a_point) { return m_path.UpdatePoint(a_index, a_point); }
         void RemovePoint(size_t a_index) { m_path.RemovePoint(a_index); }
         void ClearTimeline() { 
             m_path.ClearPath();
@@ -30,8 +31,8 @@ namespace FCSE {
         bool ExportTimeline(std::ofstream& a_file, float a_conversionFactor = 1.0f) const { 
             return m_path.ExportPath(a_file, a_conversionFactor);
         }
-        PointType GetCurrentPoint(float a_time, bool a_easeIn, bool a_easeOut) {
-            return m_path.GetCurrentPoint(a_time, a_easeIn, a_easeOut);
+        PointType GetPointAtCameraPos(float a_time, bool a_easeIn, bool a_easeOut) {
+            return m_path.GetPointAtCameraPos(a_time, a_easeIn, a_easeOut);
         }
         
         void UpdateTimeline(float a_currentTime) {
@@ -85,7 +86,7 @@ namespace FCSE {
                     if (m_currentIndex < GetPointCount()) {
                         return GetPoint(m_currentIndex).m_point;
                     }
-                    return {};
+                    return PointType{}.m_point;
                 case InterpolationMode::kLinear:
                     return GetPointLinear();
                 case InterpolationMode::kCubicHermite:
@@ -101,6 +102,7 @@ namespace FCSE {
         size_t GetCurrentIndex() const { return m_currentIndex; }
         float GetProgress() const { return m_progress; }
         float GetCurrentTime() const { return m_currentTime; }
+        bool IsComplete() const { return m_currentIndex >= GetPointCount(); }
         
         void ResetTimeline() {
             m_currentIndex = 0;
@@ -111,7 +113,7 @@ namespace FCSE {
     private:
         auto GetPointLinear() const -> decltype(std::declval<PointType>().m_point) {
             if (GetPointCount() == 0) {
-                return {};
+                return PointType{}.m_point;
             }
             
             size_t currentIdx = m_currentIndex;
@@ -127,6 +129,10 @@ namespace FCSE {
             
             const auto& prevPoint = GetPoint(currentIdx - 1);
             
+            if (prevPoint.IsNearlyEqual(currentPoint)) {
+                return currentPoint.m_point;
+            }
+            
             float t = _ts_SKSEFunctions::ApplyEasing(m_progress,
                                  currentPoint.m_transition.m_easeIn,
                                  currentPoint.m_transition.m_easeOut);
@@ -137,17 +143,19 @@ namespace FCSE {
         }
         
         auto GetPointCubicHermite() const -> decltype(std::declval<PointType>().m_point) {
-            if (GetPointCount() == 0) {
-                return {};
+            const size_t pointCount = GetPointCount();
+            
+            if (pointCount == 0) {
+                return PointType{}.m_point;
             }
             
-            if (GetPointCount() == 1) {
+            if (pointCount == 1) {
                 return GetPoint(0).m_point;
             }
             
             size_t currentIdx = m_currentIndex;
-            if (currentIdx >= GetPointCount()) {
-                return GetPoint(GetPointCount() - 1).m_point;
+            if (currentIdx >= pointCount) {
+                return GetPoint(pointCount - 1).m_point;
             }
             
             if (currentIdx == 0) {

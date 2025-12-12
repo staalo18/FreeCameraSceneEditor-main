@@ -2,10 +2,9 @@
 
 
 namespace FCSE {
-
+    constexpr float EPSILON_COMPARISON = 0.0001f;
+    
     void ComputeHermiteBasis(float t, float& h00, float& h10, float& h01, float& h11);
-
-    float ComputeTangent(float v0, float v1, float v2, bool hasV0, bool hasV2);
 
     void SetHUDMenuVisible(bool a_visible);
 

@@ -19,8 +19,12 @@ namespace FCSE {
             void StopRecording();
 
             // Add a new point at time a_time
-            void AddTranslationPoint(float a_time, bool a_easeIn, bool a_easeOut);
-            void AddRotationPoint(float a_time, bool a_easeIn, bool a_easeOut);
+            size_t AddTranslationPoint(float a_time, bool a_easeIn, bool a_easeOut);
+            size_t AddRotationPoint(float a_time, bool a_easeIn, bool a_easeOut);
+            
+            // Update existing point (returns new index after potential re-sorting)
+            size_t UpdateTranslationPoint(size_t a_index, const TranslationPoint& a_point);
+            size_t UpdateRotationPoint(size_t a_index, const RotationPoint& a_point);
             
             // Remove point
             void RemoveTranslationPoint(size_t a_index);
@@ -29,8 +33,8 @@ namespace FCSE {
             void ClearTimeline(bool a_notify = true);
             
             // Access points
-            const TranslationPoint* GetTranslationPoint(size_t a_index) const;
-            const RotationPoint* GetRotationPoint(size_t a_index) const;
+            const TranslationPoint& GetTranslationPoint(size_t a_index) const;
+            const RotationPoint& GetRotationPoint(size_t a_index) const;
             size_t GetTranslationPointCount() const { return m_translationTimeline.GetPointCount(); }
             size_t GetRotationPointCount() const { return m_rotationTimeline.GetPointCount(); }
             
@@ -47,8 +51,8 @@ namespace FCSE {
             TimelineManager() = default;
             ~TimelineManager() = default;
 
-            void AddTranslationPoint(const TranslationPoint& a_point);
-            void AddRotationPoint(const RotationPoint& a_point);
+            size_t AddTranslationPoint(const TranslationPoint& a_point);
+            size_t AddRotationPoint(const RotationPoint& a_point);
             
             void DrawTimeline();
              
@@ -58,8 +62,6 @@ namespace FCSE {
 
             TranslationTimeline m_translationTimeline;
             RotationTimeline m_rotationTimeline;
-
-            InterpolationMode m_interpolationMode = InterpolationMode::kCubicHermite;
             
             // Recording
             bool m_isRecording = false;

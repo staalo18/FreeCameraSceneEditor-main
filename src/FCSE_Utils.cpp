@@ -12,16 +12,6 @@ namespace FCSE {
         h11 = t3 - t2;                          // basis for m2
     }
     
-    float ComputeTangent(float v0, float v1, float v2, bool hasV0, bool hasV2) {
-        if (hasV0 && hasV2) {
-            return (v2 - v0) * 0.5f;  // Central difference
-        } else if (!hasV0) {
-            return v2 - v1;  // Forward difference (first segment)
-        } else {
-            return v2 - v1;  // Backward difference (last segment)
-        }
-    }
-    
     void SetHUDMenuVisible(bool a_visible) {
         if (!APIs::TrueHUD) {
             return;

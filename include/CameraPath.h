@@ -2,49 +2,28 @@
 
 #include "CameraTypes.h"
 #include "_ts_SKSEFunctions.h"
+#include "FCSE_Utils.h"
+#include <stdexcept>
 
 
 namespace FCSE {
-    class CameraPoint {
-    public:
-        CameraPoint() 
-            : m_transition(InterpolationType::kInvalid, 0.0f, false, false) {}
-        
-        CameraPoint(const Transition& a_transition)
-            : m_transition(a_transition) {}
-        
-        virtual ~CameraPoint() = default;
-        
-        // Virtual method for comparing points - must be overridden by derived classes
-        virtual bool IsNearlyEqual(const CameraPoint& other, float epsilon = 0.0001f) const = 0;
-
-        virtual void Wrap() = 0; // Wrap angles if necessary
-        
-        Transition m_transition;
-    };
-
-    class TranslationPoint : public CameraPoint {
+    class TranslationPoint {
     public:
         TranslationPoint()
-            : CameraPoint()
+            : m_transition(InterpolationType::kInvalid, 0.0f, false, false)
             , m_point({0.f, 0.f, 0.f}) {}
 
         TranslationPoint(const Transition& a_transition, const RE::NiPoint3& a_point)
-            : CameraPoint(a_transition)
+            : m_transition(a_transition)
             , m_point(a_point) {}
        
-        bool IsNearlyEqual(const CameraPoint& other, float epsilon = 0.0001f) const override {
-            const auto* otherPoint = dynamic_cast<const TranslationPoint*>(&other);
-            if (!otherPoint) return false;
-            
-            return std::abs(m_point.x - otherPoint->m_point.x) < epsilon &&
-                   std::abs(m_point.y - otherPoint->m_point.y) < epsilon &&
-                   std::abs(m_point.z - otherPoint->m_point.z) < epsilon;
+        bool IsNearlyEqual(const TranslationPoint& other) const {
+            return std::abs(m_point.x - other.m_point.x) < EPSILON_COMPARISON &&
+                   std::abs(m_point.y - other.m_point.y) < EPSILON_COMPARISON &&
+                   std::abs(m_point.z - other.m_point.z) < EPSILON_COMPARISON;
         }
        
-        void Wrap() override {
-            ; // Do nothing for translation
-        }
+        void Wrap() {} // Do nothing for translation
        
         TranslationPoint operator+(const TranslationPoint& other) const {
             return TranslationPoint(m_transition, m_point + other.m_point);
@@ -58,28 +37,26 @@ namespace FCSE {
             return TranslationPoint(m_transition, m_point * scalar);
         }
 
+        Transition m_transition;
         RE::NiPoint3 m_point;
     };
 
-    class RotationPoint : public CameraPoint {
+    class RotationPoint {
     public:
         RotationPoint()
-            : CameraPoint()
+            : m_transition(InterpolationType::kInvalid, 0.0f, false, false)
             , m_point({0.f, 0.f}) {}
 
         RotationPoint(const Transition& a_transition, const RE::BSTPoint2<float>& a_point)
-            : CameraPoint(a_transition)
+            : m_transition(a_transition)
             , m_point(a_point) {}
        
-        bool IsNearlyEqual(const CameraPoint& other, float epsilon = 0.0001f) const override {
-            const auto* otherPoint = dynamic_cast<const RotationPoint*>(&other);
-            if (!otherPoint) return false;
-            
-            return std::abs(m_point.x - otherPoint->m_point.x) < epsilon &&
-                   std::abs(m_point.y - otherPoint->m_point.y) < epsilon;
+        bool IsNearlyEqual(const RotationPoint& other) const {
+            return std::abs(m_point.x - other.m_point.x) < EPSILON_COMPARISON &&
+                   std::abs(m_point.y - other.m_point.y) < EPSILON_COMPARISON;
         }
 
-        void Wrap() override {
+        void Wrap() {
             m_point.x = _ts_SKSEFunctions::NormalRelativeAngle(m_point.x);
             m_point.y = _ts_SKSEFunctions::NormalRelativeAngle(m_point.y);
         }
@@ -105,6 +82,7 @@ namespace FCSE {
             return RotationPoint(m_transition, result);
         }
        
+        Transition m_transition;
         RE::BSTPoint2<float> m_point;
     };
 
@@ -113,24 +91,46 @@ namespace FCSE {
     public:
         virtual ~CameraPath() = default;
                 
-        void AddPoint(PointType a_point) {
-            // Validate and clamp time value to non-negative
-            if (a_point.m_transition.m_time < 0.0f) {
-                a_point.m_transition.m_time = 0.0f;
-            }
-            
+        size_t AddPoint(const PointType& a_point) {
+            PointType modifiedPoint = a_point;
+            if (modifiedPoint.m_transition.m_time < 0.0f) {
+                modifiedPoint.m_transition.m_time = 0.0f;
+            } 
+
             // Insert point in sorted order by time
-            float pointTime = a_point.m_transition.m_time;
-            auto insertPos = std::lower_bound(m_points.begin(), m_points.end(), pointTime,
+            auto insertPos = std::lower_bound(m_points.begin(), m_points.end(), modifiedPoint.m_transition.m_time,
                 [](const PointType& point, float time) {
                     return point.m_transition.m_time < time;
                 });
             
-            m_points.insert(insertPos, a_point);
+            auto it = m_points.insert(insertPos, modifiedPoint);
+            return std::distance(m_points.begin(), it);
         }
         
         const PointType& GetPoint(size_t a_index) const {
+            if (a_index >= m_points.size()) {
+                log::error("FCSE - CameraPath::GetPoint: index out of range");
+                throw std::out_of_range("CameraPath::GetPoint: index out of range");
+            }
             return m_points[a_index];
+        }
+        
+        size_t UpdatePoint(size_t a_index, const PointType& a_point) {
+            if (a_index >= m_points.size()) {
+                log::error("FCSE - CameraPath::UpdatePoint: index out of range");
+                throw std::out_of_range("CameraPath::UpdatePoint: index out of range");
+            }
+            
+            // If time hasn't changed, simple update
+            if (std::abs(m_points[a_index].m_transition.m_time - a_point.m_transition.m_time) < EPSILON_COMPARISON) {
+                m_points[a_index] = a_point;
+                return a_index;
+            }
+            
+            // Time changed: remove old point and re-insert to maintain sorted order
+            m_points.erase(m_points.begin() + a_index);
+                        
+            return AddPoint(a_point);
         }
         
         void RemovePoint(size_t a_index) {
@@ -147,7 +147,7 @@ namespace FCSE {
 
         virtual bool ImportPath(std::ifstream& a_file, float a_conversionFactor = 1.0f) = 0;
         virtual bool ExportPath(std::ofstream& a_file, float a_conversionFactor = 1.0f) const = 0;
-        virtual PointType GetCurrentPoint(float a_time, bool a_easeIn, bool a_easeOut) = 0;
+        virtual PointType GetPointAtCameraPos(float a_time, bool a_easeIn, bool a_easeOut) = 0;
         
     protected:
         std::vector<PointType> m_points;
@@ -157,7 +157,7 @@ namespace FCSE {
     public:
         using PointType = TranslationPoint;
         
-        TranslationPoint GetCurrentPoint(float a_time, bool a_easeIn, bool a_easeOut) override;
+        TranslationPoint GetPointAtCameraPos(float a_time, bool a_easeIn, bool a_easeOut) override;
         bool ImportPath(std::ifstream& a_file, float a_conversionFactor = 1.0f) override;
         bool ExportPath(std::ofstream& a_file, float a_conversionFactor = 1.0f) const override;
     };
@@ -166,7 +166,7 @@ namespace FCSE {
     public:
         using PointType = RotationPoint;
         
-        RotationPoint GetCurrentPoint(float a_time, bool a_easeIn, bool a_easeOut) override;
+        RotationPoint GetPointAtCameraPos(float a_time, bool a_easeIn, bool a_easeOut) override;
         bool ImportPath(std::ifstream& a_file, float a_conversionFactor = 1.0f) override;
         bool ExportPath(std::ofstream& a_file, float a_conversionFactor = 1.0f) const override;
     };
