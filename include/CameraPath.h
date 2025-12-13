@@ -109,16 +109,16 @@ namespace FCSE {
         
         const PointType& GetPoint(size_t a_index) const {
             if (a_index >= m_points.size()) {
-                log::error("FCSE - CameraPath::GetPoint: index out of range");
+                log::error("{}: index out of range", __FUNCTION__);
                 throw std::out_of_range("CameraPath::GetPoint: index out of range");
             }
             return m_points[a_index];
         }
         
-        size_t UpdatePoint(size_t a_index, const PointType& a_point) {
+        size_t EditPoint(size_t a_index, const PointType& a_point) {
             if (a_index >= m_points.size()) {
-                log::error("FCSE - CameraPath::UpdatePoint: index out of range");
-                throw std::out_of_range("CameraPath::UpdatePoint: index out of range");
+                log::error("{}: index out of range", __FUNCTION__);
+                throw std::out_of_range("CameraPath::EditPoint: index out of range");
             }
             
             // If time hasn't changed, simple update

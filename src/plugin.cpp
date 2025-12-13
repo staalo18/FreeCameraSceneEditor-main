@@ -2,6 +2,7 @@
 #include "ControlsManager.h"
 #include "APIManager.h"
 #include "TimelineManager.h"
+#include "ModAPI.h"
 
 namespace FCSE {
     namespace Interface {
@@ -9,24 +10,88 @@ namespace FCSE {
             return 1;
         }
         
-        size_t AddTranslationPoint(RE::StaticFunctionTag*, float a_time, bool a_easeIn, bool a_easeOut) {
-                        
-            return FCSE::TimelineManager::GetSingleton().AddTranslationPoint( a_time, a_easeIn, a_easeOut);
-log::info("{}: Added translation point with time={}, easeIn={}, easeOut={}", __FUNCTION__, 
-                     a_time, a_easeIn, a_easeOut);
+        int AddTranslationPoint(RE::StaticFunctionTag*, float a_time, bool a_easeIn, bool a_easeOut) {
+            return static_cast<int>(FCSE::TimelineManager::GetSingleton().AddTranslationPoint(a_time, a_easeIn, a_easeOut));
         }
 
-        size_t AddRotationPoint(RE::StaticFunctionTag*, float a_time, bool a_easeIn, bool a_easeOut) {
-            
-            return FCSE::TimelineManager::GetSingleton().AddRotationPoint( a_time, a_easeIn, a_easeOut);
-log::info("{}: Added rotation point with time={}, easeIn={}, easeOut={}", __FUNCTION__, 
-                     a_time, a_easeIn, a_easeOut);
+        int AddRotationPoint(RE::StaticFunctionTag*, float a_time, bool a_easeIn, bool a_easeOut) {
+            return static_cast<int>(FCSE::TimelineManager::GetSingleton().AddRotationPoint(a_time, a_easeIn, a_easeOut));
+        }
+
+        void StartRecording(RE::StaticFunctionTag*) {
+            FCSE::TimelineManager::GetSingleton().StartRecording();
+        }
+
+        void StopRecording(RE::StaticFunctionTag*) {
+            FCSE::TimelineManager::GetSingleton().StopRecording();
+        }
+
+        int EditTranslationPoint(RE::StaticFunctionTag*, int a_index, float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn, bool a_easeOut) {
+            return static_cast<int>(FCSE::TimelineManager::GetSingleton().EditTranslationPoint(static_cast<size_t>(a_index), a_time, a_posX, a_posY, a_posZ, a_easeIn, a_easeOut));
+        }
+
+        int EditRotationPoint(RE::StaticFunctionTag*, int a_index, float a_time, float a_pitch, float a_yaw, bool a_easeIn, bool a_easeOut) {
+            return static_cast<int>(FCSE::TimelineManager::GetSingleton().EditRotationPoint(static_cast<size_t>(a_index), a_time, a_pitch, a_yaw, a_easeIn, a_easeOut));
+        }
+
+        void RemoveTranslationPoint(RE::StaticFunctionTag*, int a_index) {
+            FCSE::TimelineManager::GetSingleton().RemoveTranslationPoint(static_cast<size_t>(a_index));
+        }
+
+        void RemoveRotationPoint(RE::StaticFunctionTag*, int a_index) {
+            FCSE::TimelineManager::GetSingleton().RemoveRotationPoint(static_cast<size_t>(a_index));
+        }
+
+        void ClearTimeline(RE::StaticFunctionTag*, bool a_notifyUser) {
+            FCSE::TimelineManager::GetSingleton().ClearTimeline(a_notifyUser);
+        }
+
+        int GetTranslationPointCount(RE::StaticFunctionTag*) {
+            return static_cast<int>(FCSE::TimelineManager::GetSingleton().GetTranslationPointCount());
+        }
+
+        int GetRotationPointCount(RE::StaticFunctionTag*) {
+            return static_cast<int>(FCSE::TimelineManager::GetSingleton().GetRotationPointCount());
+        }
+
+        void StartTraversal(RE::StaticFunctionTag*) {
+            FCSE::TimelineManager::GetSingleton().StartTraversal();
+        }
+
+        void StopTraversal(RE::StaticFunctionTag*) {
+            FCSE::TimelineManager::GetSingleton().StopTraversal();
+        }
+
+        bool IsTraversing(RE::StaticFunctionTag*) {
+            return FCSE::TimelineManager::GetSingleton().IsTraversing();
+        }
+
+        bool ImportTimeline(RE::StaticFunctionTag*, RE::BSFixedString a_filePath) {
+            return FCSE::TimelineManager::GetSingleton().ImportTimeline(a_filePath.c_str());
+        }
+
+        bool ExportTimeline(RE::StaticFunctionTag*, RE::BSFixedString a_filePath) {
+            return FCSE::TimelineManager::GetSingleton().ExportTimeline(a_filePath.c_str());
         }
 
         bool FCSEFunctions(RE::BSScript::Internal::VirtualMachine * a_vm){
-            a_vm->RegisterFunction("GetFCSEPluginVersion", "_ts_FCSE_PapyrusFunctions", GetFCSEPluginVersion);
-            a_vm->RegisterFunction("AddTranslationPoint", "_ts_FCSE_PapyrusFunctions", AddTranslationPoint);
-            a_vm->RegisterFunction("AddRotationPoint", "_ts_FCSE_PapyrusFunctions", AddRotationPoint);
+            a_vm->RegisterFunction("GetFCSEPluginVersion", "FCSE_SKSEFunctions", GetFCSEPluginVersion);
+            a_vm->RegisterFunction("AddTranslationPoint", "FCSE_SKSEFunctions", AddTranslationPoint);
+            a_vm->RegisterFunction("AddRotationPoint", "FCSE_SKSEFunctions", AddRotationPoint);
+            a_vm->RegisterFunction("StartRecording", "FCSE_SKSEFunctions", StartRecording);
+            a_vm->RegisterFunction("StopRecording", "FCSE_SKSEFunctions", StopRecording);
+            a_vm->RegisterFunction("EditTranslationPoint", "FCSE_SKSEFunctions", EditTranslationPoint);
+            a_vm->RegisterFunction("EditRotationPoint", "FCSE_SKSEFunctions", EditRotationPoint);
+            a_vm->RegisterFunction("RemoveTranslationPoint", "FCSE_SKSEFunctions", RemoveTranslationPoint);
+            a_vm->RegisterFunction("RemoveRotationPoint", "FCSE_SKSEFunctions", RemoveRotationPoint);
+            a_vm->RegisterFunction("ClearTimeline", "FCSE_SKSEFunctions", ClearTimeline);
+            a_vm->RegisterFunction("GetTranslationPointCount", "FCSE_SKSEFunctions", GetTranslationPointCount);
+            a_vm->RegisterFunction("GetRotationPointCount", "FCSE_SKSEFunctions", GetRotationPointCount);
+            a_vm->RegisterFunction("StartTraversal", "FCSE_SKSEFunctions", StartTraversal);
+            a_vm->RegisterFunction("StopTraversal", "FCSE_SKSEFunctions", StopTraversal);
+            a_vm->RegisterFunction("IsTraversing", "FCSE_SKSEFunctions", IsTraversing);
+            a_vm->RegisterFunction("ImportTimeline", "FCSE_SKSEFunctions", ImportTimeline);
+            a_vm->RegisterFunction("ExportTimeline", "FCSE_SKSEFunctions", ExportTimeline);
             return true;
         }
     } // namespace Interface
@@ -103,4 +168,20 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* sks
     Hooks::Install();
 
     return true;
+}
+
+extern "C" DLLEXPORT void* SKSEAPI RequestPluginAPI(const FCSE_API::InterfaceVersion a_interfaceVersion)
+{
+	auto api = Messaging::FCSEInterface::GetSingleton();
+
+	log::info("{} called, InterfaceVersion {}", __FUNCTION__, static_cast<uint8_t>(a_interfaceVersion));
+
+	switch (a_interfaceVersion) {
+	case FCSE_API::InterfaceVersion::V1:
+		log::info("{} returned the API singleton", __FUNCTION__);
+		return static_cast<void*>(api);
+	}
+
+	log::info("{} requested the wrong interface version", __FUNCTION__);
+	return nullptr;
 }

@@ -23,14 +23,14 @@ namespace FCSE {
             size_t AddRotationPoint(float a_time, bool a_easeIn, bool a_easeOut);
             
             // Update existing point (returns new index after potential re-sorting)
-            size_t UpdateTranslationPoint(size_t a_index, const TranslationPoint& a_point);
-            size_t UpdateRotationPoint(size_t a_index, const RotationPoint& a_point);
+            size_t EditTranslationPoint(size_t a_index, float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn, bool a_easeOut);
+            size_t EditRotationPoint(size_t a_index, float a_time, float a_pitch, float a_yaw, bool a_easeIn, bool a_easeOut);
             
             // Remove point
             void RemoveTranslationPoint(size_t a_index);
             void RemoveRotationPoint(size_t a_index);
 
-            void ClearTimeline(bool a_notify = true);
+            void ClearTimeline(bool a_notifyUser = true);
             
             // Access points
             const TranslationPoint& GetTranslationPoint(size_t a_index) const;
@@ -53,6 +53,9 @@ namespace FCSE {
 
             size_t AddTranslationPoint(const TranslationPoint& a_point);
             size_t AddRotationPoint(const RotationPoint& a_point);
+            
+            size_t EditTranslationPoint(size_t a_index, const TranslationPoint& a_point);
+            size_t EditRotationPoint(size_t a_index, const RotationPoint& a_point);
             
             void DrawTimeline();
              

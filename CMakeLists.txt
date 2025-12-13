@@ -97,4 +97,28 @@ if(DEFINED OUTPUT_FOLDER)
             VERBATIM
         )
     endif()
+
+    # Copy compiled Papyrus scripts (.pex files) from scripts/ to Scripts/ folder
+    set(SCRIPTS_FOLDER "${OUTPUT_FOLDER}/Scripts")
+    message(STATUS "Papyrus scripts output folder: ${SCRIPTS_FOLDER}")
+
+    add_custom_command(
+        TARGET "${PROJECT_NAME}"
+        POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E make_directory "${SCRIPTS_FOLDER}"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/scripts/FCSE_SKSEFunctions.pex" "${SCRIPTS_FOLDER}/FCSE_SKSEFunctions.pex"
+        VERBATIM
+    )
+
+    # Copy source Papyrus scripts (.psc files) from source/scripts/ to Source/Scripts/ folder
+    set(SOURCE_SCRIPTS_FOLDER "${OUTPUT_FOLDER}/Source/Scripts")
+    message(STATUS "Papyrus source scripts output folder: ${SOURCE_SCRIPTS_FOLDER}")
+
+    add_custom_command(
+        TARGET "${PROJECT_NAME}"
+        POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E make_directory "${SOURCE_SCRIPTS_FOLDER}"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/source/scripts/FCSE_SKSEFunctions.psc" "${SOURCE_SCRIPTS_FOLDER}/FCSE_SKSEFunctions.psc"
+        VERBATIM
+    )
 endif()

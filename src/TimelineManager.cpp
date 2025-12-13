@@ -102,12 +102,26 @@ namespace FCSE {
         return m_rotationTimeline.GetPoint(a_index);
     }
 
-    size_t TimelineManager::UpdateTranslationPoint(size_t a_index, const TranslationPoint& a_point) {
-        return m_translationTimeline.UpdatePoint(a_index, a_point);
+    size_t TimelineManager::EditTranslationPoint(size_t a_index, const TranslationPoint& a_point) {
+        return m_translationTimeline.EditPoint(a_index, a_point);
     }
 
-    size_t TimelineManager::UpdateRotationPoint(size_t a_index, const RotationPoint& a_point) {
-        return m_rotationTimeline.UpdatePoint(a_index, a_point);
+    size_t TimelineManager::EditRotationPoint(size_t a_index, const RotationPoint& a_point) {
+        return m_rotationTimeline.EditPoint(a_index, a_point);
+    }
+
+    size_t TimelineManager::EditTranslationPoint(size_t a_index, float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn, bool a_easeOut) {
+        Transition transition(InterpolationType::kOn, a_time, a_easeIn, a_easeOut);
+        RE::NiPoint3 position(a_posX, a_posY, a_posZ);
+        TranslationPoint point(transition, position);
+        return EditTranslationPoint(a_index, point);
+    }
+
+    size_t TimelineManager::EditRotationPoint(size_t a_index, float a_time, float a_pitch, float a_yaw, bool a_easeIn, bool a_easeOut) {
+        Transition transition(InterpolationType::kOn, a_time, a_easeIn, a_easeOut);
+        RE::BSTPoint2<float> rotation({a_pitch, a_yaw});
+        RotationPoint point(transition, rotation);
+        return EditRotationPoint(a_index, point);
     }
 
     void TimelineManager::RemoveTranslationPoint(size_t a_index) {
@@ -198,12 +212,12 @@ namespace FCSE {
     }
 
 
-    void TimelineManager::ClearTimeline(bool a_notify) {
+    void TimelineManager::ClearTimeline(bool a_notifyUser) {
         if (m_isRecording) {
             return;
         }
 
-        if (a_notify) {
+        if (a_notifyUser) {
             RE::DebugNotification("Clearing camera path...");
         }
 

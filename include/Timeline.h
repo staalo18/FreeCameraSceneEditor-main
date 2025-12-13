@@ -15,7 +15,7 @@ namespace FCSE {
         
         size_t AddPoint(const PointType& a_point) { return m_path.AddPoint(a_point); }
         const PointType& GetPoint(size_t a_index) const { return m_path.GetPoint(a_index); }
-        size_t UpdatePoint(size_t a_index, const PointType& a_point) { return m_path.UpdatePoint(a_index, a_point); }
+        size_t EditPoint(size_t a_index, const PointType& a_point) { return m_path.EditPoint(a_index, a_point); }
         void RemovePoint(size_t a_index) { m_path.RemovePoint(a_index); }
         void ClearTimeline() { 
             m_path.ClearPath();
