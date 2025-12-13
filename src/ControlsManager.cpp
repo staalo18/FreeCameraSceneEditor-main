@@ -22,7 +22,7 @@ namespace FCSE {
                  if (key == 6) {
                     FCSE::TimelineManager::GetSingleton().ClearTimeline();
                 } else if (key == 7) {
-                    FCSE::TimelineManager::GetSingleton().StartTraversal();
+                    FCSE::TimelineManager::GetSingleton().StartTraversal(1.0f, false, false, true, 12.0f);
                 } else if (key == 8) {
                     FCSE::TimelineManager::GetSingleton().StartRecording();
                 } else if (key == 9) {

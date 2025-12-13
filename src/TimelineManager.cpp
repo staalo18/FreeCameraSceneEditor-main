@@ -152,32 +152,55 @@ namespace FCSE {
             StopTraversal();
             return;
         }
-
-        m_currentTraversalTime += _ts_SKSEFunctions::GetRealTimeDeltaTime();
-
-        m_translationTimeline.UpdateTimeline(m_currentTraversalTime);
-        m_rotationTimeline.UpdateTimeline(m_currentTraversalTime);
         
-        // Get interpolated points from timeline
-        RE::NiPoint3 currentPosition = m_translationTimeline.GetCurrentPoint();
-        RE::BSTPoint2<float> currentRotation = m_rotationTimeline.GetCurrentPoint();
-
         RE::FreeCameraState* cameraState = nullptr;
         if (playerCamera->currentState && (playerCamera->currentState->id == RE::CameraState::kFree)) {
             cameraState = static_cast<RE::FreeCameraState*>(playerCamera->currentState.get());
         }
         if (!cameraState) {
+            log::error("{}: FreeCameraState not found during traversal", __FUNCTION__);
             StopTraversal();
             return;
         }
 
-        cameraState->translation = currentPosition;
-        cameraState->rotation = currentRotation;
-        
-        // Check if both timelines are complete
-        if (m_translationTimeline.IsComplete() && m_rotationTimeline.IsComplete()) {
+        float timelineDuration = m_traversalSpeed * m_traversalDuration;
+        if (timelineDuration <= 0.0f) { 
+            StopTraversal();
+            return;
+        }
+
+        float deltaTime = _ts_SKSEFunctions::GetRealTimeDeltaTime();
+        m_currentTraversalTime += deltaTime * m_traversalSpeed;
+
+        float globalProgress = std::clamp(m_currentTraversalTime  / timelineDuration, 0.0f, 1.0f);
+        float easedProgress = _ts_SKSEFunctions::ApplyEasing(globalProgress, m_globalEaseIn, m_globalEaseOut);
+
+        float currentTime = easedProgress * timelineDuration;
+
+        m_translationTimeline.UpdateTimeline(currentTime);
+        m_rotationTimeline.UpdateTimeline(currentTime);
+
+        // Get interpolated points from timeline
+        cameraState->translation = m_translationTimeline.GetCurrentPoint();
+        cameraState->rotation = m_rotationTimeline.GetCurrentPoint();
+
+        // Check if traversal is complete
+        if (m_currentTraversalTime >= timelineDuration) {
             StopTraversal();
         }        
+    }
+
+    float TimelineManager::GetTimelineDuration() const {
+        float duration = 0.0f;
+        if (m_translationTimeline.GetPointCount() > 0) {
+            duration = std::max(duration, 
+                m_translationTimeline.GetPoint(m_translationTimeline.GetPointCount() - 1).m_transition.m_time);
+        }
+        if (m_rotationTimeline.GetPointCount() > 0) {
+            duration = std::max(duration,
+                m_rotationTimeline.GetPoint(m_rotationTimeline.GetPointCount() - 1).m_transition.m_time);
+        }
+        return duration;
     }
 
     void TimelineManager::DrawTimeline() {
@@ -227,7 +250,8 @@ namespace FCSE {
         StopTraversal();
     }
 
-    void TimelineManager::StartTraversal() {
+    void TimelineManager::StartTraversal(float a_speed, bool a_globalEaseIn, bool a_globalEaseOut, bool a_useDuration, float a_duration) {
+
         if (m_translationTimeline.GetPointCount() == 0 && m_rotationTimeline.GetPointCount() == 0) {
             log::info("{}: Need at least 1 point to traverse", __FUNCTION__);
             return;
@@ -245,6 +269,40 @@ namespace FCSE {
         if (m_isRecording || m_isTraversing) {
             return;
         }
+        
+        float timelineDuration = GetTimelineDuration();
+        if (timelineDuration <= 0.0f && !a_useDuration) {
+            log::info("{}: Timeline duration is zero, cannot traverse", __FUNCTION__);
+            return;
+        }
+
+        if (a_useDuration) {
+            if (a_duration <= 0.0f) {
+                log::warn("{}: Invalid duration {}, defaulting to timeline duration", __FUNCTION__, a_duration);
+                m_traversalDuration = timelineDuration;            
+                m_traversalSpeed = 1.0f;
+            } else {
+                m_traversalDuration = a_duration;
+                m_traversalSpeed = timelineDuration / m_traversalDuration;
+            }
+        } else {
+            if (a_speed <= 0.0f) {
+                log::warn("{}: Invalid speed {}, defaulting to 1.0", __FUNCTION__, a_speed);
+                m_traversalDuration = timelineDuration;            
+                m_traversalSpeed = 1.0f;
+            } else {
+                m_traversalDuration = timelineDuration / a_speed;
+                m_traversalSpeed = a_speed;
+            }
+        }
+
+        if (m_traversalDuration <= 0.0f) {
+            log::info("{}: Traversal duration is zero, cannot traverse", __FUNCTION__);
+            return;
+        }
+        
+        m_globalEaseIn = a_globalEaseIn;
+        m_globalEaseOut = a_globalEaseOut;
         
         m_isTraversing = true;
         m_currentTraversalTime = 0.0f;
@@ -266,6 +324,9 @@ namespace FCSE {
 
         m_isTraversing = false;
         m_currentTraversalTime = 0.0f;
+        m_traversalSpeed = 1.0f;
+        m_globalEaseIn = false;
+        m_globalEaseOut = false;
         
         m_translationTimeline.ResetTimeline();
         m_rotationTimeline.ResetTimeline();        

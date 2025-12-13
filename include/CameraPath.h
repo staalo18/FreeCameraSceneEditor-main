@@ -24,6 +24,10 @@ namespace FCSE {
         }
        
         void Wrap() {} // Do nothing for translation
+        
+        TranslationPoint UnWrap(const TranslationPoint&) const {
+            return *this; // No unwrapping needed for translation
+        }
        
         TranslationPoint operator+(const TranslationPoint& other) const {
             return TranslationPoint(m_transition, m_point + other.m_point);
@@ -61,24 +65,33 @@ namespace FCSE {
             m_point.y = _ts_SKSEFunctions::NormalRelativeAngle(m_point.y);
         }
 
+        RotationPoint UnWrap(const RotationPoint& reference) const {
+            RotationPoint diff = *this - reference;
+            diff.m_point.x = _ts_SKSEFunctions::NormalRelativeAngle(diff.m_point.x);
+            diff.m_point.y = _ts_SKSEFunctions::NormalRelativeAngle(diff.m_point.y);
+            RotationPoint result = reference + diff;
+            return result;
+        }
+
+        // Raw arithmetic operators - DO NOT wrap (needed for unwrapped space calculations)
         RotationPoint operator+(const RotationPoint& other) const {
             RE::BSTPoint2<float> result;
-            result.x = _ts_SKSEFunctions::NormalRelativeAngle(m_point.x + other.m_point.x);
-            result.y = _ts_SKSEFunctions::NormalRelativeAngle(m_point.y + other.m_point.y);
+            result.x = m_point.x + other.m_point.x;
+            result.y = m_point.y + other.m_point.y;
             return RotationPoint(m_transition, result);
         }
         
         RotationPoint operator-(const RotationPoint& other) const {
             RE::BSTPoint2<float> result;
-            result.x = _ts_SKSEFunctions::NormalRelativeAngle(m_point.x - other.m_point.x);
-            result.y = _ts_SKSEFunctions::NormalRelativeAngle(m_point.y - other.m_point.y);
+            result.x = m_point.x - other.m_point.x;
+            result.y = m_point.y - other.m_point.y;
             return RotationPoint(m_transition, result);
         }
         
         RotationPoint operator*(float scalar) const {
             RE::BSTPoint2<float> result;
-            result.x = _ts_SKSEFunctions::NormalRelativeAngle(m_point.x * scalar);
-            result.y = _ts_SKSEFunctions::NormalRelativeAngle(m_point.y * scalar);
+            result.x = m_point.x * scalar;
+            result.y = m_point.y * scalar;
             return RotationPoint(m_transition, result);
         }
        

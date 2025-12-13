@@ -54,8 +54,8 @@ namespace FCSE {
             return static_cast<int>(FCSE::TimelineManager::GetSingleton().GetRotationPointCount());
         }
 
-        void StartTraversal(RE::StaticFunctionTag*) {
-            FCSE::TimelineManager::GetSingleton().StartTraversal();
+        void StartTraversal(RE::StaticFunctionTag*, float a_speed, bool a_globalEaseIn, bool a_globalEaseOut, bool a_useDuration, float a_duration) {
+            FCSE::TimelineManager::GetSingleton().StartTraversal(a_speed, a_globalEaseIn, a_globalEaseOut, a_useDuration, a_duration);
         }
 
         void StopTraversal(RE::StaticFunctionTag*) {

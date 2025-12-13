@@ -73,7 +73,7 @@ namespace FCSE_API {
 		/// <summary>
 		/// Clear the entire timeline. Prints a notification if a_notifyUser is true.
 		/// </summary>
-		virtual void ClearTimeline(bool a_notifyUser) const noexcept = 0;
+		virtual void ClearTimeline(bool a_notifyUser = true) const noexcept = 0;
 
 		/// <summary>
 		/// Get the number of translation points in the timeline.
@@ -89,8 +89,13 @@ namespace FCSE_API {
 
 		/// <summary>
 		/// Start traversing (playing back) the camera timeline.
+		/// If a_useDuration is true: 
+        ///     plays timeline over a_duration seconds
+		/// If a_useDuration is false:
+        ///     plays timeline with a_speed as speed multiplier.
+        /// Global easing (a_globalEaseIn/Out) applies to overall playback in both modes.
 		/// </summary>
-		virtual void StartTraversal() const noexcept = 0;
+		virtual void StartTraversal(float a_speed = 1.0f, bool a_globalEaseIn = false, bool a_globalEaseOut = false, bool a_useDuration = false, float a_duration = 0.0f) const noexcept = 0;
 
 		/// <summary>
 		/// Stop traversing the camera timeline.

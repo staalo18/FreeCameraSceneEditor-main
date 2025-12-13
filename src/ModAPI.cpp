@@ -56,8 +56,8 @@ size_t Messaging::FCSEInterface::GetRotationPointCount() const noexcept {
     return FCSE::TimelineManager::GetSingleton().GetRotationPointCount();
 }
 
-void Messaging::FCSEInterface::StartTraversal() const noexcept {
-    FCSE::TimelineManager::GetSingleton().StartTraversal();
+void Messaging::FCSEInterface::StartTraversal(float a_speed, bool a_globalEaseIn, bool a_globalEaseOut, bool a_useDuration, float a_duration) const noexcept {
+    FCSE::TimelineManager::GetSingleton().StartTraversal(a_speed, a_globalEaseIn, a_globalEaseOut, a_useDuration, a_duration);
 }
 
 void Messaging::FCSEInterface::StopTraversal() const noexcept {

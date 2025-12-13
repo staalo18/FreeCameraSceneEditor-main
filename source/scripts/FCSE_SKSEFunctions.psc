@@ -8,14 +8,14 @@ int Function GetFCSEPluginVersion() global native
 ; easeIn: ease in at the start of interpolation
 ; easeOut: ease out at the end of interpolation
 ; Returns: index of the added point
-int Function AddTranslationPoint(float time, bool easeIn, bool easeOut) global native
+int Function AddTranslationPoint(float time, bool easeIn = false, bool easeOut = false) global native
 
 ; Add a rotation point at the current camera rotation
 ; time: time in seconds when this point occurs
 ; easeIn: ease in at the start of interpolation
 ; easeOut: ease out at the end of interpolation
 ; Returns: index of the added point
-int Function AddRotationPoint(float time, bool easeIn, bool easeOut) global native
+int Function AddRotationPoint(float time, bool easeIn = false, bool easeOut = false) global native
 
 ; Start recording camera movements to the timeline
 Function StartRecording() global native
@@ -62,8 +62,14 @@ int Function GetTranslationPointCount() global native
 ; Returns: number of rotation points
 int Function GetRotationPointCount() global native
 
-; Start playback (traversal) of the camera timeline
-Function StartTraversal() global native
+; Start playback with advanced options
+; speed: playback speed multiplier (only used if useDuration=false)
+; useDuration: if true, plays timeline over duration seconds
+;              if false, plays timeline with speed as speed multiplier
+; duration: total duration in seconds for entire timeline (only used if useDuration=true)
+; globalEaseIn: apply ease-in at the start of entire traversal (both modes)
+; globalEaseOut: apply ease-out at the end of entire traversal (both modes)
+Function StartTraversal(float speed = 1.0, bool globalEaseIn = false, bool globalEaseOut = false, bool useDuration = false, float duration = 0.0) global native
 
 ; Stop playback of the camera timeline
 Function StopTraversal() global native
