@@ -3,19 +3,55 @@ Scriptname FCSE_SKSEFunctions
 ; Get plugin version
 int Function GetFCSEPluginVersion() global native
 
+; Add a translation point at a specified position
+; time: time in seconds when this point occurs
+; posX, posY, posZ: position coordinates
+; easeIn: ease in at the start of interpolation
+; easeOut: ease out at the end of interpolation
+; Returns: index of the added point
+int Function AddTranslationPoint(float time, float posX, float posY, float posZ, bool easeIn = false, bool easeOut = false) global native
+
+; Add a translation point relative to a reference object
+; time: time in seconds when this point occurs
+; reference: the object reference to track
+; offsetX, offsetY, offsetZ: offset from reference position
+; easeIn: ease in at the start of interpolation
+; easeOut: ease out at the end of interpolation
+; Returns: index of the added point
+int Function AddTranslationPointAtRef(float time, ObjectReference reference, float offsetX, float offsetY, float offsetZ, bool easeIn = false, bool easeOut = false) global native
+
 ; Add a translation point at the current camera position
 ; time: time in seconds when this point occurs
 ; easeIn: ease in at the start of interpolation
 ; easeOut: ease out at the end of interpolation
 ; Returns: index of the added point
-int Function AddTranslationPoint(float time, bool easeIn = false, bool easeOut = false) global native
+int Function AddTranslationPointAtCamera(float time, bool easeIn = false, bool easeOut = false) global native
+
+; Add a rotation point with specified pitch and yaw
+; time: time in seconds when this point occurs
+; pitch: pitch rotation
+; yaw: yaw rotation
+; easeIn: ease in at the start of interpolation
+; easeOut: ease out at the end of interpolation
+; Returns: index of the added point
+int Function AddRotationPoint(float time, float pitch, float yaw, bool easeIn = false, bool easeOut = false) global native
+
+; Add a rotation point using a reference's rotation angles plus offset
+; time: time in seconds when this point occurs
+; reference: the object reference whose rotation to use
+; offsetPitch: pitch offset from reference rotation
+; offsetYaw: yaw offset from reference rotation
+; easeIn: ease in at the start of interpolation
+; easeOut: ease out at the end of interpolation
+; Returns: index of the added point
+int Function AddRotationPointAtRef(float time, ObjectReference reference, float offsetPitch, float offsetYaw, bool easeIn = false, bool easeOut = false) global native
 
 ; Add a rotation point at the current camera rotation
 ; time: time in seconds when this point occurs
 ; easeIn: ease in at the start of interpolation
 ; easeOut: ease out at the end of interpolation
 ; Returns: index of the added point
-int Function AddRotationPoint(float time, bool easeIn = false, bool easeOut = false) global native
+int Function AddRotationPointAtCamera(float time, bool easeIn = false, bool easeOut = false) global native
 
 ; Start recording camera movements to the timeline
 Function StartRecording() global native

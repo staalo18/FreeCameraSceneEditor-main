@@ -25,18 +25,41 @@ namespace FCSE_API {
 		[[nodiscard]] virtual unsigned long GetFCSEThreadId() const noexcept = 0;
 
 		/// <summary>
-		/// Add a translation point to the camera timeline at the specified time.
-        /// The point's position will be taken from the current camera position.
+		/// Add a translation point to the camera timeline at a specified position.
 		/// </summary>
 		/// <returns> Index of the added point</returns>
-		[[nodiscard]] virtual size_t AddTranslationPoint(float a_time, bool a_easeIn, bool a_easeOut) const noexcept = 0;
+		[[nodiscard]] virtual size_t AddTranslationPoint(float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn, bool a_easeOut) const noexcept = 0;
 
 		/// <summary>
-		/// Add a rotation point to the camera timeline at the specified time.
-        /// The point's rotation will be taken from the current camera rotation.
+		/// Add a translation point to the camera timeline relative to a reference object.
+		/// The point will track the reference's position plus the offset.
 		/// </summary>
 		/// <returns> Index of the added point</returns>
-		[[nodiscard]] virtual size_t AddRotationPoint(float a_time, bool a_easeIn, bool a_easeOut) const noexcept = 0;
+		[[nodiscard]] virtual size_t AddTranslationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetX, float a_offsetY, float a_offsetZ, bool a_easeIn, bool a_easeOut) const noexcept = 0;
+
+		/// <summary>
+		/// Add a translation point to the camera timeline at the current camera position.
+		/// </summary>
+		/// <returns> Index of the added point</returns>
+		[[nodiscard]] virtual size_t AddTranslationPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) const noexcept = 0;
+
+		/// <summary>
+		/// Add a rotation point to the camera timeline with specified pitch and yaw.
+		/// </summary>
+		/// <returns> Index of the added point</returns>
+		[[nodiscard]] virtual size_t AddRotationPoint(float a_time, float a_pitch, float a_yaw, bool a_easeIn, bool a_easeOut) const noexcept = 0;
+
+		/// <summary>
+		/// Add a rotation point that uses a reference's rotation angles plus offset.
+		/// </summary>
+		/// <returns> Index of the added point</returns>
+		[[nodiscard]] virtual size_t AddRotationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetPitch, float a_offsetYaw, bool a_easeIn, bool a_easeOut) const noexcept = 0;
+
+		/// <summary>
+		/// Add a rotation point to the camera timeline at the current camera rotation.
+		/// </summary>
+		/// <returns> Index of the added point</returns>
+		[[nodiscard]] virtual size_t AddRotationPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) const noexcept = 0;
 
 		/// <summary>
 		/// Start recording camera movement to the timeline.

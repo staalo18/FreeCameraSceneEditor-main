@@ -12,12 +12,28 @@ unsigned long Messaging::FCSEInterface::GetFCSEThreadId() const noexcept {
 	return apiTID;
 }
 
-size_t Messaging::FCSEInterface::AddTranslationPoint(float a_time, bool a_easeIn, bool a_easeOut) const noexcept {
-    return FCSE::TimelineManager::GetSingleton().AddTranslationPoint(a_time, a_easeIn, a_easeOut);
+size_t Messaging::FCSEInterface::AddTranslationPoint(float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn, bool a_easeOut) const noexcept {
+    return FCSE::TimelineManager::GetSingleton().AddTranslationPoint(a_time, a_posX, a_posY, a_posZ, a_easeIn, a_easeOut);
 }
 
-size_t Messaging::FCSEInterface::AddRotationPoint(float a_time, bool a_easeIn, bool a_easeOut) const noexcept {
-    return FCSE::TimelineManager::GetSingleton().AddRotationPoint(a_time, a_easeIn, a_easeOut);
+size_t Messaging::FCSEInterface::AddTranslationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetX, float a_offsetY, float a_offsetZ, bool a_easeIn, bool a_easeOut) const noexcept {
+    return FCSE::TimelineManager::GetSingleton().AddTranslationPointAtRef(a_time, a_reference, a_offsetX, a_offsetY, a_offsetZ, a_easeIn, a_easeOut);
+}
+
+size_t Messaging::FCSEInterface::AddTranslationPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) const noexcept {
+    return FCSE::TimelineManager::GetSingleton().AddTranslationPointAtCamera(a_time, a_easeIn, a_easeOut);
+}
+
+size_t Messaging::FCSEInterface::AddRotationPoint(float a_time, float a_pitch, float a_yaw, bool a_easeIn, bool a_easeOut) const noexcept {
+    return FCSE::TimelineManager::GetSingleton().AddRotationPoint(a_time, a_pitch, a_yaw, a_easeIn, a_easeOut);
+}
+
+size_t Messaging::FCSEInterface::AddRotationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetPitch, float a_offsetYaw, bool a_easeIn, bool a_easeOut) const noexcept {
+    return FCSE::TimelineManager::GetSingleton().AddRotationPointAtRef(a_time, a_reference, a_offsetPitch, a_offsetYaw, a_easeIn, a_easeOut);
+}
+
+size_t Messaging::FCSEInterface::AddRotationPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) const noexcept {
+    return FCSE::TimelineManager::GetSingleton().AddRotationPointAtCamera(a_time, a_easeIn, a_easeOut);
 }
 
 void Messaging::FCSEInterface::StartRecording() const noexcept {

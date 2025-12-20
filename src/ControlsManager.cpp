@@ -3,6 +3,7 @@
 
 namespace FCSE {
 
+    float time = 0.0f;
     RE::BSEventNotifyControl ControlsManager::ProcessEvent(RE::InputEvent* const* a_event, RE::BSTEventSource<RE::InputEvent*>*) {
 
         if (!a_event || RE::UI::GetSingleton()->GameIsPaused()) {
@@ -19,10 +20,22 @@ namespace FCSE {
                 std::filesystem::path iniPath = std::filesystem::current_path() / "Data" / "SKSE" / "Plugins" / "FCSE_CameraPath.ini";
 
                 const uint32_t key = buttonEvent->GetIDCode();
-                 if (key == 6) {
+                 if (key == 5) {
+                    RE::TESObjectREFR* reference = nullptr;
+                    auto* form = RE::TESForm::LookupByID(0xd8c56);
+                    reference = form ? form->As<RE::TESObjectREFR>() : nullptr;
+                    if (reference) {
+                        float offsetX = 300.0f;
+                        float offsetY = 0.0f;
+                        float offsetZ = 100.0f;
+                        FCSE::TimelineManager::GetSingleton().AddTranslationPointAtRef(time, reference, offsetX, offsetY, offsetZ, false, false);
+                        FCSE::TimelineManager::GetSingleton().AddRotationPointAtRef(time, reference, 0.f, PI, false, false);
+                        time += 1.0f;
+                    }
+                } else if (key == 6) {
                     FCSE::TimelineManager::GetSingleton().ClearTimeline();
                 } else if (key == 7) {
-                    FCSE::TimelineManager::GetSingleton().StartTraversal(1.0f, false, false, true, 12.0f);
+                    FCSE::TimelineManager::GetSingleton().StartTraversal(1.0f, false, false, false, 12.0f);
                 } else if (key == 8) {
                     FCSE::TimelineManager::GetSingleton().StartRecording();
                 } else if (key == 9) {

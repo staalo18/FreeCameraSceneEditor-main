@@ -33,8 +33,8 @@ namespace FCSE {
 
         ClearTimeline(false);
 
-        AddTranslationPoint(m_currentRecordingTime, true, false);
-        AddRotationPoint(m_currentRecordingTime, true, false);
+        AddTranslationPointAtCamera(m_currentRecordingTime, true, false);
+        AddRotationPointAtCamera(m_currentRecordingTime, true, false);
     }
 
     void TimelineManager::StopRecording() {
@@ -47,8 +47,8 @@ namespace FCSE {
             return;
         }
         
-        AddTranslationPoint(m_currentRecordingTime, false, true);
-        AddRotationPoint(m_currentRecordingTime, false, true);
+        AddTranslationPointAtCamera(m_currentRecordingTime, false, true);
+        AddRotationPointAtCamera(m_currentRecordingTime, false, true);
 
         RE::DebugNotification("Camera path recording stopped.");
 
@@ -65,8 +65,8 @@ namespace FCSE {
 
             if (m_isRecording) {
                 if (m_currentRecordingTime - m_lastRecordedPointTime >= m_recordingInterval) {
-                    AddTranslationPoint(m_currentRecordingTime, false, false);
-                    AddRotationPoint(m_currentRecordingTime, false, false);
+                    AddTranslationPointAtCamera(m_currentRecordingTime, false, false);
+                    AddRotationPointAtCamera(m_currentRecordingTime, false, false);
                     
                     m_lastRecordedPointTime = m_currentRecordingTime;
                 }
@@ -78,15 +78,49 @@ namespace FCSE {
         }
     }
 
-    size_t TimelineManager::AddTranslationPoint(float a_time, bool a_easeIn, bool a_easeOut) {
-        return AddTranslationPoint(m_translationTimeline.GetPointAtCameraPos(a_time, a_easeIn, a_easeOut));
+    size_t TimelineManager::AddTranslationPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) {
+        return AddTranslationPoint(m_translationTimeline.GetPointAtCamera(a_time, a_easeIn, a_easeOut));
     }
 
-    size_t TimelineManager::AddRotationPoint(float a_time, bool a_easeIn, bool a_easeOut) {
-        return AddRotationPoint(m_rotationTimeline.GetPointAtCameraPos(a_time, a_easeIn, a_easeOut));
+    size_t TimelineManager::AddTranslationPoint(float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn, bool a_easeOut) {
+        Transition transition(InterpolationType::kOn, a_time, a_easeIn, a_easeOut);
+        RE::NiPoint3 position(a_posX, a_posY, a_posZ);
+        TranslationPoint point(transition, position);
+        return AddTranslationPoint(point);
     }
 
-    size_t TimelineManager::AddTranslationPoint(const TranslationPoint& a_point) {
+    size_t TimelineManager::AddTranslationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetX, float a_offsetY, float a_offsetZ, bool a_easeIn, bool a_easeOut) {
+        if (!a_reference) {
+            log::warn("{}: Null reference provided, creating point at origin", __FUNCTION__);
+            return AddTranslationPoint(a_time, a_offsetX, a_offsetY, a_offsetZ, a_easeIn, a_easeOut);
+        }
+        Transition transition(InterpolationType::kOn, a_time, a_easeIn, a_easeOut);
+        RE::NiPoint3 offset(a_offsetX, a_offsetY, a_offsetZ);
+        TranslationPoint point(transition, a_reference, offset);
+        return AddTranslationPoint(point);
+    }
+
+    size_t TimelineManager::AddRotationPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) {
+        return AddRotationPoint(m_rotationTimeline.GetPointAtCamera(a_time, a_easeIn, a_easeOut));
+    }
+
+    size_t TimelineManager::AddRotationPoint(float a_time, float a_pitch, float a_yaw, bool a_easeIn, bool a_easeOut) {
+        Transition transition(InterpolationType::kOn, a_time, a_easeIn, a_easeOut);
+        RE::BSTPoint2<float> rotation({a_pitch, a_yaw});
+        RotationPoint point(transition, rotation);
+        return AddRotationPoint(point);
+    }
+
+    size_t TimelineManager::AddRotationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetPitch, float a_offsetYaw, bool a_easeIn, bool a_easeOut) {
+        if (!a_reference) {
+            log::warn("{}: Null reference provided, creating point with offset as absolute rotation", __FUNCTION__);
+            return AddRotationPoint(a_time, a_offsetPitch, a_offsetYaw, a_easeIn, a_easeOut);
+        }
+        Transition transition(InterpolationType::kOn, a_time, a_easeIn, a_easeOut);
+        RE::BSTPoint2<float> offset({a_offsetPitch, a_offsetYaw});
+        RotationPoint point(transition, a_reference, offset);
+        return AddRotationPoint(point);
+    }    size_t TimelineManager::AddTranslationPoint(const TranslationPoint& a_point) {
         return m_translationTimeline.AddPoint(a_point);
     }
 

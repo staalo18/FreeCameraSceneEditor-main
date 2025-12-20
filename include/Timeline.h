@@ -13,10 +13,21 @@ namespace FCSE {
         Timeline() = default;
         ~Timeline() = default;
         
-        size_t AddPoint(const PointType& a_point) { return m_path.AddPoint(a_point); }
+        size_t AddPoint(const PointType& a_point) { 
+            size_t result = m_path.AddPoint(a_point);
+            ResetTimeline();
+            return result;
+        }
         const PointType& GetPoint(size_t a_index) const { return m_path.GetPoint(a_index); }
-        size_t EditPoint(size_t a_index, const PointType& a_point) { return m_path.EditPoint(a_index, a_point); }
-        void RemovePoint(size_t a_index) { m_path.RemovePoint(a_index); }
+        size_t EditPoint(size_t a_index, const PointType& a_point) { 
+            size_t result = m_path.EditPoint(a_index, a_point);
+            ResetTimeline();
+            return result;
+        }
+        void RemovePoint(size_t a_index) { 
+            m_path.RemovePoint(a_index);
+            ResetTimeline();
+        }
         void ClearTimeline() { 
             m_path.ClearPath();
             ResetTimeline();
@@ -31,8 +42,8 @@ namespace FCSE {
         bool ExportTimeline(std::ofstream& a_file, float a_conversionFactor = 1.0f) const { 
             return m_path.ExportPath(a_file, a_conversionFactor);
         }
-        PointType GetPointAtCameraPos(float a_time, bool a_easeIn, bool a_easeOut) {
-            return m_path.GetPointAtCameraPos(a_time, a_easeIn, a_easeOut);
+        PointType GetPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) {
+            return m_path.GetPointAtCamera(a_time, a_easeIn, a_easeOut);
         }
         
         void UpdateTimeline(float a_currentTime) {
