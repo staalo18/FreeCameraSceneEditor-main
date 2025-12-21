@@ -8,17 +8,8 @@ namespace FCSE {
 
     TranslationPoint TranslationPath::GetPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) {
         TranslationPoint point;
-        auto* playerCamera = RE::PlayerCamera::GetSingleton();
-        RE::FreeCameraState* cameraState = nullptr;
-        
-        if (playerCamera && playerCamera->currentState && (playerCamera->currentState->id == RE::CameraState::kFree)) {
-            cameraState = static_cast<RE::FreeCameraState*>(playerCamera->currentState.get());
-            
-            if (cameraState) {
-                point.m_transition = Transition(InterpolationType::kOn, a_time, a_easeIn, a_easeOut);
-                point.m_point = cameraState->translation;
-            }
-        }  
+        point.m_transition = Transition(InterpolationType::kOn, a_time, a_easeIn, a_easeOut);
+        point.m_point = GetFreeCameraTranslation();
 
         return point;
     }
@@ -33,19 +24,21 @@ namespace FCSE {
         
         return ParseFCSETimelineFileSections(a_file, "TranslatePoint", [this](const auto& data) {
             if (data.find("Time") != data.end()) {
-                float time = std::stof(data.at("Time"));
-                bool easeIn = data.count("EaseIn") ? (std::stoi(data.at("EaseIn")) != 0) : true;
-                bool easeOut = data.count("EaseOut") ? (std::stoi(data.at("EaseOut")) != 0) : true;
-                
-                Transition translationTrans(InterpolationType::kOn, time, easeIn, easeOut);
-                
-                // Check if this is a reference-based point
-                if (data.count("UseRef") && std::stoi(data.at("UseRef")) != 0) {
-                    // Reference-based point
-                    uint32_t formID = data.count("RefFormID") ? std::stoul(data.at("RefFormID"), nullptr, 16) : 0;
-                    float offsetX = data.count("OffsetX") ? std::stof(data.at("OffsetX")) : 0.0f;
-                    float offsetY = data.count("OffsetY") ? std::stof(data.at("OffsetY")) : 0.0f;
-                    float offsetZ = data.count("OffsetZ") ? std::stof(data.at("OffsetZ")) : 0.0f;
+                try {
+                    float time = std::stof(data.at("Time"));
+                    bool easeIn = data.count("EaseIn") ? (std::stoi(data.at("EaseIn")) != 0) : true;
+                    bool easeOut = data.count("EaseOut") ? (std::stoi(data.at("EaseOut")) != 0) : true;
+                    
+                    Transition translationTrans(InterpolationType::kOn, time, easeIn, easeOut);
+                    
+                    // Check if this is a reference-based point
+                    if (data.count("UseRef") && std::stoi(data.at("UseRef")) != 0) {
+                        // Reference-based point
+                        uint32_t formID = data.count("RefFormID") ? std::stoul(data.at("RefFormID"), nullptr, 16) : 0;
+                        float offsetX = data.count("OffsetX") ? std::stof(data.at("OffsetX")) : 0.0f;
+                        float offsetY = data.count("OffsetY") ? std::stof(data.at("OffsetY")) : 0.0f;
+                        float offsetZ = data.count("OffsetZ") ? std::stof(data.at("OffsetZ")) : 0.0f;
+                        bool isOffsetRelative = data.count("isOffsetRelative") ? (std::stoi(data.at("isOffsetRelative")) != 0) : false;
                     
                     RE::TESObjectREFR* reference = nullptr;
                     if (formID != 0) {
@@ -55,7 +48,7 @@ namespace FCSE {
                     
                     if (reference) {
                         RE::NiPoint3 offset(offsetX, offsetY, offsetZ);
-                        TranslationPoint point(translationTrans, reference, offset);
+                        TranslationPoint point(translationTrans, reference, offset, isOffsetRelative);
                         AddPoint(point);
                     } else {
                         log::warn("{}: Failed to resolve reference FormID 0x{:X}, using offset as absolute position", __FUNCTION__, formID);
@@ -72,6 +65,9 @@ namespace FCSE {
                     RE::NiPoint3 position(posX, posY, posZ);
                     TranslationPoint point(translationTrans, position);
                     AddPoint(point);
+                }
+                } catch (const std::exception& e) {
+                    log::warn("{}: Skipping invalid TranslatePoint entry: {}", __FUNCTION__, e.what());
                 }
             }
         });
@@ -93,6 +89,7 @@ namespace FCSE {
                 a_file << "OffsetX=" << point.m_offset.x << "\n";
                 a_file << "OffsetY=" << point.m_offset.y << "\n";
                 a_file << "OffsetZ=" << point.m_offset.z << "\n";
+                a_file << "isOffsetRelative=" << (point.m_isOffsetRelative ? 1 : 0) << "\n";
             } else {
                 // Static position-based point
                 a_file << "UseRef=0\n";
@@ -144,43 +141,47 @@ namespace FCSE {
         
         return ParseFCSETimelineFileSections(a_file, "RotatePoint", [this, a_conversionFactor](const auto& data) {
             if (data.find("Time") != data.end()) {
-                float time = std::stof(data.at("Time"));
-                bool easeIn = data.count("EaseIn") ? (std::stoi(data.at("EaseIn")) != 0) : true;
-                bool easeOut = data.count("EaseOut") ? (std::stoi(data.at("EaseOut")) != 0) : true;
-                
-                Transition rotationTrans(InterpolationType::kOn, time, easeIn, easeOut);
-                
-                // Check if this is a reference-based point
-                if (data.count("UseRef") && std::stoi(data.at("UseRef")) != 0) {
-                    // Reference-based point
-                    uint32_t formID = data.count("RefFormID") ? std::stoul(data.at("RefFormID"), nullptr, 16) : 0;
-                    float offsetPitch = (data.count("OffsetPitch") ? std::stof(data.at("OffsetPitch")) : 0.0f) * a_conversionFactor;
-                    float offsetYaw = (data.count("OffsetYaw") ? std::stof(data.at("OffsetYaw")) : 0.0f) * a_conversionFactor;
+                try {
+                    float time = std::stof(data.at("Time"));
+                    bool easeIn = data.count("EaseIn") ? (std::stoi(data.at("EaseIn")) != 0) : true;
+                    bool easeOut = data.count("EaseOut") ? (std::stoi(data.at("EaseOut")) != 0) : true;
                     
-                    RE::TESObjectREFR* reference = nullptr;
-                    if (formID != 0) {
-                        auto* form = RE::TESForm::LookupByID(formID);
-                        reference = form ? form->As<RE::TESObjectREFR>() : nullptr;
-                    }
+                    Transition rotationTrans(InterpolationType::kOn, time, easeIn, easeOut);
                     
-                    if (reference) {
-                        RE::BSTPoint2<float> offset({offsetPitch, offsetYaw});
-                        RotationPoint point(rotationTrans, reference, offset);
-                        AddPoint(point);
+                    // Check if this is a reference-based point
+                    if (data.count("UseRef") && std::stoi(data.at("UseRef")) != 0) {
+                        // Reference-based point
+                        uint32_t formID = data.count("RefFormID") ? std::stoul(data.at("RefFormID"), nullptr, 16) : 0;
+                        float offsetPitch = (data.count("OffsetPitch") ? std::stof(data.at("OffsetPitch")) : 0.0f) * a_conversionFactor;
+                        float offsetYaw = (data.count("OffsetYaw") ? std::stof(data.at("OffsetYaw")) : 0.0f) * a_conversionFactor;
+                        
+                        RE::TESObjectREFR* reference = nullptr;
+                        if (formID != 0) {
+                            auto* form = RE::TESForm::LookupByID(formID);
+                            reference = form ? form->As<RE::TESObjectREFR>() : nullptr;
+                        }
+                        
+                        if (reference) {
+                            RE::BSTPoint2<float> offset({offsetPitch, offsetYaw});
+                            RotationPoint point(rotationTrans, reference, offset);
+                            AddPoint(point);
+                        } else {
+                            log::warn("{}: Failed to resolve reference FormID 0x{:X}, using offset as absolute rotation", __FUNCTION__, formID);
+                            RE::BSTPoint2<float> rotation({offsetPitch, offsetYaw});
+                            RotationPoint point(rotationTrans, rotation);
+                            AddPoint(point);
+                        }
                     } else {
-                        log::warn("{}: Failed to resolve reference FormID 0x{:X}, using offset as absolute rotation", __FUNCTION__, formID);
-                        RE::BSTPoint2<float> rotation({offsetPitch, offsetYaw});
+                        // Static rotation-based point
+                        float pitch = (data.count("Pitch") ? std::stof(data.at("Pitch")) : 0.0f) * a_conversionFactor;
+                        float yaw = (data.count("Yaw") ? std::stof(data.at("Yaw")) : 0.0f) * a_conversionFactor;
+                        
+                        RE::BSTPoint2<float> rotation({pitch, yaw});
                         RotationPoint point(rotationTrans, rotation);
                         AddPoint(point);
                     }
-                } else {
-                    // Static rotation-based point
-                    float pitch = (data.count("Pitch") ? std::stof(data.at("Pitch")) : 0.0f) * a_conversionFactor;
-                    float yaw = (data.count("Yaw") ? std::stof(data.at("Yaw")) : 0.0f) * a_conversionFactor;
-                    
-                    RE::BSTPoint2<float> rotation({pitch, yaw});
-                    RotationPoint point(rotationTrans, rotation);
-                    AddPoint(point);
+                } catch (const std::exception& e) {
+                    log::warn("{}: Skipping invalid RotatePoint entry: {}", __FUNCTION__, e.what());
                 }
             }
         });

@@ -15,10 +15,11 @@ int Function AddTranslationPoint(float time, float posX, float posY, float posZ,
 ; time: time in seconds when this point occurs
 ; reference: the object reference to track
 ; offsetX, offsetY, offsetZ: offset from reference position
+; isOffsetRelative: if true, offset is relative to reference's heading (local space), otherwise world space
 ; easeIn: ease in at the start of interpolation
 ; easeOut: ease out at the end of interpolation
 ; Returns: index of the added point
-int Function AddTranslationPointAtRef(float time, ObjectReference reference, float offsetX, float offsetY, float offsetZ, bool easeIn = false, bool easeOut = false) global native
+int Function AddTranslationPointAtRef(float time, ObjectReference reference, float offsetX, float offsetY, float offsetZ, bool isOffsetRelative = false, bool easeIn = false, bool easeOut = false) global native
 
 ; Add a translation point at the current camera position
 ; time: time in seconds when this point occurs
@@ -36,11 +37,11 @@ int Function AddTranslationPointAtCamera(float time, bool easeIn = false, bool e
 ; Returns: index of the added point
 int Function AddRotationPoint(float time, float pitch, float yaw, bool easeIn = false, bool easeOut = false) global native
 
-; Add a rotation point using a reference's rotation angles plus offset
+; Add a rotation point using camera-to-reference direction plus offset
 ; time: time in seconds when this point occurs
-; reference: the object reference whose rotation to use
-; offsetPitch: pitch offset from reference rotation
-; offsetYaw: yaw offset from reference rotation
+; reference: the object reference to track
+; offsetPitch: pitch offset from camera-to-reference direction
+; offsetYaw: yaw offset from camera-to-reference direction. A value of 0 means looking directly at the reference.
 ; easeIn: ease in at the start of interpolation
 ; easeOut: ease out at the end of interpolation
 ; Returns: index of the added point

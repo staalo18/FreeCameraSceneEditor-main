@@ -16,8 +16,8 @@ size_t Messaging::FCSEInterface::AddTranslationPoint(float a_time, float a_posX,
     return FCSE::TimelineManager::GetSingleton().AddTranslationPoint(a_time, a_posX, a_posY, a_posZ, a_easeIn, a_easeOut);
 }
 
-size_t Messaging::FCSEInterface::AddTranslationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetX, float a_offsetY, float a_offsetZ, bool a_easeIn, bool a_easeOut) const noexcept {
-    return FCSE::TimelineManager::GetSingleton().AddTranslationPointAtRef(a_time, a_reference, a_offsetX, a_offsetY, a_offsetZ, a_easeIn, a_easeOut);
+size_t Messaging::FCSEInterface::AddTranslationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetX, float a_offsetY, float a_offsetZ, bool a_isOffsetRelative, bool a_easeIn, bool a_easeOut) const noexcept {
+    return FCSE::TimelineManager::GetSingleton().AddTranslationPointAtRef(a_time, a_reference, a_offsetX, a_offsetY, a_offsetZ, a_isOffsetRelative, a_easeIn, a_easeOut);
 }
 
 size_t Messaging::FCSEInterface::AddTranslationPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) const noexcept {

@@ -33,9 +33,10 @@ namespace FCSE_API {
 		/// <summary>
 		/// Add a translation point to the camera timeline relative to a reference object.
 		/// The point will track the reference's position plus the offset.
+		/// If a_isOffsetRelative is true, the offset is relative to the reference's heading, else world space.
 		/// </summary>
 		/// <returns> Index of the added point</returns>
-		[[nodiscard]] virtual size_t AddTranslationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetX, float a_offsetY, float a_offsetZ, bool a_easeIn, bool a_easeOut) const noexcept = 0;
+		[[nodiscard]] virtual size_t AddTranslationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetX, float a_offsetY, float a_offsetZ, bool a_isOffsetRelative, bool a_easeIn, bool a_easeOut) const noexcept = 0;
 
 		/// <summary>
 		/// Add a translation point to the camera timeline at the current camera position.

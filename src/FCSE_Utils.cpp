@@ -11,7 +11,42 @@ namespace FCSE {
         h01 = -2.0f * t3 + 3.0f * t2;          // basis for p2
         h11 = t3 - t2;                          // basis for m2
     }
-    
+
+    float CubicHermiteInterpolate(float a0, float a1, float a2, float a3, float t) {
+        // Compute Catmull-Rom tangents
+        float m1 = (a2 - a0) * 0.5f;
+        float m2 = (a3 - a1) * 0.5f;
+
+        float h00, h10, h01, h11;
+        ComputeHermiteBasis(t, h00, h10, h01, h11);
+
+        return a1 * h00 + m1 * h10 + a2 * h01 + m2 * h11;
+    };
+
+    float CubicHermiteInterpolateAngular(float a0, float a1, float a2, float a3, float t) {
+        // Convert to sin/cos (unit circle) representation
+        float sin0 = std::sin(a0), cos0 = std::cos(a0);
+        float sin1 = std::sin(a1), cos1 = std::cos(a1);
+        float sin2 = std::sin(a2), cos2 = std::cos(a2);
+        float sin3 = std::sin(a3), cos3 = std::cos(a3);
+        
+        // Compute Catmull-Rom tangents in sin/cos space
+        float m1_sin = (sin2 - sin0) * 0.5f;
+        float m1_cos = (cos2 - cos0) * 0.5f;
+        float m2_sin = (sin3 - sin1) * 0.5f;
+        float m2_cos = (cos3 - cos1) * 0.5f;
+        
+        float h00, h10, h01, h11;
+        ComputeHermiteBasis(t, h00, h10, h01, h11);
+        
+        // Interpolate in sin/cos space
+        float result_sin = sin1 * h00 + m1_sin * h10 + sin2 * h01 + m2_sin * h11;
+        float result_cos = cos1 * h00 + m1_cos * h10 + cos2 * h01 + m2_cos * h11;
+        
+        // Convert back to angle
+        return std::atan2(result_sin, result_cos);
+    };
+
     void SetHUDMenuVisible(bool a_visible) {
         if (!APIs::TrueHUD) {
             return;
@@ -91,5 +126,22 @@ namespace FCSE {
         }
 
         return true;
+    }
+
+
+    RE::NiPoint3 GetFreeCameraTranslation() {
+        RE::NiPoint3 translation {0.0f, 0.0f, 0.0f};
+        auto* playerCamera = RE::PlayerCamera::GetSingleton();
+        RE::FreeCameraState* cameraState = nullptr;
+        
+        if (playerCamera && playerCamera->currentState && (playerCamera->currentState->id == RE::CameraState::kFree)) {
+            cameraState = static_cast<RE::FreeCameraState*>(playerCamera->currentState.get());
+            
+            if (cameraState) {
+                translation = cameraState->translation;
+            }
+        }  
+
+        return translation;
     }
 } // namespace FCSE

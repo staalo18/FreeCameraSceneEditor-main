@@ -14,34 +14,65 @@ namespace FCSE {
             , m_point({0.f, 0.f, 0.f})
             , m_useRef(false)
             , m_reference(nullptr)
-            , m_offset({0.f, 0.f, 0.f}) {}
+            , m_offset({0.f, 0.f, 0.f})
+            , m_isOffsetRelative(false) {}
 
         TranslationPoint(const Transition& a_transition, const RE::NiPoint3& a_point)
             : m_transition(a_transition)
             , m_point(a_point)
             , m_useRef(false)
             , m_reference(nullptr)
-            , m_offset({0.f, 0.f, 0.f}) {}
+            , m_offset({0.f, 0.f, 0.f})
+            , m_isOffsetRelative(false) {}
 
-        TranslationPoint(const Transition& a_transition, RE::TESObjectREFR* a_reference, const RE::NiPoint3& a_offset)
+        TranslationPoint(const Transition& a_transition, RE::TESObjectREFR* a_reference, const RE::NiPoint3& a_offset, bool a_isOffsetRelative = false)
             : m_transition(a_transition)
             , m_point({0.f, 0.f, 0.f})
             , m_useRef(true)
             , m_reference(a_reference)
-            , m_offset(a_offset) {}
+            , m_offset(a_offset)
+            , m_isOffsetRelative(a_isOffsetRelative) {}
 
         RE::NiPoint3 GetPoint() const {
             if (m_useRef && m_reference) {
                 RE::NiPoint3 offset = m_offset;
-/*                RE::Actor* actor = m_reference->As<RE::Actor>();
-                if (actor) {
-                    float heading = actor->GetHeading(false);
-                    offset.x = 50.0f*std::sin(heading);
-                    offset.y = 50.0f*std::cos(heading);
-                    offset.z = 100.0f;
-                } else {
-                    offset = m_offset;                
-                }*/
+                
+                // If offset is relative to reference heading, rotate it
+                if (m_isOffsetRelative) {
+                    float pitch = 0.0f;
+                    float yaw = 0.0f;
+                    RE::Actor* actor = m_reference->As<RE::Actor>();
+                    if (actor) {
+                        yaw = actor->GetHeading(false);
+                    } else {
+                        pitch = m_reference->GetAngleX();
+                        yaw = m_reference->GetAngleZ();
+                    }
+                    
+                    // Rotate offset by reference's orientation
+                    // First rotate around Z axis (yaw), then around X axis (pitch)
+                    // Original offset is in reference's local space (forward=Y, right=X, up=Z)
+                    
+                    // Yaw rotation (around Z axis)
+                    float cosYaw = std::cos(yaw);
+                    float sinYaw = std::sin(yaw);
+                    RE::NiPoint3 yawRotated;
+                    yawRotated.x = m_offset.y * sinYaw + m_offset.x * cosYaw;
+                    yawRotated.y = m_offset.y * cosYaw - m_offset.x * sinYaw;
+                    yawRotated.z = m_offset.z;
+                    
+                    // Pitch rotation (around X axis)
+                    // Pitch rotates in the Y-Z plane
+                    float cosPitch = std::cos(pitch);
+                    float sinPitch = std::sin(pitch);
+                    RE::NiPoint3 rotatedOffset;
+                    rotatedOffset.x = yawRotated.x;
+                    rotatedOffset.y = yawRotated.z * sinPitch + yawRotated.y * cosPitch;
+                    rotatedOffset.z = yawRotated.z * cosPitch - yawRotated.y * sinPitch;
+                    
+                    offset = rotatedOffset;
+                }
+                
                 return m_reference->GetPosition() + offset;
             }
             return m_point;
@@ -55,10 +86,21 @@ namespace FCSE {
                    std::abs(pos.z - otherPos.z) < EPSILON_COMPARISON;
         }
        
-        void Wrap() {} // Do nothing for translation
-        
-        TranslationPoint UnWrap(const TranslationPoint&) const {
-            return *this; // No unwrapping needed for translation
+        TranslationPoint CubicHermite(const TranslationPoint& p0, const TranslationPoint& p1,
+                                   const TranslationPoint& p2, const TranslationPoint& p3, float t) {
+            TranslationPoint result;
+            result.m_transition = m_transition;
+
+            auto pt0 = p0.GetPoint();
+            auto pt1 = p1.GetPoint();
+            auto pt2 = p2.GetPoint();
+            auto pt3 = p3.GetPoint();
+
+            result.m_point.x = CubicHermiteInterpolate(pt0.x, pt1.x, pt2.x, pt3.x, t);
+            result.m_point.y = CubicHermiteInterpolate(pt0.y, pt1.y, pt2.y, pt3.y, t);
+            result.m_point.z = CubicHermiteInterpolate(pt0.z, pt1.z, pt2.z, pt3.z, t);
+
+            return result;
         }
        
         TranslationPoint operator+(const TranslationPoint& other) const {
@@ -78,6 +120,7 @@ namespace FCSE {
         bool m_useRef;                  // If true, use reference + offset instead of m_point
         RE::TESObjectREFR* m_reference; // Reference object for dynamic positioning
         RE::NiPoint3 m_offset;          // Offset from reference position
+        bool m_isOffsetRelative; // If true, offset is rotated by reference's heading
     };
 
     class RotationPoint {
@@ -105,19 +148,81 @@ namespace FCSE {
 
         RE::BSTPoint2<float> GetPoint() const {
             if (m_useRef && m_reference) {
-                RE::BSTPoint2<float> refRotation;
-                RE::Actor* actor = m_reference->As<RE::Actor>();
-                if (actor) {
-                    refRotation.x = 0.0f;
-                    refRotation.y = actor->GetHeading(false);
-                } else {
-                    refRotation.x = m_reference->GetAngleX();
-                    refRotation.y = m_reference->GetAngleZ();
+                RE::NiPoint3 refPos = m_reference->GetPosition();                
+                RE::NiPoint3 cameraPos = GetFreeCameraTranslation();
+                
+                RE::NiPoint3 toRef = refPos - cameraPos;
+                float distance = toRef.Length();
+                
+                if (distance < 0.001f) {
+                    // Camera too close to reference, can't determine direction
+                    return m_offset;
                 }
-
+                
+                toRef = toRef / distance; // Normalize to get direction vector
+                
+                // Calculate base pitch and yaw from camera-to-ref direction
+                float basePitch = -std::asin(toRef.z);
+                float baseYaw = std::atan2(toRef.x, toRef.y);
+                                    
+                // If offsets are zero (or very small), just use base direction
+                if (std::abs(m_offset.x) <EPSILON_COMPARISON && std::abs(m_offset.y) < EPSILON_COMPARISON) {
+                    return RE::BSTPoint2<float>{
+                        _ts_SKSEFunctions::NormalRelativeAngle(basePitch),
+                        _ts_SKSEFunctions::NormalRelativeAngle(baseYaw)};
+                }
+                
+                // Now apply the offsets to this base direction
+                // Convert offset to direction in local frame (where base direction is forward)
+                float cosPitchLocal = std::cos(m_offset.x);
+                float sinPitchLocal = std::sin(m_offset.x);
+                float cosYawLocal = std::cos(m_offset.y);
+                float sinYawLocal = std::sin(m_offset.y);
+                
+                // Direction in local frame (forward along base direction)
+                RE::NiPoint3 localDir;
+                localDir.x = sinYawLocal * cosPitchLocal;  // right component
+                localDir.y = cosYawLocal * cosPitchLocal;  // forward component
+                localDir.z = sinPitchLocal;                // up component
+                
+                // Build a coordinate frame where toRef is the forward (+Y) direction
+                // We need to find an orthonormal basis: right, forward, up
+                RE::NiPoint3 forward = toRef;
+                
+                // Choose an arbitrary "up" vector that's not parallel to forward
+                RE::NiPoint3 worldUp(0.0f, 0.0f, 1.0f);
+                if (std::abs(forward.z) > 0.99f) {
+                    // Forward is nearly vertical, use Y axis as reference
+                    worldUp = RE::NiPoint3(0.0f, 1.0f, 0.0f);
+                }
+                
+                // Right = forward × worldUp (cross product)
+                RE::NiPoint3 right;
+                right.x = forward.y * worldUp.z - forward.z * worldUp.y;
+                right.y = forward.z * worldUp.x - forward.x * worldUp.z;
+                right.z = forward.x * worldUp.y - forward.y * worldUp.x;
+                float rightLen = std::sqrt(right.x * right.x + right.y * right.y + right.z * right.z);
+                right = right / rightLen;
+                
+                // Up = right × forward
+                RE::NiPoint3 up;
+                up.x = right.y * forward.z - right.z * forward.y;
+                up.y = right.z * forward.x - right.x * forward.z;
+                up.z = right.x * forward.y - right.y * forward.x;
+                
+                // Transform localDir from local frame to world frame using the basis vectors
+                RE::NiPoint3 worldDir;
+                worldDir.x = localDir.x * right.x + localDir.y * forward.x + localDir.z * up.x;
+                worldDir.y = localDir.x * right.y + localDir.y * forward.y + localDir.z * up.y;
+                worldDir.z = localDir.x * right.z + localDir.y * forward.z + localDir.z * up.z;
+                
+                // Convert world direction back to pitch/yaw angles
+                float worldPitch = -std::asin(worldDir.z);
+                float worldYaw = std::atan2(worldDir.x, worldDir.y);
+                
                 return RE::BSTPoint2<float>{
-                    _ts_SKSEFunctions::NormalRelativeAngle(refRotation.x + m_offset.x),
-                    _ts_SKSEFunctions::NormalRelativeAngle(refRotation.y + m_offset.y)};
+                    _ts_SKSEFunctions::NormalRelativeAngle(worldPitch),
+                    _ts_SKSEFunctions::NormalRelativeAngle(worldYaw)};
             }
             return m_point;
         }
@@ -129,16 +234,19 @@ namespace FCSE {
                    std::abs(rot.y - otherRot.y) < EPSILON_COMPARISON;
         }
 
-        void Wrap() {
-            m_point.x = _ts_SKSEFunctions::NormalRelativeAngle(m_point.x);
-            m_point.y = _ts_SKSEFunctions::NormalRelativeAngle(m_point.y);
-        }
+        RotationPoint CubicHermite(const RotationPoint& p0, const RotationPoint& p1,
+                                   const RotationPoint& p2, const RotationPoint& p3, float t) {
+            RotationPoint result;
+            result.m_transition = m_transition;
 
-        RotationPoint UnWrap(const RotationPoint& reference) const {
-            RotationPoint diff = *this - reference;
-            diff.m_point.x = _ts_SKSEFunctions::NormalRelativeAngle(diff.m_point.x);
-            diff.m_point.y = _ts_SKSEFunctions::NormalRelativeAngle(diff.m_point.y);
-            RotationPoint result = reference + diff;
+            auto pt0 = p0.GetPoint();
+            auto pt1 = p1.GetPoint();
+            auto pt2 = p2.GetPoint();
+            auto pt3 = p3.GetPoint();
+
+            result.m_point.x = CubicHermiteInterpolateAngular(pt0.x, pt1.x, pt2.x, pt3.x, t);
+            result.m_point.y = CubicHermiteInterpolateAngular(pt0.y, pt1.y, pt2.y, pt3.y, t);
+
             return result;
         }
 
@@ -168,7 +276,7 @@ namespace FCSE {
         mutable RE::BSTPoint2<float> m_point;  // Direct rotation (used when m_useRef is false), mutable for reference updates
         bool m_useRef;                         // If true, use reference + offset instead of m_point
         RE::TESObjectREFR* m_reference;        // Reference object for dynamic rotation
-        RE::BSTPoint2<float> m_offset;         // Offset from reference rotation (pitch, yaw)
+        RE::BSTPoint2<float> m_offset;         // Offset from camera-to-reference direction (pitch, yaw)
     };
 
     template<typename PointType>

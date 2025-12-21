@@ -21,7 +21,7 @@ namespace Messaging
 		// InterfaceVersion1
         virtual unsigned long GetFCSEThreadId(void) const noexcept override;
 		virtual size_t AddTranslationPoint(float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn = false, bool a_easeOut = false) const noexcept override;
-		virtual size_t AddTranslationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetX, float a_offsetY, float a_offsetZ, bool a_easeIn = false, bool a_easeOut = false) const noexcept override;
+		virtual size_t AddTranslationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetX, float a_offsetY, float a_offsetZ, bool a_isOffsetRelative = false, bool a_easeIn = false, bool a_easeOut = false) const noexcept override;
 		virtual size_t AddTranslationPointAtCamera(float a_time, bool a_easeIn = false, bool a_easeOut = false) const noexcept override;
 		virtual size_t AddRotationPoint(float a_time, float a_pitch, float a_yaw, bool a_easeIn = false, bool a_easeOut = false) const noexcept override;
 		virtual size_t AddRotationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetPitch, float a_offsetYaw, bool a_easeIn = false, bool a_easeOut = false) const noexcept override;

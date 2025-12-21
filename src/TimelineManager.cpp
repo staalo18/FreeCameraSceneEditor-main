@@ -89,14 +89,14 @@ namespace FCSE {
         return AddTranslationPoint(point);
     }
 
-    size_t TimelineManager::AddTranslationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetX, float a_offsetY, float a_offsetZ, bool a_easeIn, bool a_easeOut) {
+    size_t TimelineManager::AddTranslationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetX, float a_offsetY, float a_offsetZ, bool a_isOffsetRelative, bool a_easeIn, bool a_easeOut) {
         if (!a_reference) {
             log::warn("{}: Null reference provided, creating point at origin", __FUNCTION__);
             return AddTranslationPoint(a_time, a_offsetX, a_offsetY, a_offsetZ, a_easeIn, a_easeOut);
         }
         Transition transition(InterpolationType::kOn, a_time, a_easeIn, a_easeOut);
         RE::NiPoint3 offset(a_offsetX, a_offsetY, a_offsetZ);
-        TranslationPoint point(transition, a_reference, offset);
+        TranslationPoint point(transition, a_reference, offset, a_isOffsetRelative);
         return AddTranslationPoint(point);
     }
 

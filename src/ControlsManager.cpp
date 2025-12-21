@@ -24,12 +24,14 @@ namespace FCSE {
                     RE::TESObjectREFR* reference = nullptr;
                     auto* form = RE::TESForm::LookupByID(0xd8c56);
                     reference = form ? form->As<RE::TESObjectREFR>() : nullptr;
+                    reference = RE::TESForm::LookupByEditorID<RE::TESObjectREFR>("FCSE_TEST01");
                     if (reference) {
-                        float offsetX = 300.0f;
-                        float offsetY = 0.0f;
-                        float offsetZ = 100.0f;
-                        FCSE::TimelineManager::GetSingleton().AddTranslationPointAtRef(time, reference, offsetX, offsetY, offsetZ, false, false);
-                        FCSE::TimelineManager::GetSingleton().AddRotationPointAtRef(time, reference, 0.f, PI, false, false);
+                        float offsetX = 0.0f;
+                        float offsetY = 1000.0f;
+                        float offsetZ = 0.0f;
+                        bool isOffsetRelative = true;
+                        FCSE::TimelineManager::GetSingleton().AddTranslationPointAtRef(time, reference, offsetX, offsetY, offsetZ, isOffsetRelative, false, false);
+                        FCSE::TimelineManager::GetSingleton().AddRotationPointAtRef(time, reference, PI, 0.f, false, false);
                         time += 1.0f;
                     }
                 } else if (key == 6) {

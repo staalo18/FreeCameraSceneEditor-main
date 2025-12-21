@@ -21,7 +21,7 @@ namespace FCSE {
             // Add a new point at time a_time
             size_t AddTranslationPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut);
             size_t AddTranslationPoint(float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn, bool a_easeOut);
-            size_t AddTranslationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetX, float a_offsetY, float a_offsetZ, bool a_easeIn, bool a_easeOut);
+            size_t AddTranslationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetX, float a_offsetY, float a_offsetZ, bool a_isOffsetRelative, bool a_easeIn, bool a_easeOut);
             size_t AddRotationPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut);
             size_t AddRotationPoint(float a_time, float a_pitch, float a_yaw, bool a_easeIn, bool a_easeOut);
             size_t AddRotationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetPitch, float a_offsetYaw, bool a_easeIn, bool a_easeOut);

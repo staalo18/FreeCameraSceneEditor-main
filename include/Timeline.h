@@ -144,7 +144,7 @@ namespace FCSE {
             
             // Linear interpolation using PointType operators
             PointType result = prevPoint + (currentPoint - prevPoint) * t;
-            result.Wrap();  // Wrap final result for rotations (no-op for translation)
+
             return result.m_point;
         }
         
@@ -188,8 +188,8 @@ namespace FCSE {
                                  currentPoint.m_transition.m_easeIn,
                                  currentPoint.m_transition.m_easeOut);
             
-             PointType result = CubicHermite(pt0, pt1, pt2, pt3, t);
-            
+            PointType result = pt1.CubicHermite(pt0, pt1, pt2, pt3, t);
+
             return result.m_point;
         }
         
