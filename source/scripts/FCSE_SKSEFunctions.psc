@@ -8,8 +8,9 @@ int Function GetFCSEPluginVersion() global native
 ; posX, posY, posZ: position coordinates
 ; easeIn: ease in at the start of interpolation
 ; easeOut: ease out at the end of interpolation
+; interpolationMode: 0=None, 1=Linear, 2=CubicHermite (default)
 ; Returns: index of the added point
-int Function AddTranslationPoint(float time, float posX, float posY, float posZ, bool easeIn = false, bool easeOut = false) global native
+int Function AddTranslationPoint(float time, float posX, float posY, float posZ, bool easeIn = false, bool easeOut = false, int interpolationMode = 2) global native
 
 ; Add a translation point relative to a reference object
 ; time: time in seconds when this point occurs
@@ -18,15 +19,17 @@ int Function AddTranslationPoint(float time, float posX, float posY, float posZ,
 ; isOffsetRelative: if true, offset is relative to reference's heading (local space), otherwise world space
 ; easeIn: ease in at the start of interpolation
 ; easeOut: ease out at the end of interpolation
+; interpolationMode: 0=None, 1=Linear, 2=CubicHermite (default)
 ; Returns: index of the added point
-int Function AddTranslationPointAtRef(float time, ObjectReference reference, float offsetX, float offsetY, float offsetZ, bool isOffsetRelative = false, bool easeIn = false, bool easeOut = false) global native
+int Function AddTranslationPointAtRef(float time, ObjectReference reference, float offsetX, float offsetY, float offsetZ, bool isOffsetRelative = false, bool easeIn = false, bool easeOut = false, int interpolationMode = 2) global native
 
 ; Add a translation point at the current camera position
 ; time: time in seconds when this point occurs
 ; easeIn: ease in at the start of interpolation
 ; easeOut: ease out at the end of interpolation
+; interpolationMode: 0=None, 1=Linear, 2=CubicHermite (default)
 ; Returns: index of the added point
-int Function AddTranslationPointAtCamera(float time, bool easeIn = false, bool easeOut = false) global native
+int Function AddTranslationPointAtCamera(float time, bool easeIn = false, bool easeOut = false, int interpolationMode = 2) global native
 
 ; Add a rotation point with specified pitch and yaw
 ; time: time in seconds when this point occurs
@@ -34,8 +37,9 @@ int Function AddTranslationPointAtCamera(float time, bool easeIn = false, bool e
 ; yaw: yaw rotation
 ; easeIn: ease in at the start of interpolation
 ; easeOut: ease out at the end of interpolation
+; interpolationMode: 0=None, 1=Linear, 2=CubicHermite (default)
 ; Returns: index of the added point
-int Function AddRotationPoint(float time, float pitch, float yaw, bool easeIn = false, bool easeOut = false) global native
+int Function AddRotationPoint(float time, float pitch, float yaw, bool easeIn = false, bool easeOut = false, int interpolationMode = 2) global native
 
 ; Add a rotation point using camera-to-reference direction plus offset
 ; time: time in seconds when this point occurs
@@ -44,15 +48,17 @@ int Function AddRotationPoint(float time, float pitch, float yaw, bool easeIn = 
 ; offsetYaw: yaw offset from camera-to-reference direction. A value of 0 means looking directly at the reference.
 ; easeIn: ease in at the start of interpolation
 ; easeOut: ease out at the end of interpolation
+; interpolationMode: 0=None, 1=Linear, 2=CubicHermite (default)
 ; Returns: index of the added point
-int Function AddRotationPointAtRef(float time, ObjectReference reference, float offsetPitch, float offsetYaw, bool easeIn = false, bool easeOut = false) global native
+int Function AddRotationPointAtRef(float time, ObjectReference reference, float offsetPitch, float offsetYaw, bool easeIn = false, bool easeOut = false, int interpolationMode = 2) global native
 
 ; Add a rotation point at the current camera rotation
 ; time: time in seconds when this point occurs
 ; easeIn: ease in at the start of interpolation
 ; easeOut: ease out at the end of interpolation
+; interpolationMode: 0=None, 1=Linear, 2=CubicHermite (default)
 ; Returns: index of the added point
-int Function AddRotationPointAtCamera(float time, bool easeIn = false, bool easeOut = false) global native
+int Function AddRotationPointAtCamera(float time, bool easeIn = false, bool easeOut = false, int interpolationMode = 2) global native
 
 ; Start recording camera movements to the timeline
 Function StartRecording() global native
@@ -66,8 +72,9 @@ Function StopRecording() global native
 ; posX, posY, posZ: new position coordinates
 ; easeIn: ease in at the start of interpolation
 ; easeOut: ease out at the end of interpolation
+; interpolationMode: 0=None, 1=Linear, 2=CubicHermite (default)
 ; Returns: new index of the point after potential re-sorting
-int Function EditTranslationPoint(int index, float time, float posX, float posY, float posZ, bool easeIn, bool easeOut) global native
+int Function EditTranslationPoint(int index, float time, float posX, float posY, float posZ, bool easeIn, bool easeOut, int interpolationMode = 2) global native
 
 ; Edit an existing rotation point
 ; index: index of the point to edit
@@ -76,8 +83,9 @@ int Function EditTranslationPoint(int index, float time, float posX, float posY,
 ; yaw: new yaw rotation (in radians or degrees depending on configuration)
 ; easeIn: ease in at the start of interpolation
 ; easeOut: ease out at the end of interpolation
+; interpolationMode: 0=None, 1=Linear, 2=CubicHermite (default)
 ; Returns: new index of the point after potential re-sorting
-int Function EditRotationPoint(int index, float time, float pitch, float yaw, bool easeIn, bool easeOut) global native
+int Function EditRotationPoint(int index, float time, float pitch, float yaw, bool easeIn, bool easeOut, int interpolationMode = 2) global native
 
 ; Remove a translation point from the timeline
 ; index: index of the point to remove

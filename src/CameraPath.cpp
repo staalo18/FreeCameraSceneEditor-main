@@ -8,7 +8,7 @@ namespace FCSE {
 
     TranslationPoint TranslationPath::GetPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) {
         TranslationPoint point;
-        point.m_transition = Transition(InterpolationType::kOn, a_time, a_easeIn, a_easeOut);
+        point.m_transition = Transition(a_time, InterpolationMode::kCubicHermite, a_easeIn, a_easeOut);
         point.m_point = GetFreeCameraTranslation();
 
         return point;
@@ -29,7 +29,10 @@ namespace FCSE {
                     bool easeIn = data.count("EaseIn") ? (std::stoi(data.at("EaseIn")) != 0) : true;
                     bool easeOut = data.count("EaseOut") ? (std::stoi(data.at("EaseOut")) != 0) : true;
                     
-                    Transition translationTrans(InterpolationType::kOn, time, easeIn, easeOut);
+                    int modeValue = data.count("InterpolationMode") ? std::stoi(data.at("InterpolationMode")) : 2;
+                    InterpolationMode mode = ToInterpolationMode(modeValue);
+                    
+                    Transition translationTrans(time, mode, easeIn, easeOut);
                     
                     // Check if this is a reference-based point
                     if (data.count("UseRef") && std::stoi(data.at("UseRef")) != 0) {
@@ -99,6 +102,7 @@ namespace FCSE {
             }
             
             a_file << "Time=" << point.m_transition.m_time << "\n";
+            a_file << "InterpolationMode=" << static_cast<int>(point.m_transition.m_mode) << "\n";
             a_file << "EaseIn=" << (point.m_transition.m_easeIn ? 1 : 0) << "\n";
             a_file << "EaseOut=" << (point.m_transition.m_easeOut ? 1 : 0) << "\n";
             a_file << "\n";
@@ -123,7 +127,7 @@ namespace FCSE {
             cameraState = static_cast<RE::FreeCameraState*>(playerCamera->currentState.get());
             
             if (cameraState) {
-                point.m_transition = Transition(InterpolationType::kOn, a_time, a_easeIn, a_easeOut);
+                point.m_transition = Transition(a_time, InterpolationMode::kCubicHermite, a_easeIn, a_easeOut);
                 point.m_point = cameraState->rotation;
             }
         }  
@@ -146,7 +150,10 @@ namespace FCSE {
                     bool easeIn = data.count("EaseIn") ? (std::stoi(data.at("EaseIn")) != 0) : true;
                     bool easeOut = data.count("EaseOut") ? (std::stoi(data.at("EaseOut")) != 0) : true;
                     
-                    Transition rotationTrans(InterpolationType::kOn, time, easeIn, easeOut);
+                    int modeValue = data.count("InterpolationMode") ? std::stoi(data.at("InterpolationMode")) : 2;
+                    InterpolationMode mode =ToInterpolationMode(modeValue);
+                    
+                    Transition rotationTrans(time, mode, easeIn, easeOut);
                     
                     // Check if this is a reference-based point
                     if (data.count("UseRef") && std::stoi(data.at("UseRef")) != 0) {
@@ -210,6 +217,7 @@ namespace FCSE {
             }
             
             a_file << "Time=" << point.m_transition.m_time << "\n";
+            a_file << "InterpolationMode=" << static_cast<int>(point.m_transition.m_mode) << "\n";
             a_file << "EaseIn=" << (point.m_transition.m_easeIn ? 1 : 0) << "\n";
             a_file << "EaseOut=" << (point.m_transition.m_easeOut ? 1 : 0) << "\n";
             a_file << "\n";

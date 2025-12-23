@@ -90,13 +90,21 @@ namespace FCSE {
         }
         
         // Get current interpolated value (returns the .m_point member of PointType)
-        auto GetCurrentPoint(InterpolationMode a_mode = InterpolationMode::kCubicHermite) const -> decltype(std::declval<PointType>().m_point) {
-            switch (a_mode) {
+        auto GetCurrentPoint() const -> decltype(std::declval<PointType>().m_point) {
+            if (GetPointCount() == 0) {
+                return PointType{}.m_point;
+            }
+            
+            size_t currentIdx = m_currentIndex;
+            if (currentIdx >= GetPointCount()) {
+                currentIdx = GetPointCount() - 1;
+            }
+            
+            const auto& currentPoint = GetPoint(currentIdx);
+            
+            switch (currentPoint.m_transition.m_mode) {
                 case InterpolationMode::kNone:
-                    if (m_currentIndex < GetPointCount()) {
-                        return GetPoint(m_currentIndex).m_point;
-                    }
-                    return PointType{}.m_point;
+                    return currentPoint.m_point;
                 case InterpolationMode::kLinear:
                     return GetPointLinear();
                 case InterpolationMode::kCubicHermite:

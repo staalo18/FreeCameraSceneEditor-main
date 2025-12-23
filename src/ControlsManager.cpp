@@ -30,8 +30,8 @@ namespace FCSE {
                         float offsetY = 1000.0f;
                         float offsetZ = 0.0f;
                         bool isOffsetRelative = true;
-                        FCSE::TimelineManager::GetSingleton().AddTranslationPointAtRef(time, reference, offsetX, offsetY, offsetZ, isOffsetRelative, false, false);
-                        FCSE::TimelineManager::GetSingleton().AddRotationPointAtRef(time, reference, PI, 0.f, false, false);
+                        FCSE::TimelineManager::GetSingleton().AddTranslationPointAtRef(time, reference, offsetX, offsetY, offsetZ, isOffsetRelative, false, false, 2);
+                        FCSE::TimelineManager::GetSingleton().AddRotationPointAtRef(time, reference, PI, 0.f, false, false, 2);
                         time += 1.0f;
                     }
                 } else if (key == 6) {

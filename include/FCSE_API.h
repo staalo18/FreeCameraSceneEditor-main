@@ -27,40 +27,46 @@ namespace FCSE_API {
 		/// <summary>
 		/// Add a translation point to the camera timeline at a specified position.
 		/// </summary>
+		/// <param name="a_interpolationMode">Interpolation mode: 0=None, 1=Linear, 2=CubicHermite (default)</param>
 		/// <returns> Index of the added point</returns>
-		[[nodiscard]] virtual size_t AddTranslationPoint(float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn, bool a_easeOut) const noexcept = 0;
+		[[nodiscard]] virtual size_t AddTranslationPoint(float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
 
 		/// <summary>
 		/// Add a translation point to the camera timeline relative to a reference object.
 		/// The point will track the reference's position plus the offset.
 		/// If a_isOffsetRelative is true, the offset is relative to the reference's heading, else world space.
 		/// </summary>
+		/// <param name="a_interpolationMode">Interpolation mode: 0=None, 1=Linear, 2=CubicHermite (default)</param>
 		/// <returns> Index of the added point</returns>
-		[[nodiscard]] virtual size_t AddTranslationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetX, float a_offsetY, float a_offsetZ, bool a_isOffsetRelative, bool a_easeIn, bool a_easeOut) const noexcept = 0;
+		[[nodiscard]] virtual size_t AddTranslationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetX = 0.0f, float a_offsetY = 0.0f, float a_offsetZ = 0.0f, bool a_isOffsetRelative = false, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
 
 		/// <summary>
 		/// Add a translation point to the camera timeline at the current camera position.
 		/// </summary>
+		/// <param name="a_interpolationMode">Interpolation mode: 0=None, 1=Linear, 2=CubicHermite (default)</param>
 		/// <returns> Index of the added point</returns>
-		[[nodiscard]] virtual size_t AddTranslationPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) const noexcept = 0;
+		[[nodiscard]] virtual size_t AddTranslationPointAtCamera(float a_time, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
 
 		/// <summary>
 		/// Add a rotation point to the camera timeline with specified pitch and yaw.
 		/// </summary>
+		/// <param name="a_interpolationMode">Interpolation mode: 0=None, 1=Linear, 2=CubicHermite (default)</param>
 		/// <returns> Index of the added point</returns>
-		[[nodiscard]] virtual size_t AddRotationPoint(float a_time, float a_pitch, float a_yaw, bool a_easeIn, bool a_easeOut) const noexcept = 0;
+		[[nodiscard]] virtual size_t AddRotationPoint(float a_time, float a_pitch, float a_yaw, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
 
 		/// <summary>
 		/// Add a rotation point that uses a reference's rotation angles plus offset.
 		/// </summary>
+		/// <param name="a_interpolationMode">Interpolation mode: 0=None, 1=Linear, 2=CubicHermite (default)</param>
 		/// <returns> Index of the added point</returns>
-		[[nodiscard]] virtual size_t AddRotationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetPitch, float a_offsetYaw, bool a_easeIn, bool a_easeOut) const noexcept = 0;
+		[[nodiscard]] virtual size_t AddRotationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetPitch, float a_offsetYaw, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
 
 		/// <summary>
 		/// Add a rotation point to the camera timeline at the current camera rotation.
 		/// </summary>
+		/// <param name="a_interpolationMode">Interpolation mode: 0=None, 1=Linear, 2=CubicHermite (default)</param>
 		/// <returns> Index of the added point</returns>
-		[[nodiscard]] virtual size_t AddRotationPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) const noexcept = 0;
+		[[nodiscard]] virtual size_t AddRotationPointAtCamera(float a_time, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
 
 		/// <summary>
 		/// Start recording camera movement to the timeline.
@@ -75,14 +81,16 @@ namespace FCSE_API {
 		/// <summary>
 		/// Edit an existing translation point (returns new index after potential re-sorting).
 		/// </summary>
+		/// <param name="a_interpolationMode">Interpolation mode: 0=None, 1=Linear, 2=CubicHermite (default)</param>
 		/// <returns> New index of the point after update</returns>
-		[[nodiscard]] virtual size_t EditTranslationPoint(size_t a_index, float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn, bool a_easeOut) const noexcept = 0;
+		[[nodiscard]] virtual size_t EditTranslationPoint(size_t a_index, float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
 
 		/// <summary>
 		/// Edit an existing rotation point (returns new index after potential re-sorting).
 		/// </summary>
+		/// <param name="a_interpolationMode">Interpolation mode: 0=None, 1=Linear, 2=CubicHermite (default)</param>
 		/// <returns> New index of the point after update</returns>
-		[[nodiscard]] virtual size_t EditRotationPoint(size_t a_index, float a_time, float a_pitch, float a_yaw, bool a_easeIn, bool a_easeOut) const noexcept = 0;
+		[[nodiscard]] virtual size_t EditRotationPoint(size_t a_index, float a_time, float a_pitch, float a_yaw, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
 
 		/// <summary>
 		/// Remove a translation point from the timeline.

@@ -10,7 +10,7 @@ namespace FCSE {
     class TranslationPoint {
     public:
         TranslationPoint()
-            : m_transition(InterpolationType::kInvalid, 0.0f, false, false)
+            : m_transition(0.0f, InterpolationMode::kCubicHermite, false, false)
             , m_point({0.f, 0.f, 0.f})
             , m_useRef(false)
             , m_reference(nullptr)
@@ -126,7 +126,7 @@ namespace FCSE {
     class RotationPoint {
     public:
         RotationPoint()
-            : m_transition(InterpolationType::kInvalid, 0.0f, false, false)
+            : m_transition(0.0f, InterpolationMode::kCubicHermite, false, false)
             , m_point({0.f, 0.f})
             , m_useRef(false)
             , m_reference(nullptr)
