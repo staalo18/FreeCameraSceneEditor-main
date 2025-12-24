@@ -20,6 +20,7 @@ namespace Messaging
 
 		// InterfaceVersion1
         virtual unsigned long GetFCSEThreadId(void) const noexcept override;
+		virtual int GetFCSEPluginVersion() const noexcept override;
 		virtual size_t AddTranslationPoint(float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept override;
 		virtual size_t AddTranslationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetX, float a_offsetY, float a_offsetZ, bool a_isOffsetRelative = false, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept override;
 		virtual size_t AddTranslationPointAtCamera(float a_time, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept override;
@@ -38,7 +39,7 @@ namespace Messaging
 		virtual void StartTraversal(float a_speed = 1.0f, bool a_globalEaseIn = false, bool a_globalEaseOut = false, bool a_useDuration = false, float a_duration = 0.0f) const noexcept override;
 		virtual void StopTraversal() const noexcept override;
 		virtual bool IsTraversing() const noexcept override;
-		virtual bool ImportTimeline(const char* a_filePath) const noexcept override;
+		virtual bool AddTimelineFromFile(const char* a_filePath, float a_timeOffset = 0.0f) const noexcept override;
 		virtual bool ExportTimeline(const char* a_filePath) const noexcept override;
 
 	private:

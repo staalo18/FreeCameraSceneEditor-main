@@ -7,7 +7,10 @@
 namespace FCSE {
     namespace Interface {
         int GetFCSEPluginVersion(RE::StaticFunctionTag*) {
-            return 1;
+            // Encode version as: major * 10000 + minor * 100 + patch
+            return static_cast<int>(Plugin::VERSION[0]) * 10000 + 
+                   static_cast<int>(Plugin::VERSION[1]) * 100 + 
+                   static_cast<int>(Plugin::VERSION[2]);
         }
         
         int AddTranslationPointAtCamera(RE::StaticFunctionTag*, float a_time, bool a_easeIn, bool a_easeOut, int a_interpolationMode) {
@@ -82,8 +85,8 @@ namespace FCSE {
             return FCSE::TimelineManager::GetSingleton().IsTraversing();
         }
 
-        bool ImportTimeline(RE::StaticFunctionTag*, RE::BSFixedString a_filePath) {
-            return FCSE::TimelineManager::GetSingleton().ImportTimeline(a_filePath.c_str());
+        bool AddTimelineFromFile(RE::StaticFunctionTag*, RE::BSFixedString a_filePath, float a_timeOffset) {
+            return FCSE::TimelineManager::GetSingleton().AddTimelineFromFile(a_filePath.c_str(), a_timeOffset);
         }
 
         bool ExportTimeline(RE::StaticFunctionTag*, RE::BSFixedString a_filePath) {
@@ -110,7 +113,7 @@ namespace FCSE {
             a_vm->RegisterFunction("StartTraversal", "FCSE_SKSEFunctions", StartTraversal);
             a_vm->RegisterFunction("StopTraversal", "FCSE_SKSEFunctions", StopTraversal);
             a_vm->RegisterFunction("IsTraversing", "FCSE_SKSEFunctions", IsTraversing);
-            a_vm->RegisterFunction("ImportTimeline", "FCSE_SKSEFunctions", ImportTimeline);
+            a_vm->RegisterFunction("AddTimelineFromFile", "FCSE_SKSEFunctions", AddTimelineFromFile);
             a_vm->RegisterFunction("ExportTimeline", "FCSE_SKSEFunctions", ExportTimeline);
             return true;
         }

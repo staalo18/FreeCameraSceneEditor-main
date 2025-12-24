@@ -25,6 +25,14 @@ namespace FCSE_API {
 		[[nodiscard]] virtual unsigned long GetFCSEThreadId() const noexcept = 0;
 
 		/// <summary>
+		/// Get the FCSE plugin version as an integer.
+		/// Encoded as: major * 10000 + minor * 100 + patch
+		/// Example: version 1.2.3 returns 10203
+		/// </summary>
+		/// <returns>Version encoded as integer</returns>
+		[[nodiscard]] virtual int GetFCSEPluginVersion() const noexcept = 0;
+
+		/// <summary>
 		/// Add a translation point to the camera timeline at a specified position.
 		/// </summary>
 		/// <param name="a_interpolationMode">Interpolation mode: 0=None, 1=Linear, 2=CubicHermite (default)</param>
@@ -141,14 +149,17 @@ namespace FCSE_API {
 		[[nodiscard]] virtual bool IsTraversing() const noexcept = 0;
 
 		/// <summary>
-		/// Import camera timeline from a file.
+		/// Adds camera timeline imported from a_filePath at time a_timeOffset to the current timeline.
 		/// </summary>
+		/// <param name="a_filePath">Relative path from Data folder (e.g., "SKSE/Plugins/MyTimeline.dat")</param>
+		/// <param name="a_timeOffset">Time offset to add to all imported point times (default 0.0)</param>
 		/// <returns> True if successful, false otherwise</returns>
-		[[nodiscard]] virtual bool ImportTimeline(const char* a_filePath) const noexcept = 0;
+		[[nodiscard]] virtual bool AddTimelineFromFile(const char* a_filePath, float a_timeOffset = 0.0f) const noexcept = 0;
 
 		/// <summary>
 		/// Export camera timeline to a file.
 		/// </summary>
+		/// <param name="a_filePath">Relative path from Data folder (e.g., "SKSE/Plugins/MyTimeline.dat")</param>
 		/// <returns> True if successful, false otherwise</returns>
 		[[nodiscard]] virtual bool ExportTimeline(const char* a_filePath) const noexcept = 0;
 	};

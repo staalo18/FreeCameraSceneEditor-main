@@ -344,7 +344,7 @@ namespace FCSE {
         
         size_t GetPointCount() const { return m_points.size(); }
 
-        virtual bool ImportPath(std::ifstream& a_file, float a_conversionFactor = 1.0f) = 0;
+        virtual bool AddPathFromFile(std::ifstream& a_file, float a_timeOffset = 0.0f, float a_conversionFactor = 1.0f) = 0;
         virtual bool ExportPath(std::ofstream& a_file, float a_conversionFactor = 1.0f) const = 0;
         virtual PointType GetPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) = 0;
         
@@ -357,7 +357,7 @@ namespace FCSE {
         using PointType = TranslationPoint;
         
         TranslationPoint GetPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) override;
-        bool ImportPath(std::ifstream& a_file, float a_conversionFactor = 1.0f) override;
+        bool AddPathFromFile(std::ifstream& a_file, float a_timeOffset = 0.0f, float a_conversionFactor = 1.0f) override;
         bool ExportPath(std::ofstream& a_file, float a_conversionFactor = 1.0f) const override;
     };
 
@@ -366,7 +366,7 @@ namespace FCSE {
         using PointType = RotationPoint;
         
         RotationPoint GetPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) override;
-        bool ImportPath(std::ifstream& a_file, float a_conversionFactor = 1.0f) override;
+        bool AddPathFromFile(std::ifstream& a_file, float a_timeOffset = 0.0f, float a_conversionFactor = 1.0f) override;
         bool ExportPath(std::ofstream& a_file, float a_conversionFactor = 1.0f) const override;
     };
 

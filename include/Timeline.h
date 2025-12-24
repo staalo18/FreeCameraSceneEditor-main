@@ -34,8 +34,8 @@ namespace FCSE {
         }
         size_t GetPointCount() const { return m_path.GetPointCount(); }
         
-        bool ImportTimeline(std::ifstream& a_file, float a_conversionFactor = 1.0f) { 
-            bool result = m_path.ImportPath(a_file, a_conversionFactor);
+        bool AddTimelineFromFile(std::ifstream& a_file, float a_timeOffset = 0.0f, float a_conversionFactor = 1.0f) { 
+            bool result = m_path.AddPathFromFile(a_file, a_timeOffset, a_conversionFactor);
             ResetTimeline();
             return result;
         }

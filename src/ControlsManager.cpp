@@ -17,7 +17,7 @@ namespace FCSE {
                     continue;
                 }
                 
-                std::filesystem::path iniPath = std::filesystem::current_path() / "Data" / "SKSE" / "Plugins" / "FCSE_CameraPath.ini";
+                const char* relativePath = "SKSE/Plugins/FCSE_CameraPath.ini";
 
                 const uint32_t key = buttonEvent->GetIDCode();
                  if (key == 5) {
@@ -37,17 +37,18 @@ namespace FCSE {
                 } else if (key == 6) {
                     FCSE::TimelineManager::GetSingleton().ClearTimeline();
                 } else if (key == 7) {
-                    FCSE::TimelineManager::GetSingleton().StartTraversal(1.0f, false, false, false, 12.0f);
+                    FCSE::TimelineManager::GetSingleton().StartTraversal(); //(1.0f, false, false, false, 12.0f);
                 } else if (key == 8) {
                     FCSE::TimelineManager::GetSingleton().StartRecording();
                 } else if (key == 9) {
                     FCSE::TimelineManager::GetSingleton().StopRecording();
                 } else if (key == 10) {
                     RE::DebugNotification("Exporting camera path...");
-                    FCSE::TimelineManager::GetSingleton().ExportTimeline(iniPath.string().c_str());
+                    FCSE::TimelineManager::GetSingleton().ExportTimeline(relativePath);
                 } else if (key == 11) {
                     RE::DebugNotification("Importing camera path...");
-                    FCSE::TimelineManager::GetSingleton().ImportTimeline(iniPath.string().c_str());
+                    FCSE::TimelineManager::GetSingleton().AddTimelineFromFile(relativePath, time);
+                    time += 20.0f;
                 }
             }
         }

@@ -14,20 +14,18 @@ namespace FCSE {
         return point;
     }
 
-    bool TranslationPath::ImportPath(std::ifstream& a_file, float a_conversionFactor) {
+    bool TranslationPath::AddPathFromFile(std::ifstream& a_file, float a_timeOffset, float a_conversionFactor) {
         if (!a_file.is_open()) {
             log::error("{}: File is not open", __FUNCTION__);
             return false;
         }
         
-        ClearPath();
-        
-        return ParseFCSETimelineFileSections(a_file, "TranslatePoint", [this](const auto& data) {
+        return ParseFCSETimelineFileSections(a_file, "TranslatePoint", [this, a_timeOffset](const auto& data) {
             if (data.find("Time") != data.end()) {
                 try {
-                    float time = std::stof(data.at("Time"));
-                    bool easeIn = data.count("EaseIn") ? (std::stoi(data.at("EaseIn")) != 0) : true;
-                    bool easeOut = data.count("EaseOut") ? (std::stoi(data.at("EaseOut")) != 0) : true;
+                    float time = std::stof(data.at("Time")) + a_timeOffset;
+                    bool easeIn = data.count("EaseIn") ? (std::stoi(data.at("EaseIn")) != 0) : false;
+                    bool easeOut = data.count("EaseOut") ? (std::stoi(data.at("EaseOut")) != 0) : false;
                     
                     int modeValue = data.count("InterpolationMode") ? std::stoi(data.at("InterpolationMode")) : 2;
                     InterpolationMode mode = ToInterpolationMode(modeValue);
@@ -135,20 +133,18 @@ namespace FCSE {
         return point;
     }
 
-    bool RotationPath::ImportPath(std::ifstream& a_file, float a_conversionFactor) {
+    bool RotationPath::AddPathFromFile(std::ifstream& a_file, float a_timeOffset, float a_conversionFactor) {
         if (!a_file.is_open()) {
             log::error("{}: File is not open", __FUNCTION__);
             return false;
         }
         
-        ClearPath();
-        
-        return ParseFCSETimelineFileSections(a_file, "RotatePoint", [this, a_conversionFactor](const auto& data) {
+        return ParseFCSETimelineFileSections(a_file, "RotatePoint", [this, a_conversionFactor, a_timeOffset](const auto& data) {
             if (data.find("Time") != data.end()) {
                 try {
-                    float time = std::stof(data.at("Time"));
-                    bool easeIn = data.count("EaseIn") ? (std::stoi(data.at("EaseIn")) != 0) : true;
-                    bool easeOut = data.count("EaseOut") ? (std::stoi(data.at("EaseOut")) != 0) : true;
+                    float time = std::stof(data.at("Time")) + a_timeOffset;
+                    bool easeIn = data.count("EaseIn") ? (std::stoi(data.at("EaseIn")) != 0) : false;
+                    bool easeOut = data.count("EaseOut") ? (std::stoi(data.at("EaseOut")) != 0) : false;
                     
                     int modeValue = data.count("InterpolationMode") ? std::stoi(data.at("InterpolationMode")) : 2;
                     InterpolationMode mode =ToInterpolationMode(modeValue);

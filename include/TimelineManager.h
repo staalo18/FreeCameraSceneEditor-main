@@ -48,7 +48,7 @@ namespace FCSE {
             bool IsTraversing() const { return m_isTraversing; }
                         
             // Import/Export camera timeline from/to file
-            bool ImportTimeline(const char* a_filePath);
+            bool AddTimelineFromFile(const char* a_filePath, float a_timeOffset = 0.0f);
             bool ExportTimeline(const char* a_filePath) const;
 
         private:

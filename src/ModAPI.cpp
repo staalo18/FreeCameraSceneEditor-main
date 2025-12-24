@@ -12,6 +12,13 @@ unsigned long Messaging::FCSEInterface::GetFCSEThreadId() const noexcept {
 	return apiTID;
 }
 
+int Messaging::FCSEInterface::GetFCSEPluginVersion() const noexcept {
+	// Encode version as: major * 10000 + minor * 100 + patch
+	return static_cast<int>(Plugin::VERSION[0]) * 10000 + 
+	       static_cast<int>(Plugin::VERSION[1]) * 100 + 
+	       static_cast<int>(Plugin::VERSION[2]);
+}
+
 size_t Messaging::FCSEInterface::AddTranslationPoint(float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn, bool a_easeOut, int a_interpolationMode) const noexcept {
     return FCSE::TimelineManager::GetSingleton().AddTranslationPoint(a_time, a_posX, a_posY, a_posZ, a_easeIn, a_easeOut, a_interpolationMode);
 }
@@ -84,8 +91,8 @@ bool Messaging::FCSEInterface::IsTraversing() const noexcept {
     return FCSE::TimelineManager::GetSingleton().IsTraversing();
 }
 
-bool Messaging::FCSEInterface::ImportTimeline(const char* a_filePath) const noexcept {
-    return FCSE::TimelineManager::GetSingleton().ImportTimeline(a_filePath);
+bool Messaging::FCSEInterface::AddTimelineFromFile(const char* a_filePath, float a_timeOffset) const noexcept {
+    return FCSE::TimelineManager::GetSingleton().AddTimelineFromFile(a_filePath, a_timeOffset);
 }
 
 bool Messaging::FCSEInterface::ExportTimeline(const char* a_filePath) const noexcept {

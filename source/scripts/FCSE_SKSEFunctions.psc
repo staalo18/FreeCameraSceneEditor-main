@@ -123,12 +123,13 @@ Function StopTraversal() global native
 ; Returns: true if traversing, false otherwise
 bool Function IsTraversing() global native
 
-; Import a camera timeline from a file
-; filePath: path to the file to import from
+; Adds camera timeline imported from filePath at timeOffset to the current timeline.
+; filePath: Relative path from Data folder (e.g., "SKSE/Plugins/MyTimeline.dat")
+; timeOffset: Time offset to add to all imported point times (default 0.0)
 ; Returns: true if successful, false otherwise
-bool Function ImportTimeline(string filePath) global native
+bool Function AddTimelineFromFile(string filePath, float timeOffset = 0.0) global native
 
 ; Export the camera timeline to a file
-; filePath: path to the file to export to
+; filePath: Relative path from Data folder (e.g., "SKSE/Plugins/MyTimeline.dat")
 ; Returns: true if successful, false otherwise
 bool Function ExportTimeline(string filePath) global native

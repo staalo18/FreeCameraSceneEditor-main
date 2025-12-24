@@ -367,41 +367,50 @@ namespace FCSE {
         m_rotationTimeline.ResetTimeline();        
     }
 
-    bool TimelineManager::ImportTimeline(const char* a_filePath) {
-        std::filesystem::path fullPath(a_filePath);
-        std::string filename = fullPath.filename().string();
+    bool TimelineManager::AddTimelineFromFile(const char* a_filePath, float a_timeOffset) {
+        std::filesystem::path fullPath = std::filesystem::current_path() / "Data" / a_filePath;
         
         if (!std::filesystem::exists(fullPath)) {
-            log::error("{}: File does not exist: {}", __FUNCTION__, a_filePath);
+            log::error("{}: File does not exist: {}", __FUNCTION__, fullPath.string());
             return false;
         }
-        
-        ClearTimeline(false);
         
         // Read General section
-        bool useDegrees = _ts_SKSEFunctions::GetValueFromINI(nullptr, 0, "UseDegrees:General", filename, true);
+        long fileVersion = _ts_SKSEFunctions::GetValueFromINI(nullptr, 0, "Version:General", a_filePath, 0L);
+        bool useDegrees = _ts_SKSEFunctions::GetValueFromINI(nullptr, 0, "UseDegrees:General", a_filePath, true);
         float degToRad = useDegrees ? (PI / 180.0f) : 1.0f;
         
-log::info("{}: Importing timeline from {}, UseDegrees={}", __FUNCTION__, a_filePath, useDegrees);
+        // Calculate current plugin version
+        long pluginVersion = static_cast<long>(Plugin::VERSION[0]) * 10000 + 
+                            static_cast<long>(Plugin::VERSION[1]) * 100 + 
+                            static_cast<long>(Plugin::VERSION[2]);
         
-        std::ifstream file(a_filePath);
+        if (fileVersion != pluginVersion) {
+            log::info("{}: Importing timeline from {} - File version {} differs from plugin version {}, timeOffset={}", 
+                     __FUNCTION__, a_filePath, fileVersion, pluginVersion, a_timeOffset);
+        } else {
+            log::info("{}: Importing timeline from {}, timeOffset={}", 
+                     __FUNCTION__, a_filePath, a_timeOffset);
+        }
+              
+        std::ifstream file(fullPath);
         if (!file.is_open()) {
-            log::error("{}: Failed to open file for reading: {}", __FUNCTION__, a_filePath);
+            log::error("{}: Failed to open file for reading: {}", __FUNCTION__, fullPath.string());
             return false;
         }
         
-        bool importTranslationSuccess = m_translationTimeline.ImportTimeline(file, 1.0f);
+        bool importTranslationSuccess = m_translationTimeline.AddTimelineFromFile(file, a_timeOffset, 1.0f);
         
         // Rewind file to beginning for rotation import
         file.clear();  // Clear any error flags
         file.seekg(0, std::ios::beg);
         if (!file.good()) {
-            log::error("{}: Failed to rewind file: {}", __FUNCTION__, a_filePath);
+            log::error("{}: Failed to rewind file: {}", __FUNCTION__, fullPath.string());
             file.close();
             return false;
         }
         
-        bool importRotationSuccess = m_rotationTimeline.ImportTimeline(file, degToRad);
+        bool importRotationSuccess = m_rotationTimeline.AddTimelineFromFile(file, a_timeOffset, degToRad);
         
         file.close();
         
@@ -421,14 +430,22 @@ __FUNCTION__, m_translationTimeline.GetPointCount(), m_rotationTimeline.GetPoint
     }
     
     bool TimelineManager::ExportTimeline(const char* a_filePath) const {
-        std::ofstream file(a_filePath);
+        // Convert relative path to absolute path from Data folder
+        std::filesystem::path fullPath = std::filesystem::current_path() / "Data" / a_filePath;
+        
+        std::ofstream file(fullPath);
         if (!file.is_open()) {
-            log::error("{}: Failed to open file for writing: {}", __FUNCTION__, a_filePath);
+            log::error("{}: Failed to open file for writing: {}", __FUNCTION__, fullPath.string());
             return false;
         }
         
         // Write General section
+        // Encode version as: major * 10000 + minor * 100 + patch
+        int versionInt = static_cast<int>(Plugin::VERSION[0]) * 10000 + 
+                         static_cast<int>(Plugin::VERSION[1]) * 100 + 
+                         static_cast<int>(Plugin::VERSION[2]);
         file << "[General]\n";
+        file << "Version=" << versionInt << "\n";
         file << "UseDegrees=1 ; Interpret rotation values as degrees (1) or radians (0)\n";
         file << "\n";
         
