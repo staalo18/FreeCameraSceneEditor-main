@@ -220,7 +220,21 @@ namespace FCSE {
 
         // Get interpolated points from timeline
         cameraState->translation = m_translationTimeline.GetCurrentPoint();
-        cameraState->rotation = m_rotationTimeline.GetCurrentPoint();
+        RE::BSTPoint2<float> rotation = m_rotationTimeline.GetCurrentPoint();
+
+        if (m_userTurning && m_allowUserRotation) {
+            // User is actively controlling rotation - update offset based on difference between
+            // current camera rotation and timeline rotation
+            m_rotationOffset.x = _ts_SKSEFunctions::NormalRelativeAngle(cameraState->rotation.x - rotation.x);
+            m_rotationOffset.y = _ts_SKSEFunctions::NormalRelativeAngle(cameraState->rotation.y - rotation.y);
+            // reset m_userTurning - Is set to true in LookHook::ProcessMouseMove() in case of user-triggered camera rotation
+            m_userTurning = false;
+            // Don't update cameraState->rotation, user is controlling it
+        } else {
+            // User not controlling rotation - apply timeline rotation plus accumulated offset
+            cameraState->rotation.x = _ts_SKSEFunctions::NormalRelativeAngle(rotation.x + m_rotationOffset.x);
+            cameraState->rotation.y = _ts_SKSEFunctions::NormalRelativeAngle(rotation.y + m_rotationOffset.y);
+        }
 
         // Check if traversal is complete
         if (m_currentTraversalTime >= timelineDuration) {
@@ -341,10 +355,16 @@ namespace FCSE {
         
         m_isTraversing = true;
         m_currentTraversalTime = 0.0f;
+        m_rotationOffset = { 0.0f, 0.0f };
         
         m_translationTimeline.ResetTimeline();
         m_rotationTimeline.ResetTimeline();        
-
+        
+        auto* ui = RE::UI::GetSingleton();
+        if (ui) {
+            m_isShowingMenus = ui->IsShowingMenus();
+            ui->ShowMenus(m_showMenusDuringTraversal);
+        }
         playerCamera->ToggleFreeCameraMode(false);
     }
 
@@ -353,6 +373,10 @@ namespace FCSE {
         if (m_isTraversing) {
             auto* playerCamera = RE::PlayerCamera::GetSingleton();
             if (playerCamera && playerCamera->IsInFreeCameraMode()) {
+                auto* ui = RE::UI::GetSingleton();
+                if (ui) {
+                    ui->ShowMenus(m_isShowingMenus);
+                }     
                 playerCamera->ToggleFreeCameraMode(false);
             }            
         }
@@ -365,6 +389,10 @@ namespace FCSE {
         
         m_translationTimeline.ResetTimeline();
         m_rotationTimeline.ResetTimeline();        
+    }
+
+    void TimelineManager::SetUserTurning(bool a_turning) {
+        m_userTurning = a_turning;
     }
 
     bool TimelineManager::AddTimelineFromFile(const char* a_filePath, float a_timeOffset) {
@@ -386,11 +414,8 @@ namespace FCSE {
                             static_cast<long>(Plugin::VERSION[2]);
         
         if (fileVersion != pluginVersion) {
-            log::info("{}: Importing timeline from {} - File version {} differs from plugin version {}, timeOffset={}", 
-                     __FUNCTION__, a_filePath, fileVersion, pluginVersion, a_timeOffset);
-        } else {
-            log::info("{}: Importing timeline from {}, timeOffset={}", 
-                     __FUNCTION__, a_filePath, a_timeOffset);
+            log::info("{}: Importing timeline from {} - File version {} differs from plugin version {}", 
+                     __FUNCTION__, a_filePath, fileVersion, pluginVersion);
         }
               
         std::ifstream file(fullPath);
@@ -399,6 +424,9 @@ namespace FCSE {
             return false;
         }
         
+        size_t translationPointCount = m_translationTimeline.GetPointCount();
+        size_t rotationPointCount = m_rotationTimeline.GetPointCount();
+
         bool importTranslationSuccess = m_translationTimeline.AddTimelineFromFile(file, a_timeOffset, 1.0f);
         
         // Rewind file to beginning for rotation import
@@ -425,7 +453,9 @@ namespace FCSE {
         }
 
 log::info("{}: Loaded {} translation and {} rotation points from {}", 
-__FUNCTION__, m_translationTimeline.GetPointCount(), m_rotationTimeline.GetPointCount(), a_filePath);
+__FUNCTION__, m_translationTimeline.GetPointCount() - translationPointCount, 
+m_rotationTimeline.GetPointCount() - rotationPointCount, a_filePath);
+
         return true;
     }
     

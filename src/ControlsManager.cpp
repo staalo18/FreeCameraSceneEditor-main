@@ -20,7 +20,9 @@ namespace FCSE {
                 const char* relativePath = "SKSE/Plugins/FCSE_CameraPath.ini";
 
                 const uint32_t key = buttonEvent->GetIDCode();
-                 if (key == 5) {
+                 if (key == 4) {
+                     FCSE::TimelineManager::GetSingleton().AllowUserRotation(!FCSE::TimelineManager::GetSingleton().IsUserRotationAllowed());
+                } else if (key == 5) {
                     RE::TESObjectREFR* reference = nullptr;
                     auto* form = RE::TESForm::LookupByID(0xd8c56);
                     reference = form ? form->As<RE::TESObjectREFR>() : nullptr;

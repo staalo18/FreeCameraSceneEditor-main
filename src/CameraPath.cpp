@@ -35,16 +35,43 @@ namespace FCSE {
                     // Check if this is a reference-based point
                     if (data.count("UseRef") && std::stoi(data.at("UseRef")) != 0) {
                         // Reference-based point
-                        uint32_t formID = data.count("RefFormID") ? std::stoul(data.at("RefFormID"), nullptr, 16) : 0;
                         float offsetX = data.count("OffsetX") ? std::stof(data.at("OffsetX")) : 0.0f;
                         float offsetY = data.count("OffsetY") ? std::stof(data.at("OffsetY")) : 0.0f;
                         float offsetZ = data.count("OffsetZ") ? std::stof(data.at("OffsetZ")) : 0.0f;
                         bool isOffsetRelative = data.count("isOffsetRelative") ? (std::stoi(data.at("isOffsetRelative")) != 0) : false;
                     
                     RE::TESObjectREFR* reference = nullptr;
-                    if (formID != 0) {
-                        auto* form = RE::TESForm::LookupByID(formID);
-                        reference = form ? form->As<RE::TESObjectREFR>() : nullptr;
+                    uint32_t formID = 0;
+                    
+                    // Try EditorID first (load-order independent)
+                    if (data.count("RefEditorID")) {
+                        std::string editorID = data.at("RefEditorID");
+                        reference = RE::TESForm::LookupByEditorID<RE::TESObjectREFR>(editorID);
+                        
+                        if (reference) {
+                            // Validate plugin name if available
+                            if (data.count("RefPlugin")) {
+                                auto* file = reference->GetFile(0);
+                                if (file && std::string(file->fileName) != data.at("RefPlugin")) {
+                                    log::warn("{}: Reference '{}' found but from different plugin (expected: {}, got: {})", 
+                                             __FUNCTION__, editorID, data.at("RefPlugin"), file->fileName);
+                                }
+                            }
+                        } else {
+                            log::warn("{}: Failed to resolve reference EditorID: {}", __FUNCTION__, editorID);
+                        }
+                    }
+                    
+                    // Fallback to FormID if EditorID lookup failed
+                    if (!reference && data.count("RefFormID")) {
+                        formID = std::stoul(data.at("RefFormID"), nullptr, 16);
+                        if (formID != 0) {
+                            auto* form = RE::TESForm::LookupByID(formID);
+                            reference = form ? form->As<RE::TESObjectREFR>() : nullptr;
+                            if (!reference) {
+                                log::warn("{}: Failed to resolve reference FormID: 0x{:X}", __FUNCTION__, formID);
+                            }
+                        }
                     }
                     
                     if (reference) {
@@ -86,6 +113,20 @@ namespace FCSE {
             if (point.m_useRef && point.m_reference) {
                 // Reference-based point
                 a_file << "UseRef=1\n";
+                
+                const char* editorID = point.m_reference->GetFormEditorID();
+                
+                if (editorID && editorID[0] != '\0') {
+                    a_file << "RefEditorID=" << editorID << "\n";
+                } else {
+                    log::warn("{}: Reference 0x{:X} has no EditorID - timeline may not be portable across load orders. Install po3's Tweaks for improved EditorID support.", 
+                             __FUNCTION__, point.m_reference->GetFormID());
+                }
+                
+                auto* file = point.m_reference->GetFile(0);
+                if (file) {
+                    a_file << "RefPlugin=" << file->fileName << "\n";
+                }
                 a_file << "RefFormID=0x" << std::hex << std::uppercase << point.m_reference->GetFormID() << std::dec << "\n";
                 a_file << "OffsetX=" << point.m_offset.x << "\n";
                 a_file << "OffsetY=" << point.m_offset.y << "\n";
@@ -154,14 +195,41 @@ namespace FCSE {
                     // Check if this is a reference-based point
                     if (data.count("UseRef") && std::stoi(data.at("UseRef")) != 0) {
                         // Reference-based point
-                        uint32_t formID = data.count("RefFormID") ? std::stoul(data.at("RefFormID"), nullptr, 16) : 0;
                         float offsetPitch = (data.count("OffsetPitch") ? std::stof(data.at("OffsetPitch")) : 0.0f) * a_conversionFactor;
                         float offsetYaw = (data.count("OffsetYaw") ? std::stof(data.at("OffsetYaw")) : 0.0f) * a_conversionFactor;
                         
                         RE::TESObjectREFR* reference = nullptr;
-                        if (formID != 0) {
-                            auto* form = RE::TESForm::LookupByID(formID);
-                            reference = form ? form->As<RE::TESObjectREFR>() : nullptr;
+                        uint32_t formID = 0;
+                        
+                        // Try EditorID first (load-order independent)
+                        if (data.count("RefEditorID")) {
+                            std::string editorID = data.at("RefEditorID");
+                            reference = RE::TESForm::LookupByEditorID<RE::TESObjectREFR>(editorID);
+                            
+                            if (reference) {
+                                // Validate plugin name if available
+                                if (data.count("RefPlugin")) {
+                                    auto* file = reference->GetFile(0);
+                                    if (file && std::string(file->fileName) != data.at("RefPlugin")) {
+                                        log::warn("{}: Reference '{}' found but from different plugin (expected: {}, got: {})", 
+                                                 __FUNCTION__, editorID, data.at("RefPlugin"), file->fileName);
+                                    }
+                                }
+                            } else {
+                                log::warn("{}: Failed to resolve reference EditorID: {}", __FUNCTION__, editorID);
+                            }
+                        }
+                        
+                        // Fallback to FormID if EditorID lookup failed
+                        if (!reference && data.count("RefFormID")) {
+                            formID = std::stoul(data.at("RefFormID"), nullptr, 16);
+                            if (formID != 0) {
+                                auto* form = RE::TESForm::LookupByID(formID);
+                                reference = form ? form->As<RE::TESObjectREFR>() : nullptr;
+                                if (!reference) {
+                                    log::warn("{}: Failed to resolve reference FormID: 0x{:X}", __FUNCTION__, formID);
+                                }
+                            }
                         }
                         
                         if (reference) {
@@ -202,6 +270,23 @@ namespace FCSE {
             if (point.m_useRef && point.m_reference) {
                 // Reference-based point
                 a_file << "UseRef=1\n";
+                
+                // Try to get EditorID for load-order independence
+                // Note: GetFormEditorID() may not work reliably without po3's Tweaks installed
+                const char* editorID = point.m_reference->GetFormEditorID();
+                
+                if (editorID && editorID[0] != '\0') {
+                    a_file << "RefEditorID=" << editorID << "\n";
+                } else {
+                    log::warn("{}: Reference 0x{:X} has no EditorID - timeline may not be portable across load orders. Install po3's Tweaks for improved EditorID support.", 
+                             __FUNCTION__, point.m_reference->GetFormID());
+                }
+                
+                // Always write plugin name and FormID for debugging/fallback
+                auto* file = point.m_reference->GetFile(0);
+                if (file) {
+                    a_file << "RefPlugin=" << file->fileName << "\n";
+                }
                 a_file << "RefFormID=0x" << std::hex << std::uppercase << point.m_reference->GetFormID() << std::dec << "\n";
                 a_file << "OffsetPitch=" << (point.m_offset.x * a_conversionFactor) << "\n";
                 a_file << "OffsetYaw=" << (point.m_offset.y * a_conversionFactor) << "\n";

@@ -143,6 +143,18 @@ namespace FCSE_API {
 		virtual void StopTraversal() const noexcept = 0;
 
 		/// <summary>
+		/// Enable or disable user rotation control during traversal.
+		/// </summary>
+		/// <param name="a_allow">True to allow user rotation, false to disable</param>
+		virtual void AllowUserRotation(bool a_allow) const noexcept = 0;
+
+		/// <summary>
+		/// Check if user rotation is currently allowed during traversal.
+		/// </summary>
+		/// <returns>True if user can control rotation, false otherwise</returns>
+		[[nodiscard]] virtual bool IsUserRotationAllowed() const noexcept = 0;
+
+		/// <summary>
 		/// Check if timeline traversal is currently active.
 		/// </summary>
 		/// <returns> True if traversing, false otherwise</returns>

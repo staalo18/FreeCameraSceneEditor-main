@@ -87,6 +87,14 @@ void Messaging::FCSEInterface::StopTraversal() const noexcept {
     FCSE::TimelineManager::GetSingleton().StopTraversal();
 }
 
+void Messaging::FCSEInterface::AllowUserRotation(bool a_allow) const noexcept {
+    FCSE::TimelineManager::GetSingleton().AllowUserRotation(a_allow);
+}
+
+bool Messaging::FCSEInterface::IsUserRotationAllowed() const noexcept {
+    return FCSE::TimelineManager::GetSingleton().IsUserRotationAllowed();
+}
+
 bool Messaging::FCSEInterface::IsTraversing() const noexcept {
     return FCSE::TimelineManager::GetSingleton().IsTraversing();
 }

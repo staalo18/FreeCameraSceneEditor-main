@@ -46,7 +46,10 @@ namespace FCSE {
             void StartTraversal(float a_speed = 1.0f, bool a_globalEaseIn = false, bool a_globalEaseOut = false, bool a_useDuration = false, float a_duration = 0.0f);
             void StopTraversal();
             bool IsTraversing() const { return m_isTraversing; }
-                        
+            void SetUserTurning(bool a_turning);
+            void AllowUserRotation(bool a_allow) { m_allowUserRotation = a_allow; }
+            bool IsUserRotationAllowed() const { return m_allowUserRotation; }    
+                                    
             // Import/Export camera timeline from/to file
             bool AddTimelineFromFile(const char* a_filePath, float a_timeOffset = 0.0f);
             bool ExportTimeline(const char* a_filePath) const;
@@ -60,7 +63,7 @@ namespace FCSE {
             
             size_t EditTranslationPoint(size_t a_index, const TranslationPoint& a_point);
             size_t EditRotationPoint(size_t a_index, const RotationPoint& a_point);
-            
+
             void DrawTimeline();
              
             void RecordTimeline();
@@ -85,6 +88,10 @@ namespace FCSE {
             float m_traversalSpeed = 1.0f;        // Speed multiplier (for kTimeline mode)
             bool m_globalEaseIn = false;        // Apply ease-in at start (both modes)
             bool m_globalEaseOut = false;       // Apply ease-out at end (both modes)
-       
+            bool m_isShowingMenus = true;      // Whether menus were showing before traversal started
+            bool m_showMenusDuringTraversal = false; // Whether to show menus during traversal
+            bool m_userTurning = false;          // Whether user is manually controlling camera during traversal
+            bool m_allowUserRotation = false;       // Whether to allow user to turn camera during traversal
+            RE::BSTPoint2<float> m_rotationOffset; // Offset to apply to rotation to account for user turning
     }; // class TimelineManager
 } // namespace FCSE

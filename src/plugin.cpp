@@ -85,6 +85,14 @@ namespace FCSE {
             return FCSE::TimelineManager::GetSingleton().IsTraversing();
         }
 
+        void AllowUserRotation(RE::StaticFunctionTag*, bool a_allow) {
+            FCSE::TimelineManager::GetSingleton().AllowUserRotation(a_allow);
+        }
+
+        bool IsUserRotationAllowed(RE::StaticFunctionTag*) {
+            return FCSE::TimelineManager::GetSingleton().IsUserRotationAllowed();
+        }
+
         bool AddTimelineFromFile(RE::StaticFunctionTag*, RE::BSFixedString a_filePath, float a_timeOffset) {
             return FCSE::TimelineManager::GetSingleton().AddTimelineFromFile(a_filePath.c_str(), a_timeOffset);
         }
@@ -94,27 +102,29 @@ namespace FCSE {
         }
 
         bool FCSEFunctions(RE::BSScript::Internal::VirtualMachine * a_vm){
-            a_vm->RegisterFunction("GetFCSEPluginVersion", "FCSE_SKSEFunctions", GetFCSEPluginVersion);
-            a_vm->RegisterFunction("AddTranslationPointAtCamera", "FCSE_SKSEFunctions", AddTranslationPointAtCamera);
-            a_vm->RegisterFunction("AddTranslationPoint", "FCSE_SKSEFunctions", AddTranslationPoint);
-            a_vm->RegisterFunction("AddTranslationPointAtRef", "FCSE_SKSEFunctions", AddTranslationPointAtRef);
-            a_vm->RegisterFunction("AddRotationPointAtCamera", "FCSE_SKSEFunctions", AddRotationPointAtCamera);
-            a_vm->RegisterFunction("AddRotationPoint", "FCSE_SKSEFunctions", AddRotationPoint);
-            a_vm->RegisterFunction("AddRotationPointAtRef", "FCSE_SKSEFunctions", AddRotationPointAtRef);
-            a_vm->RegisterFunction("StartRecording", "FCSE_SKSEFunctions", StartRecording);
-            a_vm->RegisterFunction("StopRecording", "FCSE_SKSEFunctions", StopRecording);
-            a_vm->RegisterFunction("EditTranslationPoint", "FCSE_SKSEFunctions", EditTranslationPoint);
-            a_vm->RegisterFunction("EditRotationPoint", "FCSE_SKSEFunctions", EditRotationPoint);
-            a_vm->RegisterFunction("RemoveTranslationPoint", "FCSE_SKSEFunctions", RemoveTranslationPoint);
-            a_vm->RegisterFunction("RemoveRotationPoint", "FCSE_SKSEFunctions", RemoveRotationPoint);
-            a_vm->RegisterFunction("ClearTimeline", "FCSE_SKSEFunctions", ClearTimeline);
-            a_vm->RegisterFunction("GetTranslationPointCount", "FCSE_SKSEFunctions", GetTranslationPointCount);
-            a_vm->RegisterFunction("GetRotationPointCount", "FCSE_SKSEFunctions", GetRotationPointCount);
-            a_vm->RegisterFunction("StartTraversal", "FCSE_SKSEFunctions", StartTraversal);
-            a_vm->RegisterFunction("StopTraversal", "FCSE_SKSEFunctions", StopTraversal);
-            a_vm->RegisterFunction("IsTraversing", "FCSE_SKSEFunctions", IsTraversing);
-            a_vm->RegisterFunction("AddTimelineFromFile", "FCSE_SKSEFunctions", AddTimelineFromFile);
-            a_vm->RegisterFunction("ExportTimeline", "FCSE_SKSEFunctions", ExportTimeline);
+            a_vm->RegisterFunction("FCSE_GetPluginVersion", "FCSE_SKSEFunctions", GetFCSEPluginVersion);
+            a_vm->RegisterFunction("FCSE_AddTranslationPointAtCamera", "FCSE_SKSEFunctions", AddTranslationPointAtCamera);
+            a_vm->RegisterFunction("FCSE_AddTranslationPoint", "FCSE_SKSEFunctions", AddTranslationPoint);
+            a_vm->RegisterFunction("FCSE_AddTranslationPointAtRef", "FCSE_SKSEFunctions", AddTranslationPointAtRef);
+            a_vm->RegisterFunction("FCSE_AddRotationPointAtCamera", "FCSE_SKSEFunctions", AddRotationPointAtCamera);
+            a_vm->RegisterFunction("FCSE_AddRotationPoint", "FCSE_SKSEFunctions", AddRotationPoint);
+            a_vm->RegisterFunction("FCSE_AddRotationPointAtRef", "FCSE_SKSEFunctions", AddRotationPointAtRef);
+            a_vm->RegisterFunction("FCSE_StartRecording", "FCSE_SKSEFunctions", StartRecording);
+            a_vm->RegisterFunction("FCSE_StopRecording", "FCSE_SKSEFunctions", StopRecording);
+            a_vm->RegisterFunction("FCSE_EditTranslationPoint", "FCSE_SKSEFunctions", EditTranslationPoint);
+            a_vm->RegisterFunction("FCSE_EditRotationPoint", "FCSE_SKSEFunctions", EditRotationPoint);
+            a_vm->RegisterFunction("FCSE_RemoveTranslationPoint", "FCSE_SKSEFunctions", RemoveTranslationPoint);
+            a_vm->RegisterFunction("FCSE_RemoveRotationPoint", "FCSE_SKSEFunctions", RemoveRotationPoint);
+            a_vm->RegisterFunction("FCSE_ClearTimeline", "FCSE_SKSEFunctions", ClearTimeline);
+            a_vm->RegisterFunction("FCSE_GetTranslationPointCount", "FCSE_SKSEFunctions", GetTranslationPointCount);
+            a_vm->RegisterFunction("FCSE_GetRotationPointCount", "FCSE_SKSEFunctions", GetRotationPointCount);
+            a_vm->RegisterFunction("FCSE_StartTraversal", "FCSE_SKSEFunctions", StartTraversal);
+            a_vm->RegisterFunction("FCSE_StopTraversal", "FCSE_SKSEFunctions", StopTraversal);
+            a_vm->RegisterFunction("FCSE_IsTraversing", "FCSE_SKSEFunctions", IsTraversing);
+            a_vm->RegisterFunction("FCSE_AllowUserRotation", "FCSE_SKSEFunctions", AllowUserRotation);
+            a_vm->RegisterFunction("FCSE_IsUserRotationAllowed", "FCSE_SKSEFunctions", IsUserRotationAllowed);
+            a_vm->RegisterFunction("FCSE_AddTimelineFromFile", "FCSE_SKSEFunctions", AddTimelineFromFile);
+            a_vm->RegisterFunction("FCSE_ExportTimeline", "FCSE_SKSEFunctions", ExportTimeline);
             return true;
         }
     } // namespace Interface
