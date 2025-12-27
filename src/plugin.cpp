@@ -73,16 +73,28 @@ namespace FCSE {
             return static_cast<int>(FCSE::TimelineManager::GetSingleton().GetRotationPointCount());
         }
 
-        void StartTraversal(RE::StaticFunctionTag*, float a_speed, bool a_globalEaseIn, bool a_globalEaseOut, bool a_useDuration, float a_duration) {
-            FCSE::TimelineManager::GetSingleton().StartTraversal(a_speed, a_globalEaseIn, a_globalEaseOut, a_useDuration, a_duration);
+        void StartPlayback(RE::StaticFunctionTag*, float a_speed, bool a_globalEaseIn, bool a_globalEaseOut, bool a_useDuration, float a_duration) {
+            FCSE::TimelineManager::GetSingleton().StartPlayback(a_speed, a_globalEaseIn, a_globalEaseOut, a_useDuration, a_duration);
         }
 
-        void StopTraversal(RE::StaticFunctionTag*) {
-            FCSE::TimelineManager::GetSingleton().StopTraversal();
+        void StopPlayback(RE::StaticFunctionTag*) {
+            FCSE::TimelineManager::GetSingleton().StopPlayback();
         }
 
-        bool IsTraversing(RE::StaticFunctionTag*) {
-            return FCSE::TimelineManager::GetSingleton().IsTraversing();
+        void PausePlayback(RE::StaticFunctionTag*) {
+            FCSE::TimelineManager::GetSingleton().PausePlayback();
+        }
+
+        void ResumePlayback(RE::StaticFunctionTag*) {
+            FCSE::TimelineManager::GetSingleton().ResumePlayback();
+        }
+
+        bool IsPlaybackPaused(RE::StaticFunctionTag*) {
+            return FCSE::TimelineManager::GetSingleton().IsPlaybackPaused();
+        }
+
+        bool IsPlaybackRunning(RE::StaticFunctionTag*) {
+            return FCSE::TimelineManager::GetSingleton().IsPlaybackRunning();
         }
 
         void AllowUserRotation(RE::StaticFunctionTag*, bool a_allow) {
@@ -118,9 +130,12 @@ namespace FCSE {
             a_vm->RegisterFunction("FCSE_ClearTimeline", "FCSE_SKSEFunctions", ClearTimeline);
             a_vm->RegisterFunction("FCSE_GetTranslationPointCount", "FCSE_SKSEFunctions", GetTranslationPointCount);
             a_vm->RegisterFunction("FCSE_GetRotationPointCount", "FCSE_SKSEFunctions", GetRotationPointCount);
-            a_vm->RegisterFunction("FCSE_StartTraversal", "FCSE_SKSEFunctions", StartTraversal);
-            a_vm->RegisterFunction("FCSE_StopTraversal", "FCSE_SKSEFunctions", StopTraversal);
-            a_vm->RegisterFunction("FCSE_IsTraversing", "FCSE_SKSEFunctions", IsTraversing);
+            a_vm->RegisterFunction("FCSE_StartPlayback", "FCSE_SKSEFunctions", StartPlayback);
+            a_vm->RegisterFunction("FCSE_StopPlayback", "FCSE_SKSEFunctions", StopPlayback);
+            a_vm->RegisterFunction("FCSE_PausePlayback", "FCSE_SKSEFunctions", PausePlayback);
+            a_vm->RegisterFunction("FCSE_ResumePlayback", "FCSE_SKSEFunctions", ResumePlayback);
+            a_vm->RegisterFunction("FCSE_IsPlaybackPaused", "FCSE_SKSEFunctions", IsPlaybackPaused);
+            a_vm->RegisterFunction("FCSE_IsPlaybackRunning", "FCSE_SKSEFunctions", IsPlaybackRunning);
             a_vm->RegisterFunction("FCSE_AllowUserRotation", "FCSE_SKSEFunctions", AllowUserRotation);
             a_vm->RegisterFunction("FCSE_IsUserRotationAllowed", "FCSE_SKSEFunctions", IsUserRotationAllowed);
             a_vm->RegisterFunction("FCSE_AddTimelineFromFile", "FCSE_SKSEFunctions", AddTimelineFromFile);

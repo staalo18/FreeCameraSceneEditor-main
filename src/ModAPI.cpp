@@ -79,12 +79,24 @@ size_t Messaging::FCSEInterface::GetRotationPointCount() const noexcept {
     return FCSE::TimelineManager::GetSingleton().GetRotationPointCount();
 }
 
-void Messaging::FCSEInterface::StartTraversal(float a_speed, bool a_globalEaseIn, bool a_globalEaseOut, bool a_useDuration, float a_duration) const noexcept {
-    FCSE::TimelineManager::GetSingleton().StartTraversal(a_speed, a_globalEaseIn, a_globalEaseOut, a_useDuration, a_duration);
+void Messaging::FCSEInterface::StartPlayback(float a_speed, bool a_globalEaseIn, bool a_globalEaseOut, bool a_useDuration, float a_duration) const noexcept {
+    FCSE::TimelineManager::GetSingleton().StartPlayback(a_speed, a_globalEaseIn, a_globalEaseOut, a_useDuration, a_duration);
 }
 
-void Messaging::FCSEInterface::StopTraversal() const noexcept {
-    FCSE::TimelineManager::GetSingleton().StopTraversal();
+void Messaging::FCSEInterface::StopPlayback() const noexcept {
+    FCSE::TimelineManager::GetSingleton().StopPlayback();
+}
+
+void Messaging::FCSEInterface::PausePlayback() const noexcept {
+    FCSE::TimelineManager::GetSingleton().PausePlayback();
+}
+
+void Messaging::FCSEInterface::ResumePlayback() const noexcept {
+    FCSE::TimelineManager::GetSingleton().ResumePlayback();
+}
+
+bool Messaging::FCSEInterface::IsPlaybackPaused() const noexcept {
+    return FCSE::TimelineManager::GetSingleton().IsPlaybackPaused();
 }
 
 void Messaging::FCSEInterface::AllowUserRotation(bool a_allow) const noexcept {
@@ -95,8 +107,8 @@ bool Messaging::FCSEInterface::IsUserRotationAllowed() const noexcept {
     return FCSE::TimelineManager::GetSingleton().IsUserRotationAllowed();
 }
 
-bool Messaging::FCSEInterface::IsTraversing() const noexcept {
-    return FCSE::TimelineManager::GetSingleton().IsTraversing();
+bool Messaging::FCSEInterface::IsPlaybackRunning() const noexcept {
+    return FCSE::TimelineManager::GetSingleton().IsPlaybackRunning();
 }
 
 bool Messaging::FCSEInterface::AddTimelineFromFile(const char* a_filePath, float a_timeOffset) const noexcept {

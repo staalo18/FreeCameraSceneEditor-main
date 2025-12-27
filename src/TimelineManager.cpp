@@ -10,7 +10,7 @@ namespace FCSE {
 
         DrawTimeline();
 
-        TraverseCamera();
+        PlayTimeline();
 
         RecordTimeline();
     }
@@ -170,24 +170,24 @@ namespace FCSE {
         m_rotationTimeline.RemovePoint(a_index);
     }
 
-    void TimelineManager::TraverseCamera() {
-        if (!m_isTraversing || m_isRecording) {
+    void TimelineManager::PlayTimeline() {
+        if (!m_isPlaybackRunning || m_isRecording) {
             return;
         }
 
         if (m_translationTimeline.GetPointCount() == 0 && m_rotationTimeline.GetPointCount() == 0) {
-            StopTraversal();
+            StopPlayback();
             return;
         }
 
         auto* playerCamera = RE::PlayerCamera::GetSingleton();
         if (!playerCamera) {
-            log::error("{}: PlayerCamera not found during traversal", __FUNCTION__);
-            StopTraversal();
+            log::error("{}: PlayerCamera not found during playback", __FUNCTION__);
+            StopPlayback();
             return;
         }
         if (!playerCamera->IsInFreeCameraMode()) {
-            StopTraversal();
+            StopPlayback();
             return;
         }
         
@@ -196,27 +196,34 @@ namespace FCSE {
             cameraState = static_cast<RE::FreeCameraState*>(playerCamera->currentState.get());
         }
         if (!cameraState) {
-            log::error("{}: FreeCameraState not found during traversal", __FUNCTION__);
-            StopTraversal();
+            log::error("{}: FreeCameraState not found during playback", __FUNCTION__);
+            StopPlayback();
             return;
         }
 
-        float timelineDuration = m_traversalSpeed * m_traversalDuration;
-        if (timelineDuration <= 0.0f) { 
-            StopTraversal();
-            return;
+        // Calculate delta time with speed and global easing
+        float deltaTime = _ts_SKSEFunctions::GetRealTimeDeltaTime() * m_playbackSpeed;
+        
+        // Apply global easing if enabled
+        if (m_globalEaseIn || m_globalEaseOut) {
+            float currentTime = m_translationTimeline.GetCurrentTime();
+            float timelineDuration = m_playbackDuration;
+            
+            if (timelineDuration > 0.0f) {
+                float globalProgress = std::clamp(currentTime / timelineDuration, 0.0f, 1.0f);
+                float nextProgress = std::clamp((currentTime + deltaTime) / timelineDuration, 0.0f, 1.0f);
+                
+                float easedCurrent = _ts_SKSEFunctions::ApplyEasing(globalProgress, m_globalEaseIn, m_globalEaseOut);
+                float easedNext = _ts_SKSEFunctions::ApplyEasing(nextProgress, m_globalEaseIn, m_globalEaseOut);
+                
+                float easedDelta = (easedNext - easedCurrent) * timelineDuration;
+                deltaTime = easedDelta;
+            }
         }
 
-        float deltaTime = _ts_SKSEFunctions::GetRealTimeDeltaTime();
-        m_currentTraversalTime += deltaTime * m_traversalSpeed;
-
-        float globalProgress = std::clamp(m_currentTraversalTime  / timelineDuration, 0.0f, 1.0f);
-        float easedProgress = _ts_SKSEFunctions::ApplyEasing(globalProgress, m_globalEaseIn, m_globalEaseOut);
-
-        float currentTime = easedProgress * timelineDuration;
-
-        m_translationTimeline.UpdateTimeline(currentTime);
-        m_rotationTimeline.UpdateTimeline(currentTime);
+        // Update both timelines with same deltaTime to keep them synchronized
+        m_translationTimeline.UpdateTimeline(deltaTime);
+        m_rotationTimeline.UpdateTimeline(deltaTime);
 
         // Get interpolated points from timeline
         cameraState->translation = m_translationTimeline.GetCurrentPoint();
@@ -236,10 +243,10 @@ namespace FCSE {
             cameraState->rotation.y = _ts_SKSEFunctions::NormalRelativeAngle(rotation.y + m_rotationOffset.y);
         }
 
-        // Check if traversal is complete
-        if (m_currentTraversalTime >= timelineDuration) {
-            StopTraversal();
-        }        
+        // Check if both timelines have completed (for kEnd mode)
+        if (!m_translationTimeline.IsPlaying() && !m_rotationTimeline.IsPlaying()) {
+            StopPlayback();
+        }
     }
 
     float TimelineManager::GetTimelineDuration() const {
@@ -256,7 +263,7 @@ namespace FCSE {
     }
 
     void TimelineManager::DrawTimeline() {
-        if (!APIs::TrueHUD || (m_translationTimeline.GetPointCount() == 0 && m_rotationTimeline.GetPointCount() == 0) || m_isTraversing) {
+        if (!APIs::TrueHUD || (m_translationTimeline.GetPointCount() == 0 && m_rotationTimeline.GetPointCount() == 0) || m_isPlaybackRunning) {
             return;
         }
         
@@ -296,13 +303,13 @@ namespace FCSE {
         m_translationTimeline.ClearTimeline();
         m_rotationTimeline.ClearTimeline();
 
-        StopTraversal();
+        StopPlayback();
     }
 
-    void TimelineManager::StartTraversal(float a_speed, bool a_globalEaseIn, bool a_globalEaseOut, bool a_useDuration, float a_duration) {
+    void TimelineManager::StartPlayback(float a_speed, bool a_globalEaseIn, bool a_globalEaseOut, bool a_useDuration, float a_duration) {
 
         if (m_translationTimeline.GetPointCount() == 0 && m_rotationTimeline.GetPointCount() == 0) {
-            log::info("{}: Need at least 1 point to traverse", __FUNCTION__);
+            log::info("{}: Need at least 1 point to play timeline", __FUNCTION__);
             return;
         }
 
@@ -315,62 +322,63 @@ namespace FCSE {
             return;
         }
 
-        if (m_isRecording || m_isTraversing) {
+        if (m_isRecording || m_isPlaybackRunning) {
             return;
         }
         
         float timelineDuration = GetTimelineDuration();
         if (timelineDuration <= 0.0f && !a_useDuration) {
-            log::info("{}: Timeline duration is zero, cannot traverse", __FUNCTION__);
+            log::info("{}: Timeline duration is zero, cannot play", __FUNCTION__);
             return;
         }
 
         if (a_useDuration) {
             if (a_duration <= 0.0f) {
                 log::warn("{}: Invalid duration {}, defaulting to timeline duration", __FUNCTION__, a_duration);
-                m_traversalDuration = timelineDuration;            
-                m_traversalSpeed = 1.0f;
+                m_playbackDuration = timelineDuration;            
+                m_playbackSpeed = 1.0f;
             } else {
-                m_traversalDuration = a_duration;
-                m_traversalSpeed = timelineDuration / m_traversalDuration;
+                m_playbackDuration = a_duration;
+                m_playbackSpeed = timelineDuration / m_playbackDuration;
             }
         } else {
             if (a_speed <= 0.0f) {
                 log::warn("{}: Invalid speed {}, defaulting to 1.0", __FUNCTION__, a_speed);
-                m_traversalDuration = timelineDuration;            
-                m_traversalSpeed = 1.0f;
+                m_playbackDuration = timelineDuration;            
+                m_playbackSpeed = 1.0f;
             } else {
-                m_traversalDuration = timelineDuration / a_speed;
-                m_traversalSpeed = a_speed;
+                m_playbackDuration = timelineDuration / a_speed;
+                m_playbackSpeed = a_speed;
             }
         }
 
-        if (m_traversalDuration <= 0.0f) {
-            log::info("{}: Traversal duration is zero, cannot traverse", __FUNCTION__);
+        if (m_playbackDuration <= 0.0f) {
+            log::info("{}: Playback duration is zero, cannot play", __FUNCTION__);
             return;
         }
         
         m_globalEaseIn = a_globalEaseIn;
         m_globalEaseOut = a_globalEaseOut;
         
-        m_isTraversing = true;
-        m_currentTraversalTime = 0.0f;
+        m_isPlaybackRunning = true;
         m_rotationOffset = { 0.0f, 0.0f };
         
         m_translationTimeline.ResetTimeline();
-        m_rotationTimeline.ResetTimeline();        
+        m_rotationTimeline.ResetTimeline();
+        m_translationTimeline.StartPlayback();
+        m_rotationTimeline.StartPlayback();
         
         auto* ui = RE::UI::GetSingleton();
         if (ui) {
             m_isShowingMenus = ui->IsShowingMenus();
-            ui->ShowMenus(m_showMenusDuringTraversal);
+            ui->ShowMenus(m_showMenusDuringPlayback);
         }
         playerCamera->ToggleFreeCameraMode(false);
     }
 
-    void TimelineManager::StopTraversal() {
+    void TimelineManager::StopPlayback() {
 
-        if (m_isTraversing) {
+        if (m_isPlaybackRunning) {
             auto* playerCamera = RE::PlayerCamera::GetSingleton();
             if (playerCamera && playerCamera->IsInFreeCameraMode()) {
                 auto* ui = RE::UI::GetSingleton();
@@ -381,18 +389,37 @@ namespace FCSE {
             }            
         }
 
-        m_isTraversing = false;
-        m_currentTraversalTime = 0.0f;
-        m_traversalSpeed = 1.0f;
+        m_isPlaybackRunning = false;
+        m_playbackSpeed = 1.0f;
         m_globalEaseIn = false;
         m_globalEaseOut = false;
         
+        m_translationTimeline.StopPlayback();
+        m_rotationTimeline.StopPlayback();
         m_translationTimeline.ResetTimeline();
-        m_rotationTimeline.ResetTimeline();        
+        m_rotationTimeline.ResetTimeline();
     }
 
     void TimelineManager::SetUserTurning(bool a_turning) {
         m_userTurning = a_turning;
+    }
+
+    void TimelineManager::PausePlayback() {
+        if (m_isPlaybackRunning) {
+            m_translationTimeline.PausePlayback();
+            m_rotationTimeline.PausePlayback();
+        }
+    }
+
+    void TimelineManager::ResumePlayback() {
+        if (m_isPlaybackRunning) {
+            m_translationTimeline.ResumePlayback();
+            m_rotationTimeline.ResumePlayback();
+        }
+    }
+
+    bool TimelineManager::IsPlaybackPaused() const {
+        return m_isPlaybackRunning && (m_translationTimeline.IsPaused() || m_rotationTimeline.IsPaused());
     }
 
     bool TimelineManager::AddTimelineFromFile(const char* a_filePath, float a_timeOffset) {
@@ -406,7 +433,11 @@ namespace FCSE {
         // Read General section
         long fileVersion = _ts_SKSEFunctions::GetValueFromINI(nullptr, 0, "Version:General", a_filePath, 0L);
         bool useDegrees = _ts_SKSEFunctions::GetValueFromINI(nullptr, 0, "UseDegrees:General", a_filePath, true);
+        long playbackModeValue = _ts_SKSEFunctions::GetValueFromINI(nullptr, 0, "PlaybackMode:General", a_filePath, 0L);  // Default to kEnd
+        float loopTimeOffset = static_cast<float>(_ts_SKSEFunctions::GetValueFromINI(nullptr, 0, "LoopTimeOffset:General", a_filePath, 0.0));  // Default to 0.0
+        
         float degToRad = useDegrees ? (PI / 180.0f) : 1.0f;
+        PlaybackMode playbackMode = (playbackModeValue == 1) ? PlaybackMode::kLoop : PlaybackMode::kEnd;
         
         // Calculate current plugin version
         long pluginVersion = static_cast<long>(Plugin::VERSION[0]) * 10000 + 
@@ -439,6 +470,12 @@ namespace FCSE {
         }
         
         bool importRotationSuccess = m_rotationTimeline.AddTimelineFromFile(file, a_timeOffset, degToRad);
+        
+        // Set loop mode and offset on both timelines
+        m_translationTimeline.SetPlaybackMode(playbackMode);
+        m_translationTimeline.SetLoopTimeOffset(loopTimeOffset);
+        m_rotationTimeline.SetPlaybackMode(playbackMode);
+        m_rotationTimeline.SetLoopTimeOffset(loopTimeOffset);
         
         file.close();
         
@@ -477,6 +514,12 @@ m_rotationTimeline.GetPointCount() - rotationPointCount, a_filePath);
         file << "[General]\n";
         file << "Version=" << versionInt << "\n";
         file << "UseDegrees=1 ; Interpret rotation values as degrees (1) or radians (0)\n";
+        
+        // Get loop mode and offset from translation timeline (both timelines should have same values)
+        int playbackModeInt = static_cast<int>(m_translationTimeline.GetPlaybackMode());
+        float loopTimeOffset = m_translationTimeline.GetLoopTimeOffset();
+        file << "PlaybackMode=" << playbackModeInt << " ; 0=kEnd (stop at end), 1=kLoop (restart from beginning)\n";
+        file << "LoopTimeOffset=" << loopTimeOffset << " ; Extra time after last point for loop interpolation (seconds)\n";
         file << "\n";
         
         float radToDeg = 180.0f / PI;

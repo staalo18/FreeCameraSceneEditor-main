@@ -27,8 +27,8 @@ namespace Hooks
 
 		if (!RE::UI::GetSingleton()->GameIsPaused()) {
 			timelineManager.SetUserTurning(true);
-			if (timelineManager.IsTraversing() && !timelineManager.IsUserRotationAllowed()) {
-				return; // ignore look input during traversal
+			if (timelineManager.IsPlaybackRunning() && !timelineManager.IsUserRotationAllowed()) {
+				return; // ignore look input during playback
 			}
 		}
 
@@ -41,8 +41,8 @@ namespace Hooks
 
 		if (!RE::UI::GetSingleton()->GameIsPaused()) {
 			timelineManager.SetUserTurning(true);
-			if (timelineManager.IsTraversing() && !timelineManager.IsUserRotationAllowed()) {
-				return; // ignore look input during traversal
+			if (timelineManager.IsPlaybackRunning() && !timelineManager.IsUserRotationAllowed()) {
+				return; // ignore look input during playback
 			}
 		}
 
@@ -52,8 +52,8 @@ namespace Hooks
 	void MovementHook::ProcessThumbstick(RE::MovementHandler* a_this, RE::ThumbstickEvent* a_event, RE::PlayerControlsData* a_data)
 	{
 		auto& timelineManager = FCSE::TimelineManager::GetSingleton();
-		if (a_event && a_event->IsLeft() && timelineManager.IsTraversing()) {
-			return; // ignore movement input during traversal
+		if (a_event && a_event->IsLeft() && timelineManager.IsPlaybackRunning() && !RE::UI::GetSingleton()->GameIsPaused()) {
+			return; // ignore movement input during playback
 		}
 
 		_ProcessThumbstick(a_this, a_event, a_data);
@@ -75,8 +75,8 @@ namespace Hooks
 			}
 		}
 		auto& timelineManager = FCSE::TimelineManager::GetSingleton();
-		if (bRelevant && timelineManager.IsTraversing()) {
-			return; // ignore movement input during traversal
+		if (bRelevant && timelineManager.IsPlaybackRunning() && !RE::UI::GetSingleton()->GameIsPaused()) {
+			return; // ignore movement input during playback
 		}
 
 		_ProcessButton(a_this, a_event, a_data);

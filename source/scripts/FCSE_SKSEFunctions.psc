@@ -114,24 +114,34 @@ int Function FCSE_GetRotationPointCount() global native
 ; useDuration: if true, plays timeline over duration seconds
 ;              if false, plays timeline with speed as speed multiplier
 ; duration: total duration in seconds for entire timeline (only used if useDuration=true)
-; globalEaseIn: apply ease-in at the start of entire traversal (both modes)
-; globalEaseOut: apply ease-out at the end of entire traversal (both modes)
-Function FCSE_StartTraversal(float speed = 1.0, bool globalEaseIn = false, bool globalEaseOut = false, bool useDuration = false, float duration = 0.0) global native
+; globalEaseIn: apply ease-in at the start of entire playback
+; globalEaseOut: apply ease-out at the end of entire playback
+Function FCSE_StartPlayback(float speed = 1.0, bool globalEaseIn = false, bool globalEaseOut = false, bool useDuration = false, float duration = 0.0) global native
 
 ; Stop playback of the camera timeline
-Function FCSE_StopTraversal() global native
+Function FCSE_StopPlayback() global native
 
-; Enable or disable user rotation control during traversal
+; Pause the camera timeline playback
+Function FCSE_PausePlayback() global native
+
+; Resume the camera timeline playback
+Function FCSE_ResumePlayback() global native
+
+; Check if timeline playback is currently running
+; Returns: true if playing, false otherwise
+bool Function FCSE_IsPlaybackRunning() global native
+
+; Check if timeline playback is currently paused
+; Returns: true if paused, false otherwise
+bool Function FCSE_IsPlaybackPaused() global native
+
+; Enable or disable user rotation control during playback
 ; allow: true to allow user rotation, false to disable
 Function FCSE_AllowUserRotation(bool allow) global native
 
-; Check if user rotation is currently allowed during traversal
+; Check if user rotation is currently allowed during playback
 ; Returns: true if user can control rotation, false otherwise
 bool Function FCSE_IsUserRotationAllowed() global native
-
-; Check if timeline playback is currently active
-; Returns: true if traversing, false otherwise
-bool Function FCSE_IsTraversing() global native
 
 ; Adds camera timeline imported from filePath at timeOffset to the current timeline.
 ; filePath: Relative path from Data folder (e.g., "SKSE/Plugins/MyTimeline.dat")

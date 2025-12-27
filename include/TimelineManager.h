@@ -42,10 +42,13 @@ namespace FCSE {
             size_t GetTranslationPointCount() const { return m_translationTimeline.GetPointCount(); }
             size_t GetRotationPointCount() const { return m_rotationTimeline.GetPointCount(); }
             
-            // Traversal
-            void StartTraversal(float a_speed = 1.0f, bool a_globalEaseIn = false, bool a_globalEaseOut = false, bool a_useDuration = false, float a_duration = 0.0f);
-            void StopTraversal();
-            bool IsTraversing() const { return m_isTraversing; }
+            // Playback
+            void StartPlayback(float a_speed = 1.0f, bool a_globalEaseIn = false, bool a_globalEaseOut = false, bool a_useDuration = false, float a_duration = 0.0f);
+            void StopPlayback();
+            bool IsPlaybackRunning() const { return m_isPlaybackRunning; }
+            void PausePlayback();
+            void ResumePlayback();
+            bool IsPlaybackPaused() const;
             void SetUserTurning(bool a_turning);
             void AllowUserRotation(bool a_allow) { m_allowUserRotation = a_allow; }
             bool IsUserRotationAllowed() const { return m_allowUserRotation; }    
@@ -68,7 +71,7 @@ namespace FCSE {
              
             void RecordTimeline();
             
-            void TraverseCamera();
+            void PlayTimeline();
 
             float GetTimelineDuration() const;
 
@@ -81,17 +84,16 @@ namespace FCSE {
             float m_recordingInterval = 1.0f;  // Time between recorded points
             float m_lastRecordedPointTime = 0.0f;
 
-            // Traversal
-            bool m_isTraversing = false;            
-            float m_currentTraversalTime = 0.0f;  // Absolute time since start of traversal
-            float m_traversalDuration = 0.0f;     // Total duration of traversal
-            float m_traversalSpeed = 1.0f;        // Speed multiplier (for kTimeline mode)
-            bool m_globalEaseIn = false;        // Apply ease-in at start (both modes)
-            bool m_globalEaseOut = false;       // Apply ease-out at end (both modes)
-            bool m_isShowingMenus = true;      // Whether menus were showing before traversal started
-            bool m_showMenusDuringTraversal = false; // Whether to show menus during traversal
-            bool m_userTurning = false;          // Whether user is manually controlling camera during traversal
-            bool m_allowUserRotation = false;       // Whether to allow user to turn camera during traversal
+            // Playback
+            bool m_isPlaybackRunning = false;
+            float m_playbackSpeed = 1.0f;        // Speed multiplier
+            bool m_globalEaseIn = false;          // Apply ease-in at start
+            bool m_globalEaseOut = false;         // Apply ease-out at end
+            float m_playbackDuration = 0.0f;     // Total intended duration
+            bool m_isShowingMenus = true;         // Whether menus were showing before playback started
+            bool m_showMenusDuringPlayback = false; // Whether to show menus during playback
+            bool m_userTurning = false;           // Whether user is manually controlling camera during playback
+            bool m_allowUserRotation = false;     // Whether to allow user to turn camera during playback
             RE::BSTPoint2<float> m_rotationOffset; // Offset to apply to rotation to account for user turning
     }; // class TimelineManager
 } // namespace FCSE

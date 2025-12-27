@@ -3,7 +3,6 @@
 
 namespace FCSE {
 
-    float time = 0.0f;
     RE::BSEventNotifyControl ControlsManager::ProcessEvent(RE::InputEvent* const* a_event, RE::BSTEventSource<RE::InputEvent*>*) {
 
         if (!a_event || RE::UI::GetSingleton()->GameIsPaused()) {
@@ -20,10 +19,18 @@ namespace FCSE {
                 const char* relativePath = "SKSE/Plugins/FCSE_CameraPath.ini";
 
                 const uint32_t key = buttonEvent->GetIDCode();
-                 if (key == 4) {
+                if (key == 2) {
+                    if (FCSE::TimelineManager::GetSingleton().IsPlaybackPaused()) {
+                        FCSE::TimelineManager::GetSingleton().ResumePlayback();
+                    } else {
+                        FCSE::TimelineManager::GetSingleton().PausePlayback();
+                    }
+                } else if (key == 3) {
+                        FCSE::TimelineManager::GetSingleton().StopPlayback();
+                } else if (key == 4) {
                      FCSE::TimelineManager::GetSingleton().AllowUserRotation(!FCSE::TimelineManager::GetSingleton().IsUserRotationAllowed());
                 } else if (key == 5) {
-                    RE::TESObjectREFR* reference = nullptr;
+/*                    RE::TESObjectREFR* reference = nullptr;
                     auto* form = RE::TESForm::LookupByID(0xd8c56);
                     reference = form ? form->As<RE::TESObjectREFR>() : nullptr;
                     reference = RE::TESForm::LookupByEditorID<RE::TESObjectREFR>("FCSE_TEST01");
@@ -34,12 +41,11 @@ namespace FCSE {
                         bool isOffsetRelative = true;
                         FCSE::TimelineManager::GetSingleton().AddTranslationPointAtRef(time, reference, offsetX, offsetY, offsetZ, isOffsetRelative, false, false, 2);
                         FCSE::TimelineManager::GetSingleton().AddRotationPointAtRef(time, reference, PI, 0.f, false, false, 2);
-                        time += 1.0f;
-                    }
+                    }*/
                 } else if (key == 6) {
                     FCSE::TimelineManager::GetSingleton().ClearTimeline();
                 } else if (key == 7) {
-                    FCSE::TimelineManager::GetSingleton().StartTraversal(); //(1.0f, false, false, false, 12.0f);
+                    FCSE::TimelineManager::GetSingleton().StartPlayback(); //(1.0f, false, false, false, 12.0f);
                 } else if (key == 8) {
                     FCSE::TimelineManager::GetSingleton().StartRecording();
                 } else if (key == 9) {
@@ -49,8 +55,7 @@ namespace FCSE {
                     FCSE::TimelineManager::GetSingleton().ExportTimeline(relativePath);
                 } else if (key == 11) {
                     RE::DebugNotification("Importing camera path...");
-                    FCSE::TimelineManager::GetSingleton().AddTimelineFromFile(relativePath, time);
-                    time += 20.0f;
+                    FCSE::TimelineManager::GetSingleton().AddTimelineFromFile(relativePath);
                 }
             }
         }

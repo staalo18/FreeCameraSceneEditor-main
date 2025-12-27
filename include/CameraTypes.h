@@ -14,7 +14,7 @@ namespace FCSE {
     };
     
     struct Transition {
-        float m_time;                           // Absolute time at which this point is reached (0 = start of traversal)
+        float m_time;                           // Absolute time at which this point is reached (0 = start of playback)
         InterpolationMode m_mode;               // Interpolation mode for this segment
         bool m_easeIn;                          // Ease in (accelerate from 0 at initial point)
         bool m_easeOut;                         // Ease out (decelerate to 0 at target point)

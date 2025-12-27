@@ -36,11 +36,14 @@ namespace Messaging
 		virtual void ClearTimeline(bool a_notifyUser = true) const noexcept override;
 		virtual size_t GetTranslationPointCount() const noexcept override;
 		virtual size_t GetRotationPointCount() const noexcept override;
-        void StartTraversal(float a_speed = 1.0f, bool a_globalEaseIn = false, bool a_globalEaseOut = false, bool a_useDuration = false, float a_duration = 0.0f) const noexcept override;
-		virtual void StopTraversal() const noexcept override;
+        void StartPlayback(float a_speed = 1.0f, bool a_globalEaseIn = false, bool a_globalEaseOut = false, bool a_useDuration = false, float a_duration = 0.0f) const noexcept override;
+		virtual void StopPlayback() const noexcept override;
+		virtual void PausePlayback() const noexcept override;
+		virtual void ResumePlayback() const noexcept override;
+		virtual bool IsPlaybackPaused() const noexcept override;
 		virtual void AllowUserRotation(bool a_allow) const noexcept override;
 		virtual bool IsUserRotationAllowed() const noexcept override;
-		virtual bool IsTraversing() const noexcept override;
+		virtual bool IsPlaybackRunning() const noexcept override;
 		virtual bool AddTimelineFromFile(const char* a_filePath, float a_timeOffset = 0.0f) const noexcept override;
 		virtual bool ExportTimeline(const char* a_filePath) const noexcept override;
 

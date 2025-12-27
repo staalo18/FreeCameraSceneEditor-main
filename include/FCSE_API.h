@@ -128,37 +128,53 @@ namespace FCSE_API {
 		[[nodiscard]] virtual size_t GetRotationPointCount() const noexcept = 0;
 
 		/// <summary>
-		/// Start traversing (playing back) the camera timeline.
+		/// Start playing the camera timeline.
 		/// If a_useDuration is true: 
         ///     plays timeline over a_duration seconds
 		/// If a_useDuration is false:
         ///     plays timeline with a_speed as speed multiplier.
         /// Global easing (a_globalEaseIn/Out) applies to overall playback in both modes.
 		/// </summary>
-		virtual void StartTraversal(float a_speed = 1.0f, bool a_globalEaseIn = false, bool a_globalEaseOut = false, bool a_useDuration = false, float a_duration = 0.0f) const noexcept = 0;
+		virtual void StartPlayback(float a_speed = 1.0f, bool a_globalEaseIn = false, bool a_globalEaseOut = false, bool a_useDuration = false, float a_duration = 0.0f) const noexcept = 0;
 
 		/// <summary>
-		/// Stop traversing the camera timeline.
+		/// Stop playing the camera timeline.
 		/// </summary>
-		virtual void StopTraversal() const noexcept = 0;
+		virtual void StopPlayback() const noexcept = 0;
 
 		/// <summary>
-		/// Enable or disable user rotation control during traversal.
+		/// Pause the camera timeline playback.
+		/// </summary>
+		virtual void PausePlayback() const noexcept = 0;
+
+		/// <summary>
+		/// Resume the camera timeline playback.
+		/// </summary>
+		virtual void ResumePlayback() const noexcept = 0;
+
+		/// <summary>
+		/// Check if timeline playback is currently running.
+		/// </summary>
+		/// <returns> True if playing, false otherwise</returns>
+		[[nodiscard]] virtual bool IsPlaybackRunning() const noexcept = 0;
+
+		/// <summary>
+		/// Check if timeline playback is currently paused.
+		/// </summary>
+		/// <returns>True if paused, false otherwise</returns>
+		[[nodiscard]] virtual bool IsPlaybackPaused() const noexcept = 0;
+
+		/// <summary>
+		/// Enable or disable user rotation control during playback.
 		/// </summary>
 		/// <param name="a_allow">True to allow user rotation, false to disable</param>
 		virtual void AllowUserRotation(bool a_allow) const noexcept = 0;
 
 		/// <summary>
-		/// Check if user rotation is currently allowed during traversal.
+		/// Check if user rotation is currently allowed during playback.
 		/// </summary>
 		/// <returns>True if user can control rotation, false otherwise</returns>
 		[[nodiscard]] virtual bool IsUserRotationAllowed() const noexcept = 0;
-
-		/// <summary>
-		/// Check if timeline traversal is currently active.
-		/// </summary>
-		/// <returns> True if traversing, false otherwise</returns>
-		[[nodiscard]] virtual bool IsTraversing() const noexcept = 0;
 
 		/// <summary>
 		/// Adds camera timeline imported from a_filePath at time a_timeOffset to the current timeline.
