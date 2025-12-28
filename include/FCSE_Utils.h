@@ -18,7 +18,5 @@ namespace FCSE {
         const std::string& a_sectionName,
         std::function<void(const std::map<std::string, std::string>&)> a_processSection
     );
-
-    RE::NiPoint3 GetFreeCameraTranslation();
 } // namespace FCSE
 

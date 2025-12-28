@@ -35,6 +35,12 @@ namespace FCSE_API {
 		/// <summary>
 		/// Add a translation point to the camera timeline at a specified position.
 		/// </summary>
+		/// <param name="a_time">Time in seconds when this point occurs</param>
+		/// <param name="a_posX">X position coordinate</param>
+		/// <param name="a_posY">Y position coordinate</param>
+		/// <param name="a_posZ">Z position coordinate</param>
+		/// <param name="a_easeIn">Apply ease-in at the start of interpolation (default: false)</param>
+		/// <param name="a_easeOut">Apply ease-out at the end of interpolation (default: false)</param>
 		/// <param name="a_interpolationMode">Interpolation mode: 0=None, 1=Linear, 2=CubicHermite (default)</param>
 		/// <returns> Index of the added point</returns>
 		[[nodiscard]] virtual size_t AddTranslationPoint(float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
@@ -44,6 +50,14 @@ namespace FCSE_API {
 		/// The point will track the reference's position plus the offset.
 		/// If a_isOffsetRelative is true, the offset is relative to the reference's heading, else world space.
 		/// </summary>
+		/// <param name="a_time">Time in seconds when this point occurs</param>
+		/// <param name="a_reference">The object reference to track</param>
+		/// <param name="a_offsetX">X offset from reference position (default: 0.0)</param>
+		/// <param name="a_offsetY">Y offset from reference position (default: 0.0)</param>
+		/// <param name="a_offsetZ">Z offset from reference position (default: 0.0)</param>
+		/// <param name="a_isOffsetRelative">If true, offset is relative to reference's heading (local space), otherwise world space (default: false)</param>
+		/// <param name="a_easeIn">Apply ease-in at the start of interpolation (default: false)</param>
+		/// <param name="a_easeOut">Apply ease-out at the end of interpolation (default: false)</param>
 		/// <param name="a_interpolationMode">Interpolation mode: 0=None, 1=Linear, 2=CubicHermite (default)</param>
 		/// <returns> Index of the added point</returns>
 		[[nodiscard]] virtual size_t AddTranslationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetX = 0.0f, float a_offsetY = 0.0f, float a_offsetZ = 0.0f, bool a_isOffsetRelative = false, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
@@ -51,6 +65,9 @@ namespace FCSE_API {
 		/// <summary>
 		/// Add a translation point to the camera timeline at the current camera position.
 		/// </summary>
+		/// <param name="a_time">Time in seconds when this point occurs</param>
+		/// <param name="a_easeIn">Apply ease-in at the start of interpolation (default: false)</param>
+		/// <param name="a_easeOut">Apply ease-out at the end of interpolation (default: false)</param>
 		/// <param name="a_interpolationMode">Interpolation mode: 0=None, 1=Linear, 2=CubicHermite (default)</param>
 		/// <returns> Index of the added point</returns>
 		[[nodiscard]] virtual size_t AddTranslationPointAtCamera(float a_time, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
@@ -58,21 +75,36 @@ namespace FCSE_API {
 		/// <summary>
 		/// Add a rotation point to the camera timeline with specified pitch and yaw.
 		/// </summary>
+		/// <param name="a_time">Time in seconds when this point occurs</param>
+		/// <param name="a_pitch">Pitch rotation in radians (relative to world coordinates)</param>
+		/// <param name="a_yaw">Yaw rotation in radians (relative to world coordinates)</param>
+		/// <param name="a_easeIn">Apply ease-in at the start of interpolation (default: false)</param>
+		/// <param name="a_easeOut">Apply ease-out at the end of interpolation (default: false)</param>
 		/// <param name="a_interpolationMode">Interpolation mode: 0=None, 1=Linear, 2=CubicHermite (default)</param>
 		/// <returns> Index of the added point</returns>
 		[[nodiscard]] virtual size_t AddRotationPoint(float a_time, float a_pitch, float a_yaw, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
 
 		/// <summary>
-		/// Add a rotation point that uses a reference's rotation angles plus offset.
-		/// If a_isOffsetRelative is true, the offset is relative to the reference's facing direction, else relative to camera-to-reference direction.
+		/// Add a rotation point that sets the rotation relative to camera-to-reference direction, or alternatively the ref's heading
 		/// </summary>
-		/// <param name="a_interpolationMode">Interpolation mode: 0=None, 1=Linear, 2=CubicHermite (default)</param>
+		/// <param name="a_time>: time in seconds when this point occurs
+		/// <param name="a_reference>: the object reference to track
+		/// <param name="a_offsetPitch>: pitch offset from camera-to-reference direction (a_isOffsetRelative == false) / the ref's heading (a_isOffsetRelative == true)
+		/// <param name="a_offsetYaw>: a_isOffsetRelative == false - yaw offset from camera-to-reference direction. A value of 0 means looking directly at the reference.
+		///            a_isOffsetRelative == true - yaw offset from reference's heading. A value of 0 means looking into the direction the ref is heading.
+		/// <param name="a_isOffsetRelative>: if true, offset is relative to reference's heading instead of camera-to-reference direction.
+		/// <param name="a_easeIn>: ease in at the start of interpolation
+		/// <param name="a_ easeOut>: ease out at the end of interpolation
+		/// <param name="a_interpolationMode">: 0=None, 1=Linear, 2=CubicHermite (default)</param>
 		/// <returns> Index of the added point</returns>
 		[[nodiscard]] virtual size_t AddRotationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetPitch, float a_offsetYaw, bool a_isOffsetRelative = false, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
 
 		/// <summary>
 		/// Add a rotation point to the camera timeline at the current camera rotation.
 		/// </summary>
+		/// <param name="a_time">Time in seconds when this point occurs</param>
+		/// <param name="a_easeIn">Apply ease-in at the start of interpolation (default: false)</param>
+		/// <param name="a_easeOut">Apply ease-out at the end of interpolation (default: false)</param>
 		/// <param name="a_interpolationMode">Interpolation mode: 0=None, 1=Linear, 2=CubicHermite (default)</param>
 		/// <returns> Index of the added point</returns>
 		[[nodiscard]] virtual size_t AddRotationPointAtCamera(float a_time, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
@@ -90,6 +122,13 @@ namespace FCSE_API {
 		/// <summary>
 		/// Edit an existing translation point (returns new index after potential re-sorting).
 		/// </summary>
+		/// <param name="a_index">Index of the point to edit</param>
+		/// <param name="a_time">New time in seconds when this point occurs</param>
+		/// <param name="a_posX">New X position coordinate</param>
+		/// <param name="a_posY">New Y position coordinate</param>
+		/// <param name="a_posZ">New Z position coordinate</param>
+		/// <param name="a_easeIn">Apply ease-in at the start of interpolation (default: false)</param>
+		/// <param name="a_easeOut">Apply ease-out at the end of interpolation (default: false)</param>
 		/// <param name="a_interpolationMode">Interpolation mode: 0=None, 1=Linear, 2=CubicHermite (default)</param>
 		/// <returns> New index of the point after update</returns>
 		[[nodiscard]] virtual size_t EditTranslationPoint(size_t a_index, float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
@@ -97,6 +136,12 @@ namespace FCSE_API {
 		/// <summary>
 		/// Edit an existing rotation point (returns new index after potential re-sorting).
 		/// </summary>
+		/// <param name="a_index">Index of the point to edit</param>
+		/// <param name="a_time">New time in seconds when this point occurs</param>
+		/// <param name="a_pitch">New pitch rotation in radians</param>
+		/// <param name="a_yaw">New yaw rotation in radians</param>
+		/// <param name="a_easeIn">Apply ease-in at the start of interpolation (default: false)</param>
+		/// <param name="a_easeOut">Apply ease-out at the end of interpolation (default: false)</param>
 		/// <param name="a_interpolationMode">Interpolation mode: 0=None, 1=Linear, 2=CubicHermite (default)</param>
 		/// <returns> New index of the point after update</returns>
 		[[nodiscard]] virtual size_t EditRotationPoint(size_t a_index, float a_time, float a_pitch, float a_yaw, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
@@ -104,16 +149,19 @@ namespace FCSE_API {
 		/// <summary>
 		/// Remove a translation point from the timeline.
 		/// </summary>
+		/// <param name="a_index">Index of the point to remove</param>
 		virtual void RemoveTranslationPoint(size_t a_index) const noexcept = 0;
 
 		/// <summary>
 		/// Remove a rotation point from the timeline.
 		/// </summary>
+		/// <param name="a_index">Index of the point to remove</param>
 		virtual void RemoveRotationPoint(size_t a_index) const noexcept = 0;
 
 		/// <summary>
 		/// Clear the entire timeline. Prints a notification if a_notifyUser is true.
 		/// </summary>
+		/// <param name="a_notifyUser">Whether to show a notification to the user (default: true)</param>
 		virtual void ClearTimeline(bool a_notifyUser = true) const noexcept = 0;
 
 		/// <summary>
@@ -136,6 +184,11 @@ namespace FCSE_API {
         ///     plays timeline with a_speed as speed multiplier.
         /// Global easing (a_globalEaseIn/Out) applies to overall playback in both modes.
 		/// </summary>
+		/// <param name="a_speed">Playback speed multiplier, only used if a_useDuration is false (default: 1.0)</param>
+		/// <param name="a_globalEaseIn">Apply ease-in at the start of entire playback (default: false)</param>
+		/// <param name="a_globalEaseOut">Apply ease-out at the end of entire playback (default: false)</param>
+		/// <param name="a_useDuration">If true, plays timeline over a_duration seconds; if false, uses a_speed multiplier (default: false)</param>
+		/// <param name="a_duration">Total duration in seconds for entire timeline, only used if a_useDuration is true (default: 0.0)</param>
 		virtual void StartPlayback(float a_speed = 1.0f, bool a_globalEaseIn = false, bool a_globalEaseOut = false, bool a_useDuration = false, float a_duration = 0.0f) const noexcept = 0;
 
 		/// <summary>
@@ -168,7 +221,7 @@ namespace FCSE_API {
 		/// <summary>
 		/// Enable or disable user rotation control during playback.
 		/// </summary>
-		/// <param name="a_allow">True to allow user rotation, false to disable</param>
+		/// <param name="a_allow">True to allow user to control rotation, false to disable</param>
 		virtual void AllowUserRotation(bool a_allow) const noexcept = 0;
 
 		/// <summary>
@@ -181,7 +234,7 @@ namespace FCSE_API {
 		/// Adds camera timeline imported from a_filePath at time a_timeOffset to the current timeline.
 		/// </summary>
 		/// <param name="a_filePath">Relative path from Data folder (e.g., "SKSE/Plugins/MyTimeline.dat")</param>
-		/// <param name="a_timeOffset">Time offset to add to all imported point times (default 0.0)</param>
+		/// <param name="a_timeOffset">Time offset in seconds to add to all imported point times (default: 0.0)</param>
 		/// <returns> True if successful, false otherwise</returns>
 		[[nodiscard]] virtual bool AddTimelineFromFile(const char* a_filePath, float a_timeOffset = 0.0f) const noexcept = 0;
 

@@ -127,21 +127,4 @@ namespace FCSE {
 
         return true;
     }
-
-
-    RE::NiPoint3 GetFreeCameraTranslation() {
-        RE::NiPoint3 translation {0.0f, 0.0f, 0.0f};
-        auto* playerCamera = RE::PlayerCamera::GetSingleton();
-        RE::FreeCameraState* cameraState = nullptr;
-        
-        if (playerCamera && playerCamera->currentState && (playerCamera->currentState->id == RE::CameraState::kFree)) {
-            cameraState = static_cast<RE::FreeCameraState*>(playerCamera->currentState.get());
-            
-            if (cameraState) {
-                translation = cameraState->translation;
-            }
-        }  
-
-        return translation;
-    }
 } // namespace FCSE

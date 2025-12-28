@@ -168,7 +168,7 @@ namespace FCSE {
                         _ts_SKSEFunctions::NormalRelativeAngle(yaw + m_offset.y)};
                 } else { // camera looks at reference with offset
                     RE::NiPoint3 refPos = m_reference->GetPosition();                
-                    RE::NiPoint3 cameraPos = GetFreeCameraTranslation();
+                    RE::NiPoint3 cameraPos = _ts_SKSEFunctions::GetCameraPos();
                     
                     RE::NiPoint3 toRef = refPos - cameraPos;
                     float distance = toRef.Length();

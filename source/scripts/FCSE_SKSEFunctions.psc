@@ -35,20 +35,21 @@ int Function FCSE_AddTranslationPointAtCamera(float time, bool easeIn = false, b
 
 ; Add a rotation point with specified pitch and yaw
 ; time: time in seconds when this point occurs
-; pitch: pitch rotation
-; yaw: yaw rotation
+; pitch: relative to world coords
+; yaw: relative to world coords
 ; easeIn: ease in at the start of interpolation
 ; easeOut: ease out at the end of interpolation
 ; interpolationMode: 0=None, 1=Linear, 2=CubicHermite (default)
 ; Returns: index of the added point
 int Function FCSE_AddRotationPoint(float time, float pitch, float yaw, bool easeIn = false, bool easeOut = false, int interpolationMode = 2) global native
 
-; Add a rotation point using camera-to-reference direction plus offset
+; Add a rotation point that sets the rotation relative to camera-to-reference direction, or alternatively the ref's heading
 ; time: time in seconds when this point occurs
 ; reference: the object reference to track
-; offsetPitch: pitch offset from camera-to-reference direction
-; offsetYaw: yaw offset from camera-to-reference direction. A value of 0 means looking directly at the reference.
-; isOffsetRelative: if true, offset is relative to reference's facing direction instead of camera-to-reference
+; offsetPitch: pitch offset from camera-to-reference direction (isOffsetRelative == false) / the ref's heading (isOffsetRelative == true)
+; offsetYaw: isOffsetRelative == false - yaw offset from camera-to-reference direction. A value of 0 means looking directly at the reference.
+;            isOffsetRelative == true - yaw offset from reference's heading. A value of 0 means looking into the direction the ref is heading.
+; isOffsetRelative: if true, offset is relative to reference's heading instead of camera-to-reference direction.
 ; easeIn: ease in at the start of interpolation
 ; easeOut: ease out at the end of interpolation
 ; interpolationMode: 0=None, 1=Linear, 2=CubicHermite (default)

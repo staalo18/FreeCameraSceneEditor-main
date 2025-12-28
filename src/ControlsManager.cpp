@@ -37,19 +37,20 @@ namespace FCSE {
                         auto& timelineManager = FCSE::TimelineManager::GetSingleton();
                         bool isOffsetRelative = true;
                         timelineManager.ClearTimeline();
-                        RE::NiPoint3 camPos = _ts_SKSEFunctions::GetCameraPos();
-                        RE::NiPoint3 camRot = _ts_SKSEFunctions::GetCameraRotation();
                         float offsetY = 30.f;
                         float offsetZ = 120.f;
 
-                        timelineManager.AddTranslationPoint(0.f, camPos.x, camPos.y, camPos.z, true, true, 2);
-                        timelineManager.AddRotationPoint(0.f, camRot.x, camRot.z, true, true, 2);
+                        timelineManager.AddTranslationPointAtCamera(0.0f, true, true, 2);
+                        timelineManager.AddRotationPointAtCamera(0.f, true, true, 2);
+                        timelineManager.AddRotationPointAtRef(0.5f, reference, 0.0f, 0.f, false, true, true, 2);
+                        timelineManager.AddRotationPointAtRef(1.5f, reference, 0.0f, 0.f, false, true, true, 2);
                         timelineManager.AddTranslationPointAtRef(2.f, reference, 0.f, offsetY, offsetZ, isOffsetRelative, true, true, 2);
                         timelineManager.AddRotationPointAtRef(2.f, reference, 0.0f, 0.f, isOffsetRelative, true, true, 2);
                         timelineManager.AddTranslationPointAtRef(8.f, reference, 0.f, offsetY, offsetZ, isOffsetRelative, true, true, 2);
                         timelineManager.AddRotationPointAtRef(8.f, reference, 0.0f, 0.f, isOffsetRelative, true, true, 2);
-                        timelineManager.AddTranslationPoint(10.f, camPos.x, camPos.y, camPos.z, true, true, 2);
-                        timelineManager.AddRotationPoint(10.f, camRot.x, camRot.z, true, true, 2);
+                        timelineManager.AddRotationPointAtRef(9.f, RE::PlayerCharacter::GetSingleton(), 0.0f, 0.f, false, true, true, 2);
+                        timelineManager.AddTranslationPointAtCamera(10.0f, true, true, 2);
+                        timelineManager.AddRotationPointAtCamera(10.f, true, true, 2);
 
                         timelineManager.StartPlayback();
                     }

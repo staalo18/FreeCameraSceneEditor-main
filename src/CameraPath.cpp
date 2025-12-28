@@ -9,7 +9,7 @@ namespace FCSE {
     TranslationPoint TranslationPath::GetPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) {
         TranslationPoint point;
         point.m_transition = Transition(a_time, InterpolationMode::kCubicHermite, a_easeIn, a_easeOut);
-        point.m_point = GetFreeCameraTranslation();
+        point.m_point = _ts_SKSEFunctions::GetCameraPos();
 
         return point;
     }
@@ -159,17 +159,10 @@ namespace FCSE {
     
     RotationPoint RotationPath::GetPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) {
         RotationPoint point;
-        auto* playerCamera = RE::PlayerCamera::GetSingleton();
-        RE::FreeCameraState* cameraState = nullptr;
-        
-        if (playerCamera && playerCamera->currentState && (playerCamera->currentState->id == RE::CameraState::kFree)) {
-            cameraState = static_cast<RE::FreeCameraState*>(playerCamera->currentState.get());
-            
-            if (cameraState) {
-                point.m_transition = Transition(a_time, InterpolationMode::kCubicHermite, a_easeIn, a_easeOut);
-                point.m_point = cameraState->rotation;
-            }
-        }  
+        point.m_transition = Transition(a_time, InterpolationMode::kCubicHermite, a_easeIn, a_easeOut);
+        auto rotation = _ts_SKSEFunctions::GetCameraRotation();
+        point.m_point.x = rotation.x;  // Pitch
+        point.m_point.y = rotation.z;  // Yaw
 
         return point;
     }

@@ -233,33 +233,27 @@ namespace FCSE {
             return;
         }
 
-        // Calculate delta time with speed and global easing
         float deltaTime = _ts_SKSEFunctions::GetRealTimeDeltaTime() * m_playbackSpeed;
         
-        // Apply global easing if enabled
-        if (m_globalEaseIn || m_globalEaseOut) {
-            float currentTime = m_translationTimeline.GetCurrentTime();
-            float timelineDuration = m_playbackDuration;
-            
-            if (timelineDuration > 0.0f) {
-                float globalProgress = std::clamp(currentTime / timelineDuration, 0.0f, 1.0f);
-                float nextProgress = std::clamp((currentTime + deltaTime) / timelineDuration, 0.0f, 1.0f);
-                
-                float easedCurrent = _ts_SKSEFunctions::ApplyEasing(globalProgress, m_globalEaseIn, m_globalEaseOut);
-                float easedNext = _ts_SKSEFunctions::ApplyEasing(nextProgress, m_globalEaseIn, m_globalEaseOut);
-                
-                float easedDelta = (easedNext - easedCurrent) * timelineDuration;
-                deltaTime = easedDelta;
-            }
-        }
-
-        // Update both timelines with same deltaTime to keep them synchronized
         m_translationTimeline.UpdateTimeline(deltaTime);
         m_rotationTimeline.UpdateTimeline(deltaTime);
 
-        // Get interpolated points from timeline
-        cameraState->translation = m_translationTimeline.GetCurrentPoint();
-        RE::BSTPoint2<float> rotation = m_rotationTimeline.GetCurrentPoint();
+        // Apply global easing to determine which point in the timeline to sample
+        float sampleTime = m_translationTimeline.GetPlaybackTime();
+        if (m_globalEaseIn || m_globalEaseOut) {
+            float timelineDuration = GetTimelineDuration();
+            
+            if (timelineDuration > 0.0f) {
+                float linearProgress = std::clamp(sampleTime / timelineDuration, 0.0f, 1.0f);
+                float easedProgress = _ts_SKSEFunctions::ApplyEasing(linearProgress, m_globalEaseIn, m_globalEaseOut);
+                
+                sampleTime = easedProgress * timelineDuration;
+            }
+        }
+
+        // Get interpolated points from timeline at the (potentially eased) sample time
+        cameraState->translation = m_translationTimeline.GetPointAtTime(sampleTime);
+        RE::BSTPoint2<float> rotation = m_rotationTimeline.GetPointAtTime(sampleTime);
 
         if (m_userTurning && m_allowUserRotation) {
             // User is actively controlling rotation - update offset based on difference between
