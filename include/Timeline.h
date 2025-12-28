@@ -185,7 +185,7 @@ namespace FCSE {
             m_isPaused = false;
         }
         
-        // Set loop mode (from file during import)
+        // Set playback mode (from file during import)
         void SetPlaybackMode(PlaybackMode a_mode) {
             m_playbackMode = a_mode;
         }
@@ -195,7 +195,7 @@ namespace FCSE {
             m_loopTimeOffset = a_offset;
         }
         
-        // Get loop mode (for export)
+        // Get playback mode (for export)
         PlaybackMode GetPlaybackMode() const {
             return m_playbackMode;
         }

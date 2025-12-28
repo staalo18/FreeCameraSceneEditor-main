@@ -24,7 +24,7 @@ namespace FCSE {
             size_t AddTranslationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetX, float a_offsetY, float a_offsetZ, bool a_isOffsetRelative, bool a_easeIn, bool a_easeOut, int a_interpolationMode);
             size_t AddRotationPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut, int a_interpolationMode);
             size_t AddRotationPoint(float a_time, float a_pitch, float a_yaw, bool a_easeIn, bool a_easeOut, int a_interpolationMode);
-            size_t AddRotationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetPitch, float a_offsetYaw, bool a_easeIn, bool a_easeOut, int a_interpolationMode);
+            size_t AddRotationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetPitch, float a_offsetYaw, bool a_isOffsetRelative, bool a_easeIn, bool a_easeOut, int a_interpolationMode);
             
             // Update existing point (returns new index after potential re-sorting)
             size_t EditTranslationPoint(size_t a_index, float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn, bool a_easeOut, int a_interpolationMode);
@@ -95,5 +95,6 @@ namespace FCSE {
             bool m_userTurning = false;           // Whether user is manually controlling camera during playback
             bool m_allowUserRotation = false;     // Whether to allow user to turn camera during playback
             RE::BSTPoint2<float> m_rotationOffset; // Offset to apply to rotation to account for user turning
+            RE::NiPoint2 m_lastFreeRotation;           // camera free rotation before playback started (third-person only)
     }; // class TimelineManager
 } // namespace FCSE

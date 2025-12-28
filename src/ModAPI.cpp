@@ -35,8 +35,8 @@ size_t Messaging::FCSEInterface::AddRotationPoint(float a_time, float a_pitch, f
     return FCSE::TimelineManager::GetSingleton().AddRotationPoint(a_time, a_pitch, a_yaw, a_easeIn, a_easeOut, a_interpolationMode);
 }
 
-size_t Messaging::FCSEInterface::AddRotationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetPitch, float a_offsetYaw, bool a_easeIn, bool a_easeOut, int a_interpolationMode) const noexcept {
-    return FCSE::TimelineManager::GetSingleton().AddRotationPointAtRef(a_time, a_reference, a_offsetPitch, a_offsetYaw, a_easeIn, a_easeOut, a_interpolationMode);
+size_t Messaging::FCSEInterface::AddRotationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetPitch, float a_offsetYaw, bool a_isOffsetRelative, bool a_easeIn, bool a_easeOut, int a_interpolationMode) const noexcept {
+    return FCSE::TimelineManager::GetSingleton().AddRotationPointAtRef(a_time, a_reference, a_offsetPitch, a_offsetYaw, a_isOffsetRelative, a_easeIn, a_easeOut, a_interpolationMode);
 }
 
 size_t Messaging::FCSEInterface::AddRotationPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut, int a_interpolationMode) const noexcept {

@@ -130,99 +130,119 @@ namespace FCSE {
             , m_point({0.f, 0.f})
             , m_useRef(false)
             , m_reference(nullptr)
-            , m_offset({0.f, 0.f}) {}
+            , m_offset({0.f, 0.f})
+            , m_isOffsetRelative(false) {}
 
         RotationPoint(const Transition& a_transition, const RE::BSTPoint2<float>& a_point)
             : m_transition(a_transition)
             , m_point(a_point)
             , m_useRef(false)
             , m_reference(nullptr)
-            , m_offset({0.f, 0.f}) {}
+            , m_offset({0.f, 0.f})
+            , m_isOffsetRelative(false) {}
 
-        RotationPoint(const Transition& a_transition, RE::TESObjectREFR* a_reference, const RE::BSTPoint2<float>& a_offset)
+        RotationPoint(const Transition& a_transition, RE::TESObjectREFR* a_reference, const RE::BSTPoint2<float>& a_offset, bool a_isOffsetRelative = false)
             : m_transition(a_transition)
             , m_point({0.f, 0.f})
             , m_useRef(true)
             , m_reference(a_reference)
-            , m_offset(a_offset) {}
+            , m_offset(a_offset)
+            , m_isOffsetRelative(a_isOffsetRelative) {}
 
         RE::BSTPoint2<float> GetPoint() const {
             if (m_useRef && m_reference) {
-                RE::NiPoint3 refPos = m_reference->GetPosition();                
-                RE::NiPoint3 cameraPos = GetFreeCameraTranslation();
-                
-                RE::NiPoint3 toRef = refPos - cameraPos;
-                float distance = toRef.Length();
-                
-                if (distance < 0.001f) {
-                    // Camera too close to reference, can't determine direction
-                    return m_offset;
-                }
-                
-                toRef = toRef / distance; // Normalize to get direction vector
-                
-                // Calculate base pitch and yaw from camera-to-ref direction
-                float basePitch = -std::asin(toRef.z);
-                float baseYaw = std::atan2(toRef.x, toRef.y);
-                                    
-                // If offsets are zero (or very small), just use base direction
-                if (std::abs(m_offset.x) <EPSILON_COMPARISON && std::abs(m_offset.y) < EPSILON_COMPARISON) {
+                if (m_isOffsetRelative) { // If offset is relative to reference heading, use reference's facing direction
+                    float pitch = 0.0f;
+                    float yaw = 0.0f;
+                    RE::Actor* actor = m_reference->As<RE::Actor>();
+                    if (actor) {
+                        yaw = actor->GetHeading(false);
+                    } else {
+                        pitch = m_reference->GetAngleX();
+                        yaw = m_reference->GetAngleZ();
+                    }
+                    
+                    // Apply offset to reference's base orientation
                     return RE::BSTPoint2<float>{
-                        _ts_SKSEFunctions::NormalRelativeAngle(basePitch),
-                        _ts_SKSEFunctions::NormalRelativeAngle(baseYaw)};
+                        _ts_SKSEFunctions::NormalRelativeAngle(pitch + m_offset.x),
+                        _ts_SKSEFunctions::NormalRelativeAngle(yaw + m_offset.y)};
+                } else { // camera looks at reference with offset
+                    RE::NiPoint3 refPos = m_reference->GetPosition();                
+                    RE::NiPoint3 cameraPos = GetFreeCameraTranslation();
+                    
+                    RE::NiPoint3 toRef = refPos - cameraPos;
+                    float distance = toRef.Length();
+                    
+                    if (distance < 0.001f) {
+                        // Camera too close to reference, can't determine direction
+                        return m_offset;
+                    }
+                    
+                    toRef = toRef / distance; // Normalize to get direction vector
+                    
+                    // Calculate base pitch and yaw from camera-to-ref direction
+                    float basePitch = -std::asin(toRef.z);
+                    float baseYaw = std::atan2(toRef.x, toRef.y);
+                                        
+                    // If offsets are zero (or very small), just use base direction
+                    if (std::abs(m_offset.x) <EPSILON_COMPARISON && std::abs(m_offset.y) < EPSILON_COMPARISON) {
+                        return RE::BSTPoint2<float>{
+                            _ts_SKSEFunctions::NormalRelativeAngle(basePitch),
+                            _ts_SKSEFunctions::NormalRelativeAngle(baseYaw)};
+                    }
+                    
+                    // Now apply the offsets to this base direction
+                    // Convert offset to direction in local frame (where base direction is forward)
+                    float cosPitchLocal = std::cos(m_offset.x);
+                    float sinPitchLocal = std::sin(m_offset.x);
+                    float cosYawLocal = std::cos(m_offset.y);
+                    float sinYawLocal = std::sin(m_offset.y);
+                    
+                    // Direction in local frame (forward along base direction)
+                    RE::NiPoint3 localDir;
+                    localDir.x = sinYawLocal * cosPitchLocal;  // right component
+                    localDir.y = cosYawLocal * cosPitchLocal;  // forward component
+                    localDir.z = sinPitchLocal;                // up component
+                    
+                    // Build a coordinate frame where toRef is the forward (+Y) direction
+                    // We need to find an orthonormal basis: right, forward, up
+                    RE::NiPoint3 forward = toRef;
+                    
+                    // Choose an arbitrary "up" vector that's not parallel to forward
+                    RE::NiPoint3 worldUp(0.0f, 0.0f, 1.0f);
+                    if (std::abs(forward.z) > 0.99f) {
+                        // Forward is nearly vertical, use Y axis as reference
+                        worldUp = RE::NiPoint3(0.0f, 1.0f, 0.0f);
+                    }
+                    
+                    // Right = forward × worldUp (cross product)
+                    RE::NiPoint3 right;
+                    right.x = forward.y * worldUp.z - forward.z * worldUp.y;
+                    right.y = forward.z * worldUp.x - forward.x * worldUp.z;
+                    right.z = forward.x * worldUp.y - forward.y * worldUp.x;
+                    float rightLen = std::sqrt(right.x * right.x + right.y * right.y + right.z * right.z);
+                    right = right / rightLen;
+                    
+                    // Up = right × forward
+                    RE::NiPoint3 up;
+                    up.x = right.y * forward.z - right.z * forward.y;
+                    up.y = right.z * forward.x - right.x * forward.z;
+                    up.z = right.x * forward.y - right.y * forward.x;
+                    
+                    // Transform localDir from local frame to world frame using the basis vectors
+                    RE::NiPoint3 worldDir;
+                    worldDir.x = localDir.x * right.x + localDir.y * forward.x + localDir.z * up.x;
+                    worldDir.y = localDir.x * right.y + localDir.y * forward.y + localDir.z * up.y;
+                    worldDir.z = localDir.x * right.z + localDir.y * forward.z + localDir.z * up.z;
+                    
+                    // Convert world direction back to pitch/yaw angles
+                    float worldPitch = -std::asin(worldDir.z);
+                    float worldYaw = std::atan2(worldDir.x, worldDir.y);
+                    
+                    return RE::BSTPoint2<float>{
+                        _ts_SKSEFunctions::NormalRelativeAngle(worldPitch),
+                        _ts_SKSEFunctions::NormalRelativeAngle(worldYaw)};
                 }
-                
-                // Now apply the offsets to this base direction
-                // Convert offset to direction in local frame (where base direction is forward)
-                float cosPitchLocal = std::cos(m_offset.x);
-                float sinPitchLocal = std::sin(m_offset.x);
-                float cosYawLocal = std::cos(m_offset.y);
-                float sinYawLocal = std::sin(m_offset.y);
-                
-                // Direction in local frame (forward along base direction)
-                RE::NiPoint3 localDir;
-                localDir.x = sinYawLocal * cosPitchLocal;  // right component
-                localDir.y = cosYawLocal * cosPitchLocal;  // forward component
-                localDir.z = sinPitchLocal;                // up component
-                
-                // Build a coordinate frame where toRef is the forward (+Y) direction
-                // We need to find an orthonormal basis: right, forward, up
-                RE::NiPoint3 forward = toRef;
-                
-                // Choose an arbitrary "up" vector that's not parallel to forward
-                RE::NiPoint3 worldUp(0.0f, 0.0f, 1.0f);
-                if (std::abs(forward.z) > 0.99f) {
-                    // Forward is nearly vertical, use Y axis as reference
-                    worldUp = RE::NiPoint3(0.0f, 1.0f, 0.0f);
-                }
-                
-                // Right = forward × worldUp (cross product)
-                RE::NiPoint3 right;
-                right.x = forward.y * worldUp.z - forward.z * worldUp.y;
-                right.y = forward.z * worldUp.x - forward.x * worldUp.z;
-                right.z = forward.x * worldUp.y - forward.y * worldUp.x;
-                float rightLen = std::sqrt(right.x * right.x + right.y * right.y + right.z * right.z);
-                right = right / rightLen;
-                
-                // Up = right × forward
-                RE::NiPoint3 up;
-                up.x = right.y * forward.z - right.z * forward.y;
-                up.y = right.z * forward.x - right.x * forward.z;
-                up.z = right.x * forward.y - right.y * forward.x;
-                
-                // Transform localDir from local frame to world frame using the basis vectors
-                RE::NiPoint3 worldDir;
-                worldDir.x = localDir.x * right.x + localDir.y * forward.x + localDir.z * up.x;
-                worldDir.y = localDir.x * right.y + localDir.y * forward.y + localDir.z * up.y;
-                worldDir.z = localDir.x * right.z + localDir.y * forward.z + localDir.z * up.z;
-                
-                // Convert world direction back to pitch/yaw angles
-                float worldPitch = -std::asin(worldDir.z);
-                float worldYaw = std::atan2(worldDir.x, worldDir.y);
-                
-                return RE::BSTPoint2<float>{
-                    _ts_SKSEFunctions::NormalRelativeAngle(worldPitch),
-                    _ts_SKSEFunctions::NormalRelativeAngle(worldYaw)};
             }
             return m_point;
         }
@@ -277,6 +297,7 @@ namespace FCSE {
         bool m_useRef;                         // If true, use reference + offset instead of m_point
         RE::TESObjectREFR* m_reference;        // Reference object for dynamic rotation
         RE::BSTPoint2<float> m_offset;         // Offset from camera-to-reference direction (pitch, yaw)
+        bool m_isOffsetRelative;               // If true, offset is relative to reference's facing direction
     };
 
     template<typename PointType>

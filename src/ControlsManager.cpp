@@ -30,18 +30,29 @@ namespace FCSE {
                 } else if (key == 4) {
                      FCSE::TimelineManager::GetSingleton().AllowUserRotation(!FCSE::TimelineManager::GetSingleton().IsUserRotationAllowed());
                 } else if (key == 5) {
-/*                    RE::TESObjectREFR* reference = nullptr;
+                    RE::TESObjectREFR* reference = nullptr;
                     auto* form = RE::TESForm::LookupByID(0xd8c56);
                     reference = form ? form->As<RE::TESObjectREFR>() : nullptr;
-                    reference = RE::TESForm::LookupByEditorID<RE::TESObjectREFR>("FCSE_TEST01");
                     if (reference) {
-                        float offsetX = 0.0f;
-                        float offsetY = 1000.0f;
-                        float offsetZ = 0.0f;
+                        auto& timelineManager = FCSE::TimelineManager::GetSingleton();
                         bool isOffsetRelative = true;
-                        FCSE::TimelineManager::GetSingleton().AddTranslationPointAtRef(time, reference, offsetX, offsetY, offsetZ, isOffsetRelative, false, false, 2);
-                        FCSE::TimelineManager::GetSingleton().AddRotationPointAtRef(time, reference, PI, 0.f, false, false, 2);
-                    }*/
+                        timelineManager.ClearTimeline();
+                        RE::NiPoint3 camPos = _ts_SKSEFunctions::GetCameraPos();
+                        RE::NiPoint3 camRot = _ts_SKSEFunctions::GetCameraRotation();
+                        float offsetY = 30.f;
+                        float offsetZ = 120.f;
+
+                        timelineManager.AddTranslationPoint(0.f, camPos.x, camPos.y, camPos.z, true, true, 2);
+                        timelineManager.AddRotationPoint(0.f, camRot.x, camRot.z, true, true, 2);
+                        timelineManager.AddTranslationPointAtRef(2.f, reference, 0.f, offsetY, offsetZ, isOffsetRelative, true, true, 2);
+                        timelineManager.AddRotationPointAtRef(2.f, reference, 0.0f, 0.f, isOffsetRelative, true, true, 2);
+                        timelineManager.AddTranslationPointAtRef(8.f, reference, 0.f, offsetY, offsetZ, isOffsetRelative, true, true, 2);
+                        timelineManager.AddRotationPointAtRef(8.f, reference, 0.0f, 0.f, isOffsetRelative, true, true, 2);
+                        timelineManager.AddTranslationPoint(10.f, camPos.x, camPos.y, camPos.z, true, true, 2);
+                        timelineManager.AddRotationPoint(10.f, camRot.x, camRot.z, true, true, 2);
+
+                        timelineManager.StartPlayback();
+                    }
                 } else if (key == 6) {
                     FCSE::TimelineManager::GetSingleton().ClearTimeline();
                 } else if (key == 7) {

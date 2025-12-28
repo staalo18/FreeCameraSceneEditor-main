@@ -48,11 +48,12 @@ int Function FCSE_AddRotationPoint(float time, float pitch, float yaw, bool ease
 ; reference: the object reference to track
 ; offsetPitch: pitch offset from camera-to-reference direction
 ; offsetYaw: yaw offset from camera-to-reference direction. A value of 0 means looking directly at the reference.
+; isOffsetRelative: if true, offset is relative to reference's facing direction instead of camera-to-reference
 ; easeIn: ease in at the start of interpolation
 ; easeOut: ease out at the end of interpolation
 ; interpolationMode: 0=None, 1=Linear, 2=CubicHermite (default)
 ; Returns: index of the added point
-int Function FCSE_AddRotationPointAtRef(float time, ObjectReference reference, float offsetPitch, float offsetYaw, bool easeIn = false, bool easeOut = false, int interpolationMode = 2) global native
+int Function FCSE_AddRotationPointAtRef(float time, ObjectReference reference, float offsetPitch, float offsetYaw, bool isOffsetRelative = false, bool easeIn = false, bool easeOut = false, int interpolationMode = 2) global native
 
 ; Add a rotation point at the current camera rotation
 ; time: time in seconds when this point occurs

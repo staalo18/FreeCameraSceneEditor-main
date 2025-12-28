@@ -4,9 +4,17 @@
 namespace FCSE {
 
     void TimelineManager::Update() {
-        if (RE::UI::GetSingleton()->GameIsPaused()) {
+        auto* ui = RE::UI::GetSingleton();
+        if (ui && ui->GameIsPaused()) {
+
+            if (m_isPlaybackRunning) {
+                // re-enable menus if paused during playback
+                ui->ShowMenus(m_isShowingMenus);
+            }
             return;
-        }
+        } else if (m_isPlaybackRunning) {
+            ui->ShowMenus(m_showMenusDuringPlayback);
+        } 
 
         DrawTimeline();
 
@@ -21,7 +29,7 @@ namespace FCSE {
             return;
         }
 
-        if (m_isRecording || !(playerCamera->currentState && (playerCamera->currentState->id == RE::CameraState::kFree))) {
+        if (m_isRecording || m_isPlaybackRunning || !(playerCamera->currentState && (playerCamera->currentState->id == RE::CameraState::kFree))) {
             return;
         }
 
@@ -115,20 +123,28 @@ namespace FCSE {
         return AddRotationPoint(point);
     }
 
-    size_t TimelineManager::AddRotationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetPitch, float a_offsetYaw, bool a_easeIn, bool a_easeOut, int a_interpolationMode) {
+    size_t TimelineManager::AddRotationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetPitch, float a_offsetYaw, bool a_isOffsetRelative, bool a_easeIn, bool a_easeOut, int a_interpolationMode) {
         if (!a_reference) {
             log::warn("{}: Null reference provided, creating point with offset as absolute rotation", __FUNCTION__);
             return AddRotationPoint(a_time, a_offsetPitch, a_offsetYaw, a_easeIn, a_easeOut, a_interpolationMode);
         }
         Transition transition(a_time, ToInterpolationMode(a_interpolationMode), a_easeIn, a_easeOut);
         RE::BSTPoint2<float> offset({a_offsetPitch, a_offsetYaw});
-        RotationPoint point(transition, a_reference, offset);
+        RotationPoint point(transition, a_reference, offset, a_isOffsetRelative);
         return AddRotationPoint(point);
     }    size_t TimelineManager::AddTranslationPoint(const TranslationPoint& a_point) {
+        if (m_isPlaybackRunning) {
+            log::info("{}: Timeline modified during playback, stopping playback", __FUNCTION__);
+            StopPlayback();
+        }
         return m_translationTimeline.AddPoint(a_point);
     }
 
     size_t TimelineManager::AddRotationPoint(const RotationPoint& a_point) {
+        if (m_isPlaybackRunning) {
+            log::info("{}: Timeline modified during playback, stopping playback", __FUNCTION__);
+            StopPlayback();
+        }
         return m_rotationTimeline.AddPoint(a_point);
     }
 
@@ -141,10 +157,18 @@ namespace FCSE {
     }
 
     size_t TimelineManager::EditTranslationPoint(size_t a_index, const TranslationPoint& a_point) {
+        if (m_isPlaybackRunning) {
+            log::info("{}: Timeline modified during playback, stopping playback", __FUNCTION__);
+            StopPlayback();
+        }
         return m_translationTimeline.EditPoint(a_index, a_point);
     }
 
     size_t TimelineManager::EditRotationPoint(size_t a_index, const RotationPoint& a_point) {
+        if (m_isPlaybackRunning) {
+            log::info("{}: Timeline modified during playback, stopping playback", __FUNCTION__);
+            StopPlayback();
+        }
         return m_rotationTimeline.EditPoint(a_index, a_point);
     }
 
@@ -163,10 +187,18 @@ namespace FCSE {
     }
 
     void TimelineManager::RemoveTranslationPoint(size_t a_index) {
+        if (m_isPlaybackRunning) {
+            log::info("{}: Timeline modified during playback, stopping playback", __FUNCTION__);
+            StopPlayback();
+        }
         m_translationTimeline.RemovePoint(a_index);
     }
 
     void TimelineManager::RemoveRotationPoint(size_t a_index) {
+        if (m_isPlaybackRunning) {
+            log::info("{}: Timeline modified during playback, stopping playback", __FUNCTION__);
+            StopPlayback();
+        }
         m_rotationTimeline.RemovePoint(a_index);
     }
 
@@ -363,6 +395,18 @@ namespace FCSE {
         m_isPlaybackRunning = true;
         m_rotationOffset = { 0.0f, 0.0f };
         
+        if (playerCamera->currentState && 
+            (playerCamera->currentState->id == RE::CameraState::kThirdPerson ||
+			playerCamera->currentState->id == RE::CameraState::kMount ||
+			playerCamera->currentState->id == RE::CameraState::kDragon)) {
+				
+            RE::ThirdPersonState* cameraState = static_cast<RE::ThirdPersonState*>(playerCamera->currentState.get());
+				
+            if (cameraState) {
+                m_lastFreeRotation = cameraState->freeRotation;
+            }
+        }
+        
         m_translationTimeline.ResetTimeline();
         m_rotationTimeline.ResetTimeline();
         m_translationTimeline.StartPlayback();
@@ -386,6 +430,18 @@ namespace FCSE {
                     ui->ShowMenus(m_isShowingMenus);
                 }     
                 playerCamera->ToggleFreeCameraMode(false);
+
+                if (playerCamera->currentState && 
+                    (playerCamera->currentState->id == RE::CameraState::kThirdPerson ||
+                    playerCamera->currentState->id == RE::CameraState::kMount ||
+                    playerCamera->currentState->id == RE::CameraState::kDragon)) {
+                        
+                    RE::ThirdPersonState* cameraState = static_cast<RE::ThirdPersonState*>(playerCamera->currentState.get());
+                        
+                    if (cameraState) {
+                        cameraState->freeRotation = m_lastFreeRotation;
+                    }
+                }
             }            
         }
 
@@ -423,6 +479,11 @@ namespace FCSE {
     }
 
     bool TimelineManager::AddTimelineFromFile(const char* a_filePath, float a_timeOffset) {
+        if (m_isPlaybackRunning) {
+            log::info("{}: Timeline modified during playback, stopping playback", __FUNCTION__);
+            StopPlayback();
+        }
+
         std::filesystem::path fullPath = std::filesystem::current_path() / "Data" / a_filePath;
         
         if (!std::filesystem::exists(fullPath)) {
@@ -471,7 +532,7 @@ namespace FCSE {
         
         bool importRotationSuccess = m_rotationTimeline.AddTimelineFromFile(file, a_timeOffset, degToRad);
         
-        // Set loop mode and offset on both timelines
+        // Set playback mode and offset on both timelines
         m_translationTimeline.SetPlaybackMode(playbackMode);
         m_translationTimeline.SetLoopTimeOffset(loopTimeOffset);
         m_rotationTimeline.SetPlaybackMode(playbackMode);
@@ -515,7 +576,7 @@ m_rotationTimeline.GetPointCount() - rotationPointCount, a_filePath);
         file << "Version=" << versionInt << "\n";
         file << "UseDegrees=1 ; Interpret rotation values as degrees (1) or radians (0)\n";
         
-        // Get loop mode and offset from translation timeline (both timelines should have same values)
+        // Get playback mode and offset from translation timeline (both timelines should have same values)
         int playbackModeInt = static_cast<int>(m_translationTimeline.GetPlaybackMode());
         float loopTimeOffset = m_translationTimeline.GetLoopTimeOffset();
         file << "PlaybackMode=" << playbackModeInt << " ; 0=kEnd (stop at end), 1=kLoop (restart from beginning)\n";

@@ -64,10 +64,11 @@ namespace FCSE_API {
 
 		/// <summary>
 		/// Add a rotation point that uses a reference's rotation angles plus offset.
+		/// If a_isOffsetRelative is true, the offset is relative to the reference's facing direction, else relative to camera-to-reference direction.
 		/// </summary>
 		/// <param name="a_interpolationMode">Interpolation mode: 0=None, 1=Linear, 2=CubicHermite (default)</param>
 		/// <returns> Index of the added point</returns>
-		[[nodiscard]] virtual size_t AddRotationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetPitch, float a_offsetYaw, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
+		[[nodiscard]] virtual size_t AddRotationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetPitch, float a_offsetYaw, bool a_isOffsetRelative = false, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
 
 		/// <summary>
 		/// Add a rotation point to the camera timeline at the current camera rotation.
