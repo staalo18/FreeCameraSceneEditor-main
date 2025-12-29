@@ -51,14 +51,6 @@ void Messaging::FCSEInterface::StopRecording() const noexcept {
     FCSE::TimelineManager::GetSingleton().StopRecording();
 }
 
-size_t Messaging::FCSEInterface::EditTranslationPoint(size_t a_index, float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn, bool a_easeOut, int a_interpolationMode) const noexcept {
-    return FCSE::TimelineManager::GetSingleton().EditTranslationPoint(a_index, a_time, a_posX, a_posY, a_posZ, a_easeIn, a_easeOut, a_interpolationMode);
-}
-
-size_t Messaging::FCSEInterface::EditRotationPoint(size_t a_index, float a_time, float a_pitch, float a_yaw, bool a_easeIn, bool a_easeOut, int a_interpolationMode) const noexcept {
-    return FCSE::TimelineManager::GetSingleton().EditRotationPoint(a_index, a_time, a_pitch, a_yaw, a_easeIn, a_easeOut, a_interpolationMode);
-}
-
 void Messaging::FCSEInterface::RemoveTranslationPoint(size_t a_index) const noexcept {
     FCSE::TimelineManager::GetSingleton().RemoveTranslationPoint(a_index);
 }

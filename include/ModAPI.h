@@ -29,8 +29,6 @@ namespace Messaging
 		virtual size_t AddRotationPointAtCamera(float a_time, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept override;
 		virtual void StartRecording() const noexcept override;
 		virtual void StopRecording() const noexcept override;
-		virtual size_t EditTranslationPoint(size_t a_index, float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept override;
-		virtual size_t EditRotationPoint(size_t a_index, float a_time, float a_pitch, float a_yaw, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept override;
 		virtual void RemoveTranslationPoint(size_t a_index) const noexcept override;
 		virtual void RemoveRotationPoint(size_t a_index) const noexcept override;
 		virtual void ClearTimeline(bool a_notifyUser = true) const noexcept override;

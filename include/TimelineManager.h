@@ -26,10 +26,6 @@ namespace FCSE {
             size_t AddRotationPoint(float a_time, float a_pitch, float a_yaw, bool a_easeIn, bool a_easeOut, int a_interpolationMode);
             size_t AddRotationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetPitch, float a_offsetYaw, bool a_isOffsetRelative, bool a_easeIn, bool a_easeOut, int a_interpolationMode);
             
-            // Update existing point (returns new index after potential re-sorting)
-            size_t EditTranslationPoint(size_t a_index, float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn, bool a_easeOut, int a_interpolationMode);
-            size_t EditRotationPoint(size_t a_index, float a_time, float a_pitch, float a_yaw, bool a_easeIn, bool a_easeOut, int a_interpolationMode);
-            
             // Remove point
             void RemoveTranslationPoint(size_t a_index);
             void RemoveRotationPoint(size_t a_index);
@@ -37,8 +33,6 @@ namespace FCSE {
             void ClearTimeline(bool a_notifyUser = true);
             
             // Access points
-            const TranslationPoint& GetTranslationPoint(size_t a_index) const;
-            const RotationPoint& GetRotationPoint(size_t a_index) const;
             size_t GetTranslationPointCount() const { return m_translationTimeline.GetPointCount(); }
             size_t GetRotationPointCount() const { return m_rotationTimeline.GetPointCount(); }
             
@@ -64,9 +58,6 @@ namespace FCSE {
             size_t AddTranslationPoint(const TranslationPoint& a_point);
             size_t AddRotationPoint(const RotationPoint& a_point);
             
-            size_t EditTranslationPoint(size_t a_index, const TranslationPoint& a_point);
-            size_t EditRotationPoint(size_t a_index, const RotationPoint& a_point);
-
             void DrawTimeline();
              
             void RecordTimeline();

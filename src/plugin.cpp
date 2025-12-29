@@ -45,14 +45,6 @@ namespace FCSE {
             FCSE::TimelineManager::GetSingleton().StopRecording();
         }
 
-        int EditTranslationPoint(RE::StaticFunctionTag*, int a_index, float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn, bool a_easeOut, int a_interpolationMode) {
-            return static_cast<int>(FCSE::TimelineManager::GetSingleton().EditTranslationPoint(static_cast<size_t>(a_index), a_time, a_posX, a_posY, a_posZ, a_easeIn, a_easeOut, a_interpolationMode));
-        }
-
-        int EditRotationPoint(RE::StaticFunctionTag*, int a_index, float a_time, float a_pitch, float a_yaw, bool a_easeIn, bool a_easeOut, int a_interpolationMode) {
-            return static_cast<int>(FCSE::TimelineManager::GetSingleton().EditRotationPoint(static_cast<size_t>(a_index), a_time, a_pitch, a_yaw, a_easeIn, a_easeOut, a_interpolationMode));
-        }
-
         void RemoveTranslationPoint(RE::StaticFunctionTag*, int a_index) {
             FCSE::TimelineManager::GetSingleton().RemoveTranslationPoint(static_cast<size_t>(a_index));
         }
@@ -123,8 +115,6 @@ namespace FCSE {
             a_vm->RegisterFunction("FCSE_AddRotationPointAtRef", "FCSE_SKSEFunctions", AddRotationPointAtRef);
             a_vm->RegisterFunction("FCSE_StartRecording", "FCSE_SKSEFunctions", StartRecording);
             a_vm->RegisterFunction("FCSE_StopRecording", "FCSE_SKSEFunctions", StopRecording);
-            a_vm->RegisterFunction("FCSE_EditTranslationPoint", "FCSE_SKSEFunctions", EditTranslationPoint);
-            a_vm->RegisterFunction("FCSE_EditRotationPoint", "FCSE_SKSEFunctions", EditRotationPoint);
             a_vm->RegisterFunction("FCSE_RemoveTranslationPoint", "FCSE_SKSEFunctions", RemoveTranslationPoint);
             a_vm->RegisterFunction("FCSE_RemoveRotationPoint", "FCSE_SKSEFunctions", RemoveRotationPoint);
             a_vm->RegisterFunction("FCSE_ClearTimeline", "FCSE_SKSEFunctions", ClearTimeline);

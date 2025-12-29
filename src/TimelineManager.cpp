@@ -41,8 +41,10 @@ namespace FCSE {
 
         ClearTimeline(false);
 
-        AddTranslationPointAtCamera(m_currentRecordingTime, true, false, 2);
-        AddRotationPointAtCamera(m_currentRecordingTime, true, false, 2);
+        RE::NiPoint3 cameraPos = _ts_SKSEFunctions::GetCameraPos();
+        RE::NiPoint3 cameraRot = _ts_SKSEFunctions::GetCameraRotation();
+        AddTranslationPoint(m_currentRecordingTime, cameraPos.x, cameraPos.y, cameraPos.z, true, false, 2);
+        AddRotationPoint(m_currentRecordingTime, cameraRot.x, cameraRot.z, true, false, 2);
     }
 
     void TimelineManager::StopRecording() {
@@ -55,8 +57,10 @@ namespace FCSE {
             return;
         }
         
-        AddTranslationPointAtCamera(m_currentRecordingTime, false, true, 2);
-        AddRotationPointAtCamera(m_currentRecordingTime, false, true, 2);
+        RE::NiPoint3 cameraPos = _ts_SKSEFunctions::GetCameraPos();
+        RE::NiPoint3 cameraRot = _ts_SKSEFunctions::GetCameraRotation();
+        AddTranslationPoint(m_currentRecordingTime, cameraPos.x, cameraPos.y, cameraPos.z, false, true, 2);
+        AddRotationPoint(m_currentRecordingTime, cameraRot.x, cameraRot.z, false, true, 2);
 
         RE::DebugNotification("Camera path recording stopped.");
 
@@ -73,8 +77,11 @@ namespace FCSE {
 
             if (m_isRecording) {
                 if (m_currentRecordingTime - m_lastRecordedPointTime >= m_recordingInterval) {
-                    AddTranslationPointAtCamera(m_currentRecordingTime, false, false, 2);
-                    AddRotationPointAtCamera(m_currentRecordingTime, false, false, 2);
+                    // Capture actual camera position/rotation as kWorld points
+                    RE::NiPoint3 cameraPos = _ts_SKSEFunctions::GetCameraPos();
+                    RE::NiPoint3 cameraRot = _ts_SKSEFunctions::GetCameraRotation();
+                    AddTranslationPoint(m_currentRecordingTime, cameraPos.x, cameraPos.y, cameraPos.z, false, false, 2);
+                    AddRotationPoint(m_currentRecordingTime, cameraRot.x, cameraRot.z, false, false, 2);
                     
                     m_lastRecordedPointTime = m_currentRecordingTime;
                 }
@@ -95,7 +102,7 @@ namespace FCSE {
     size_t TimelineManager::AddTranslationPoint(float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn, bool a_easeOut, int a_interpolationMode) {
         Transition transition(a_time, ToInterpolationMode(a_interpolationMode), a_easeIn, a_easeOut);
         RE::NiPoint3 position(a_posX, a_posY, a_posZ);
-        TranslationPoint point(transition, position);
+        TranslationPoint point(transition, PointType::kWorld, position, RE::NiPoint3{});
         return AddTranslationPoint(point);
     }
 
@@ -106,7 +113,7 @@ namespace FCSE {
         }
         Transition transition(a_time, ToInterpolationMode(a_interpolationMode), a_easeIn, a_easeOut);
         RE::NiPoint3 offset(a_offsetX, a_offsetY, a_offsetZ);
-        TranslationPoint point(transition, a_reference, offset, a_isOffsetRelative);
+        TranslationPoint point(transition, PointType::kReference, RE::NiPoint3{}, offset, a_reference, a_isOffsetRelative);
         return AddTranslationPoint(point);
     }
 
@@ -119,7 +126,7 @@ namespace FCSE {
     size_t TimelineManager::AddRotationPoint(float a_time, float a_pitch, float a_yaw, bool a_easeIn, bool a_easeOut, int a_interpolationMode) {
         Transition transition(a_time, ToInterpolationMode(a_interpolationMode), a_easeIn, a_easeOut);
         RE::BSTPoint2<float> rotation({a_pitch, a_yaw});
-        RotationPoint point(transition, rotation);
+        RotationPoint point(transition, PointType::kWorld, rotation, RE::BSTPoint2<float>{});
         return AddRotationPoint(point);
     }
 
@@ -130,7 +137,7 @@ namespace FCSE {
         }
         Transition transition(a_time, ToInterpolationMode(a_interpolationMode), a_easeIn, a_easeOut);
         RE::BSTPoint2<float> offset({a_offsetPitch, a_offsetYaw});
-        RotationPoint point(transition, a_reference, offset, a_isOffsetRelative);
+        RotationPoint point(transition, PointType::kReference, RE::BSTPoint2<float>{}, offset, a_reference, a_isOffsetRelative);
         return AddRotationPoint(point);
     }    size_t TimelineManager::AddTranslationPoint(const TranslationPoint& a_point) {
         if (m_isPlaybackRunning) {
@@ -146,44 +153,6 @@ namespace FCSE {
             StopPlayback();
         }
         return m_rotationTimeline.AddPoint(a_point);
-    }
-
-    const TranslationPoint& TimelineManager::GetTranslationPoint(size_t a_index) const {
-        return m_translationTimeline.GetPoint(a_index);
-    }
-
-    const RotationPoint& TimelineManager::GetRotationPoint(size_t a_index) const {
-        return m_rotationTimeline.GetPoint(a_index);
-    }
-
-    size_t TimelineManager::EditTranslationPoint(size_t a_index, const TranslationPoint& a_point) {
-        if (m_isPlaybackRunning) {
-            log::info("{}: Timeline modified during playback, stopping playback", __FUNCTION__);
-            StopPlayback();
-        }
-        return m_translationTimeline.EditPoint(a_index, a_point);
-    }
-
-    size_t TimelineManager::EditRotationPoint(size_t a_index, const RotationPoint& a_point) {
-        if (m_isPlaybackRunning) {
-            log::info("{}: Timeline modified during playback, stopping playback", __FUNCTION__);
-            StopPlayback();
-        }
-        return m_rotationTimeline.EditPoint(a_index, a_point);
-    }
-
-    size_t TimelineManager::EditTranslationPoint(size_t a_index, float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn, bool a_easeOut, int a_interpolationMode) {
-        Transition transition(a_time, ToInterpolationMode(a_interpolationMode), a_easeIn, a_easeOut);
-        RE::NiPoint3 position(a_posX, a_posY, a_posZ);
-        TranslationPoint point(transition, position);
-        return EditTranslationPoint(a_index, point);
-    }
-
-    size_t TimelineManager::EditRotationPoint(size_t a_index, float a_time, float a_pitch, float a_yaw, bool a_easeIn, bool a_easeOut, int a_interpolationMode) {
-        Transition transition(a_time, ToInterpolationMode(a_interpolationMode), a_easeIn, a_easeOut);
-        RE::BSTPoint2<float> rotation({a_pitch, a_yaw});
-        RotationPoint point(transition, rotation);
-        return EditRotationPoint(a_index, point);
     }
 
     void TimelineManager::RemoveTranslationPoint(size_t a_index) {
@@ -568,13 +537,13 @@ m_rotationTimeline.GetPointCount() - rotationPointCount, a_filePath);
                          static_cast<int>(Plugin::VERSION[2]);
         file << "[General]\n";
         file << "Version=" << versionInt << "\n";
-        file << "UseDegrees=1 ; Interpret rotation values as degrees (1) or radians (0)\n";
+        file << "UseDegrees=1\n";
         
         // Get playback mode and offset from translation timeline (both timelines should have same values)
         int playbackModeInt = static_cast<int>(m_translationTimeline.GetPlaybackMode());
         float loopTimeOffset = m_translationTimeline.GetLoopTimeOffset();
-        file << "PlaybackMode=" << playbackModeInt << " ; 0=kEnd (stop at end), 1=kLoop (restart from beginning)\n";
-        file << "LoopTimeOffset=" << loopTimeOffset << " ; Extra time after last point for loop interpolation (seconds)\n";
+        file << "PlaybackMode=" << playbackModeInt << "\n";
+        file << "LoopTimeOffset=" << loopTimeOffset << "\n";
         file << "\n";
         
         float radToDeg = 180.0f / PI;

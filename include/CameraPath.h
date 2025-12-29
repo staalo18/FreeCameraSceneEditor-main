@@ -9,32 +9,27 @@
 namespace FCSE {
     class TranslationPoint {
     public:
-        TranslationPoint()
-            : m_transition(0.0f, InterpolationMode::kCubicHermite, false, false)
-            , m_point({0.f, 0.f, 0.f})
-            , m_useRef(false)
-            , m_reference(nullptr)
-            , m_offset({0.f, 0.f, 0.f})
-            , m_isOffsetRelative(false) {}
-
-        TranslationPoint(const Transition& a_transition, const RE::NiPoint3& a_point)
+        TranslationPoint(
+            const Transition& a_transition = Transition(0.0f, InterpolationMode::kCubicHermite, false, false),
+            PointType a_pointType = PointType::kWorld,
+            const RE::NiPoint3& a_point = {0.f, 0.f, 0.f},
+            const RE::NiPoint3& a_offset = {0.f, 0.f, 0.f},
+            RE::TESObjectREFR* a_reference = nullptr,
+            bool a_isOffsetRelative = false)
             : m_transition(a_transition)
-            , m_point(a_point)
-            , m_useRef(false)
-            , m_reference(nullptr)
-            , m_offset({0.f, 0.f, 0.f})
-            , m_isOffsetRelative(false) {}
+            , m_point(a_point)           // world coordinates (kWorld and kCamera(baked))
+            , m_pointType(a_pointType)   // kWorld, kReference, kCamera
+            , m_reference(a_reference)   // used for kReference type
+            , m_offset(a_offset)         // offset for kReference and kCamera types
+            , m_isOffsetRelative(a_isOffsetRelative) {} // unused for kWorld type
 
-        TranslationPoint(const Transition& a_transition, RE::TESObjectREFR* a_reference, const RE::NiPoint3& a_offset, bool a_isOffsetRelative = false)
-            : m_transition(a_transition)
-            , m_point({0.f, 0.f, 0.f})
-            , m_useRef(true)
-            , m_reference(a_reference)
-            , m_offset(a_offset)
-            , m_isOffsetRelative(a_isOffsetRelative) {}
+        RE::NiPoint3 GetPointAtCamera() const {
+            RE::NiPoint3 cameraPos = _ts_SKSEFunctions::GetCameraPos();
+            return cameraPos + m_offset;
+        }
 
         RE::NiPoint3 GetPoint() const {
-            if (m_useRef && m_reference) {
+            if (m_pointType == PointType::kReference && m_reference) {
                 RE::NiPoint3 offset = m_offset;
                 
                 // If offset is relative to reference heading, rotate it
@@ -104,53 +99,48 @@ namespace FCSE {
         }
        
         TranslationPoint operator+(const TranslationPoint& other) const {
-            return TranslationPoint(m_transition, GetPoint() + other.GetPoint());
+            return TranslationPoint(m_transition, PointType::kWorld, GetPoint() + other.GetPoint(), RE::NiPoint3{});
         }
         
         TranslationPoint operator-(const TranslationPoint& other) const {
-            return TranslationPoint(m_transition, GetPoint() - other.GetPoint());
+            return TranslationPoint(m_transition, PointType::kWorld, GetPoint() - other.GetPoint(), RE::NiPoint3{});
         }
         
         TranslationPoint operator*(float scalar) const {
-            return TranslationPoint(m_transition, GetPoint() * scalar);
+            return TranslationPoint(m_transition, PointType::kWorld, GetPoint() * scalar, RE::NiPoint3{});
         }
 
         Transition m_transition;
-        mutable RE::NiPoint3 m_point;   // Direct position (used when m_useRef is false), mutable for reference updates
-        bool m_useRef;                  // If true, use reference + offset instead of m_point
-        RE::TESObjectREFR* m_reference; // Reference object for dynamic positioning
-        RE::NiPoint3 m_offset;          // Offset from reference position
-        bool m_isOffsetRelative; // If true, offset is rotated by reference's heading
+        mutable RE::NiPoint3 m_point;   // Direct position (used when m_pointType is kWorld), mutable for reference updates
+        PointType m_pointType;          // Type of point: kWorld, kReference, or kCamera
+        RE::TESObjectREFR* m_reference; // Reference object for dynamic positioning (kReference only)
+        RE::NiPoint3 m_offset;          // Offset from reference position (kReference and kCamera)
+        bool m_isOffsetRelative;        // If true, offset is rotated by reference's heading (kReference only)
     };
 
     class RotationPoint {
     public:
-        RotationPoint()
-            : m_transition(0.0f, InterpolationMode::kCubicHermite, false, false)
-            , m_point({0.f, 0.f})
-            , m_useRef(false)
-            , m_reference(nullptr)
-            , m_offset({0.f, 0.f})
-            , m_isOffsetRelative(false) {}
-
-        RotationPoint(const Transition& a_transition, const RE::BSTPoint2<float>& a_point)
+        RotationPoint(
+            const Transition& a_transition = Transition(0.0f, InterpolationMode::kCubicHermite, false, false),
+            PointType a_pointType = PointType::kWorld,
+            const RE::BSTPoint2<float>& a_point = {0.f, 0.f},
+            const RE::BSTPoint2<float>& a_offset = {0.f, 0.f},
+            RE::TESObjectREFR* a_reference = nullptr,
+            bool a_isOffsetRelative = false)
             : m_transition(a_transition)
-            , m_point(a_point)
-            , m_useRef(false)
-            , m_reference(nullptr)
-            , m_offset({0.f, 0.f})
-            , m_isOffsetRelative(false) {}
+            , m_point(a_point)           // rotation (kWorld and kCamera(baked))
+            , m_pointType(a_pointType)   // kWorld, kReference, kCamera
+            , m_reference(a_reference)   // used for kReference type
+            , m_offset(a_offset)         // offset for kReference and kCamera types
+            , m_isOffsetRelative(a_isOffsetRelative) {} // unused for kWorld type
 
-        RotationPoint(const Transition& a_transition, RE::TESObjectREFR* a_reference, const RE::BSTPoint2<float>& a_offset, bool a_isOffsetRelative = false)
-            : m_transition(a_transition)
-            , m_point({0.f, 0.f})
-            , m_useRef(true)
-            , m_reference(a_reference)
-            , m_offset(a_offset)
-            , m_isOffsetRelative(a_isOffsetRelative) {}
+        RE::BSTPoint2<float> GetPointAtCamera() const {
+            auto rotation = _ts_SKSEFunctions::GetCameraRotation();
+            return RE::BSTPoint2<float>{rotation.x + m_offset.x, rotation.z + m_offset.y};  // Pitch + offsetPitch, Yaw + offsetYaw
+        }
 
         RE::BSTPoint2<float> GetPoint() const {
-            if (m_useRef && m_reference) {
+            if (m_pointType == PointType::kReference && m_reference) {
                 if (m_isOffsetRelative) { // If offset is relative to reference heading, use reference's facing direction
                     float pitch = 0.0f;
                     float yaw = 0.0f;
@@ -275,45 +265,45 @@ namespace FCSE {
             RE::BSTPoint2<float> result;
             result.x = GetPoint().x + other.GetPoint().x;
             result.y = GetPoint().y + other.GetPoint().y;
-            return RotationPoint(m_transition, result);
+            return RotationPoint(m_transition, PointType::kWorld, result, RE::BSTPoint2<float>{});
         }
         
         RotationPoint operator-(const RotationPoint& other) const {
             RE::BSTPoint2<float> result;
             result.x = GetPoint().x - other.GetPoint().x;
             result.y = GetPoint().y - other.GetPoint().y;
-            return RotationPoint(m_transition, result);
+            return RotationPoint(m_transition, PointType::kWorld, result, RE::BSTPoint2<float>{});
         }
         
         RotationPoint operator*(float scalar) const {
             RE::BSTPoint2<float> result;
             result.x = GetPoint().x * scalar;
             result.y = GetPoint().y * scalar;
-            return RotationPoint(m_transition, result);
+            return RotationPoint(m_transition, PointType::kWorld, result, RE::BSTPoint2<float>{});
         }
        
         Transition m_transition;
-        mutable RE::BSTPoint2<float> m_point;  // Direct rotation (used when m_useRef is false), mutable for reference updates
-        bool m_useRef;                         // If true, use reference + offset instead of m_point
-        RE::TESObjectREFR* m_reference;        // Reference object for dynamic rotation
-        RE::BSTPoint2<float> m_offset;         // Offset from camera-to-reference direction (pitch, yaw)
-        bool m_isOffsetRelative;               // If true, offset is relative to reference's facing direction
+        mutable RE::BSTPoint2<float> m_point;  // Direct rotation (used when m_pointType is kWorld), mutable for reference updates
+        PointType m_pointType;                 // Type of point: kWorld, kReference, or kCamera
+        RE::TESObjectREFR* m_reference;        // Reference object for dynamic rotation (kReference only)
+        RE::BSTPoint2<float> m_offset;         // Offset from camera-to-reference direction (kReference and kCamera)
+        bool m_isOffsetRelative;               // If true, offset is relative to reference's facing direction (kReference only)
     };
 
-    template<typename PointType>
+    template<typename TransitionPoint>
     class CameraPath {
     public:
         virtual ~CameraPath() = default;
                 
-        size_t AddPoint(const PointType& a_point) {
-            PointType modifiedPoint = a_point;
+        size_t AddPoint(const TransitionPoint& a_point) {
+            TransitionPoint modifiedPoint = a_point;
             if (modifiedPoint.m_transition.m_time < 0.0f) {
                 modifiedPoint.m_transition.m_time = 0.0f;
             } 
 
             // Insert point in sorted order by time
             auto insertPos = std::lower_bound(m_points.begin(), m_points.end(), modifiedPoint.m_transition.m_time,
-                [](const PointType& point, float time) {
+                [](const TransitionPoint& point, float time) {
                     return point.m_transition.m_time < time;
                 });
             
@@ -321,36 +311,18 @@ namespace FCSE {
             return std::distance(m_points.begin(), it);
         }
         
-        const PointType& GetPoint(size_t a_index) const {
+        const TransitionPoint& GetPoint(size_t a_index) const {
             if (a_index >= m_points.size()) {
                 log::error("{}: index out of range", __FUNCTION__);
                 throw std::out_of_range("CameraPath::GetPoint: index out of range");
             }
             
             // Update cached m_point from reference if this is a reference-based point
-            if (m_points[a_index].m_useRef && m_points[a_index].m_reference) {
+            if (m_points[a_index].m_pointType == PointType::kReference && m_points[a_index].m_reference) {
                 m_points[a_index].m_point = m_points[a_index].GetPoint();
             }
             
             return m_points[a_index];
-        }
-        
-        size_t EditPoint(size_t a_index, const PointType& a_point) {
-            if (a_index >= m_points.size()) {
-                log::error("{}: index out of range", __FUNCTION__);
-                throw std::out_of_range("CameraPath::EditPoint: index out of range");
-            }
-            
-            // If time hasn't changed, simple update
-            if (std::abs(m_points[a_index].m_transition.m_time - a_point.m_transition.m_time) < EPSILON_COMPARISON) {
-                m_points[a_index] = a_point;
-                return a_index;
-            }
-            
-            // Time changed: remove old point and re-insert to maintain sorted order
-            m_points.erase(m_points.begin() + a_index);
-                        
-            return AddPoint(a_point);
         }
         
         void RemovePoint(size_t a_index) {
@@ -365,17 +337,26 @@ namespace FCSE {
         
         size_t GetPointCount() const { return m_points.size(); }
 
+        // Update all camera points - store current camera value into m_point
+        void UpdateCameraPoints() {
+            for (auto& point : m_points) {
+                if (point.m_pointType == PointType::kCamera) {
+                    point.m_point = point.GetPointAtCamera();
+                }
+            }
+        }
+
         virtual bool AddPathFromFile(std::ifstream& a_file, float a_timeOffset = 0.0f, float a_conversionFactor = 1.0f) = 0;
         virtual bool ExportPath(std::ofstream& a_file, float a_conversionFactor = 1.0f) const = 0;
-        virtual PointType GetPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) = 0;
+        virtual TransitionPoint GetPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) = 0;
         
     protected:
-        std::vector<PointType> m_points;
+        std::vector<TransitionPoint> m_points;
     };
 
     class TranslationPath : public CameraPath<TranslationPoint> {
     public:
-        using PointType = TranslationPoint;
+        using TransitionPoint = TranslationPoint;
         
         TranslationPoint GetPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) override;
         bool AddPathFromFile(std::ifstream& a_file, float a_timeOffset = 0.0f, float a_conversionFactor = 1.0f) override;
@@ -384,7 +365,7 @@ namespace FCSE {
 
     class RotationPath : public CameraPath<RotationPoint> {
     public:
-        using PointType = RotationPoint;
+        using TransitionPoint = RotationPoint;
         
         RotationPoint GetPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) override;
         bool AddPathFromFile(std::ifstream& a_file, float a_timeOffset = 0.0f, float a_conversionFactor = 1.0f) override;

@@ -12,6 +12,13 @@ namespace FCSE {
         kTranslation,
         kRotation
     };
+
+    enum struct PointType {
+        kWorld = 0,      // Static world point
+        kReference = 1,  // Dynamic reference-based point
+        kCamera = 2      // Static camera-based point (initialized at StartPlayback)
+    };
+
     
     struct Transition {
         float m_time;                           // Absolute time at which this point is reached (0 = start of playback)
@@ -33,4 +40,13 @@ namespace FCSE {
         }
         return static_cast<InterpolationMode>(a_mode);
     }
+
+    inline PointType ToPointType(int a_mode) {
+        if (a_mode < 0 || a_mode > static_cast<int>(PointType::kCamera)) {
+            log::warn("Invalid point type {} passed, defaulting to kWorld", a_mode);
+            return PointType::kWorld;
+        }
+        return static_cast<PointType>(a_mode);
+    }
+
 } // namespace FCSE

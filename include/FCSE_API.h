@@ -63,7 +63,8 @@ namespace FCSE_API {
 		[[nodiscard]] virtual size_t AddTranslationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetX = 0.0f, float a_offsetY = 0.0f, float a_offsetZ = 0.0f, bool a_isOffsetRelative = false, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
 
 		/// <summary>
-		/// Add a translation point to the camera timeline at the current camera position.
+		/// Add a translation point that captures camera position at the start of playback.
+		/// This point can be used to start playback smoothly from the last camera position, and return to it later.
 		/// </summary>
 		/// <param name="a_time">Time in seconds when this point occurs</param>
 		/// <param name="a_easeIn">Apply ease-in at the start of interpolation (default: false)</param>
@@ -100,7 +101,8 @@ namespace FCSE_API {
 		[[nodiscard]] virtual size_t AddRotationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetPitch, float a_offsetYaw, bool a_isOffsetRelative = false, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
 
 		/// <summary>
-		/// Add a rotation point to the camera timeline at the current camera rotation.
+		/// Add a rotation point that captures camera rotation at the start of playback.
+		/// This point can be used to start playback smoothly from the last camera rotation, and return to it later.
 		/// </summary>
 		/// <param name="a_time">Time in seconds when this point occurs</param>
 		/// <param name="a_easeIn">Apply ease-in at the start of interpolation (default: false)</param>
@@ -118,33 +120,6 @@ namespace FCSE_API {
 		/// Stop recording camera movement.
 		/// </summary>
 		virtual void StopRecording() const noexcept = 0;
-
-		/// <summary>
-		/// Edit an existing translation point (returns new index after potential re-sorting).
-		/// </summary>
-		/// <param name="a_index">Index of the point to edit</param>
-		/// <param name="a_time">New time in seconds when this point occurs</param>
-		/// <param name="a_posX">New X position coordinate</param>
-		/// <param name="a_posY">New Y position coordinate</param>
-		/// <param name="a_posZ">New Z position coordinate</param>
-		/// <param name="a_easeIn">Apply ease-in at the start of interpolation (default: false)</param>
-		/// <param name="a_easeOut">Apply ease-out at the end of interpolation (default: false)</param>
-		/// <param name="a_interpolationMode">Interpolation mode: 0=None, 1=Linear, 2=CubicHermite (default)</param>
-		/// <returns> New index of the point after update</returns>
-		[[nodiscard]] virtual size_t EditTranslationPoint(size_t a_index, float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
-
-		/// <summary>
-		/// Edit an existing rotation point (returns new index after potential re-sorting).
-		/// </summary>
-		/// <param name="a_index">Index of the point to edit</param>
-		/// <param name="a_time">New time in seconds when this point occurs</param>
-		/// <param name="a_pitch">New pitch rotation in radians</param>
-		/// <param name="a_yaw">New yaw rotation in radians</param>
-		/// <param name="a_easeIn">Apply ease-in at the start of interpolation (default: false)</param>
-		/// <param name="a_easeOut">Apply ease-out at the end of interpolation (default: false)</param>
-		/// <param name="a_interpolationMode">Interpolation mode: 0=None, 1=Linear, 2=CubicHermite (default)</param>
-		/// <returns> New index of the point after update</returns>
-		[[nodiscard]] virtual size_t EditRotationPoint(size_t a_index, float a_time, float a_pitch, float a_yaw, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
 
 		/// <summary>
 		/// Remove a translation point from the timeline.

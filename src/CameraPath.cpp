@@ -7,11 +7,8 @@ namespace FCSE {
     // ===== TranslationPath implementations =====
 
     TranslationPoint TranslationPath::GetPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) {
-        TranslationPoint point;
-        point.m_transition = Transition(a_time, InterpolationMode::kCubicHermite, a_easeIn, a_easeOut);
-        point.m_point = _ts_SKSEFunctions::GetCameraPos();
-
-        return point;
+        Transition transition(a_time, InterpolationMode::kCubicHermite, a_easeIn, a_easeOut);
+        return TranslationPoint(transition, PointType::kCamera);
     }
 
     bool TranslationPath::AddPathFromFile(std::ifstream& a_file, float a_timeOffset, float a_conversionFactor) {
@@ -32,16 +29,36 @@ namespace FCSE {
                     
                     Transition translationTrans(time, mode, easeIn, easeOut);
                     
-                    // Check if this is a reference-based point
-                    if (data.count("UseRef") && std::stoi(data.at("UseRef")) != 0) {
-                        // Reference-based point
+                    // Read PointType
+                    int pointTypeValue = data.count("PointType") ? std::stoi(data.at("PointType")) : 0;
+                    PointType pointType = ToPointType(pointTypeValue);
+                    
+                    if (pointType == PointType::kWorld) {
+                        // Static position-based point - read PositionX/Y/Z
+                        float posX = data.count("PositionX") ? std::stof(data.at("PositionX")) : 0.0f;
+                        float posY = data.count("PositionY") ? std::stof(data.at("PositionY")) : 0.0f;
+                        float posZ = data.count("PositionZ") ? std::stof(data.at("PositionZ")) : 0.0f;
+                        RE::NiPoint3 position(posX, posY, posZ);
+                        TranslationPoint point(translationTrans, PointType::kWorld, position, RE::NiPoint3{});
+                        AddPoint(point);
+                    } else if (pointType == PointType::kCamera) {
+                        // Camera point - read OffsetX/Y/Z
                         float offsetX = data.count("OffsetX") ? std::stof(data.at("OffsetX")) : 0.0f;
                         float offsetY = data.count("OffsetY") ? std::stof(data.at("OffsetY")) : 0.0f;
                         float offsetZ = data.count("OffsetZ") ? std::stof(data.at("OffsetZ")) : 0.0f;
+                        RE::NiPoint3 offset(offsetX, offsetY, offsetZ);
+                        TranslationPoint point(translationTrans, PointType::kCamera, RE::NiPoint3{}, offset);
+                        AddPoint(point);
+                    } else if (pointType == PointType::kReference) {
+                        // Reference-based point - read OffsetX/Y/Z
+                        float offsetX = data.count("OffsetX") ? std::stof(data.at("OffsetX")) : 0.0f;
+                        float offsetY = data.count("OffsetY") ? std::stof(data.at("OffsetY")) : 0.0f;
+                        float offsetZ = data.count("OffsetZ") ? std::stof(data.at("OffsetZ")) : 0.0f;
+                        RE::NiPoint3 offset(offsetX, offsetY, offsetZ);
                         bool isOffsetRelative = data.count("isOffsetRelative") ? (std::stoi(data.at("isOffsetRelative")) != 0) : false;
-                    
-                    RE::TESObjectREFR* reference = nullptr;
-                    uint32_t formID = 0;
+                        // Reference-based point
+                        RE::TESObjectREFR* reference = nullptr;
+                        uint32_t formID = 0;
                     
                     // Try EditorID first (load-order independent)
                     if (data.count("RefEditorID")) {
@@ -75,24 +92,13 @@ namespace FCSE {
                     }
                     
                     if (reference) {
-                        RE::NiPoint3 offset(offsetX, offsetY, offsetZ);
-                        TranslationPoint point(translationTrans, reference, offset, isOffsetRelative);
+                        TranslationPoint point(translationTrans, PointType::kReference, RE::NiPoint3{}, offset, reference, isOffsetRelative);
                         AddPoint(point);
                     } else {
                         log::warn("{}: Failed to resolve reference FormID 0x{:X}, using offset as absolute position", __FUNCTION__, formID);
-                        RE::NiPoint3 position(offsetX, offsetY, offsetZ);
-                        TranslationPoint point(translationTrans, position);
+                        TranslationPoint point(translationTrans, PointType::kWorld, offset, RE::NiPoint3{});
                         AddPoint(point);
                     }
-                } else {
-                    // Static position-based point
-                    float posX = data.count("PositionX") ? std::stof(data.at("PositionX")) : 0.0f;
-                    float posY = data.count("PositionY") ? std::stof(data.at("PositionY")) : 0.0f;
-                    float posZ = data.count("PositionZ") ? std::stof(data.at("PositionZ")) : 0.0f;
-                    
-                    RE::NiPoint3 position(posX, posY, posZ);
-                    TranslationPoint point(translationTrans, position);
-                    AddPoint(point);
                 }
                 } catch (const std::exception& e) {
                     log::warn("{}: Skipping invalid TranslatePoint entry: {}", __FUNCTION__, e.what());
@@ -109,11 +115,23 @@ namespace FCSE {
 
         for (const auto& point : m_points) {
             a_file << "[TranslatePoint]\n";
+            a_file << "PointType=" << static_cast<int>(point.m_pointType) << "\n";
             
-            if (point.m_useRef && point.m_reference) {
-                // Reference-based point
-                a_file << "UseRef=1\n";
-                
+            // Write position values with appropriate field names
+            if (point.m_pointType == PointType::kWorld) {
+                // kWorld: write as absolute PositionX/Y/Z
+                a_file << "PositionX=" << point.m_point.x << "\n";
+                a_file << "PositionY=" << point.m_point.y << "\n";
+                a_file << "PositionZ=" << point.m_point.z << "\n";
+            } else {
+                // kCamera/kReference: write as OffsetX/Y/Z
+                a_file << "OffsetX=" << point.m_offset.x << "\n";
+                a_file << "OffsetY=" << point.m_offset.y << "\n";
+                a_file << "OffsetZ=" << point.m_offset.z << "\n";
+            }
+            
+            if (point.m_pointType == PointType::kReference && point.m_reference) {
+                // Reference-based point - write reference info
                 const char* editorID = point.m_reference->GetFormEditorID();
                 
                 if (editorID && editorID[0] != '\0') {
@@ -128,16 +146,7 @@ namespace FCSE {
                     a_file << "RefPlugin=" << file->fileName << "\n";
                 }
                 a_file << "RefFormID=0x" << std::hex << std::uppercase << point.m_reference->GetFormID() << std::dec << "\n";
-                a_file << "OffsetX=" << point.m_offset.x << "\n";
-                a_file << "OffsetY=" << point.m_offset.y << "\n";
-                a_file << "OffsetZ=" << point.m_offset.z << "\n";
                 a_file << "isOffsetRelative=" << (point.m_isOffsetRelative ? 1 : 0) << "\n";
-            } else {
-                // Static position-based point
-                a_file << "UseRef=0\n";
-                a_file << "PositionX=" << point.m_point.x << "\n";
-                a_file << "PositionY=" << point.m_point.y << "\n";
-                a_file << "PositionZ=" << point.m_point.z << "\n";
             }
             
             a_file << "Time=" << point.m_transition.m_time << "\n";
@@ -158,13 +167,8 @@ namespace FCSE {
     // ===== RotationPath implementations =====
     
     RotationPoint RotationPath::GetPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) {
-        RotationPoint point;
-        point.m_transition = Transition(a_time, InterpolationMode::kCubicHermite, a_easeIn, a_easeOut);
-        auto rotation = _ts_SKSEFunctions::GetCameraRotation();
-        point.m_point.x = rotation.x;  // Pitch
-        point.m_point.y = rotation.z;  // Yaw
-
-        return point;
+        Transition transition(a_time, InterpolationMode::kCubicHermite, a_easeIn, a_easeOut);
+        return RotationPoint(transition, PointType::kCamera);
     }
 
     bool RotationPath::AddPathFromFile(std::ifstream& a_file, float a_timeOffset, float a_conversionFactor) {
@@ -185,12 +189,31 @@ namespace FCSE {
                     
                     Transition rotationTrans(time, mode, easeIn, easeOut);
                     
-                    // Check if this is a reference-based point
-                    if (data.count("UseRef") && std::stoi(data.at("UseRef")) != 0) {
+                    int pointTypeValue = data.count("PointType") ? std::stoi(data.at("PointType")) : 0;
+                    PointType pointType = ToPointType(pointTypeValue);
+                    
+                    // Read rotation/offset values based on point type
+                    RE::BSTPoint2<float> rotation;
+                    RE::BSTPoint2<float> offset;
+                    
+                    if (pointType == PointType::kWorld) {
+                        // kWorld: read Pitch/Yaw
+                        rotation.x = (data.count("Pitch") ? std::stof(data.at("Pitch")) : 0.0f) * a_conversionFactor;
+                        rotation.y = (data.count("Yaw") ? std::stof(data.at("Yaw")) : 0.0f) * a_conversionFactor;
+                    } else {
+                        // kCamera/kReference: read OffsetPitch/Yaw
+                        offset.x = (data.count("OffsetPitch") ? std::stof(data.at("OffsetPitch")) : 0.0f) * a_conversionFactor;
+                        offset.y = (data.count("OffsetYaw") ? std::stof(data.at("OffsetYaw")) : 0.0f) * a_conversionFactor;
+                    }
+                    
+                    bool isOffsetRelative = data.count("isOffsetRelative") ? (std::stoi(data.at("isOffsetRelative")) != 0) : false;
+                    
+                    if (pointType == PointType::kCamera) {
+                        // Camera point with offset
+                        RotationPoint point(rotationTrans, PointType::kCamera, RE::BSTPoint2<float>{}, offset);
+                        AddPoint(point);
+                    } else if (pointType == PointType::kReference) {
                         // Reference-based point
-                        float offsetPitch = (data.count("OffsetPitch") ? std::stof(data.at("OffsetPitch")) : 0.0f) * a_conversionFactor;
-                        float offsetYaw = (data.count("OffsetYaw") ? std::stof(data.at("OffsetYaw")) : 0.0f) * a_conversionFactor;
-                        
                         RE::TESObjectREFR* reference = nullptr;
                         uint32_t formID = 0;
                         
@@ -226,22 +249,16 @@ namespace FCSE {
                         }
                         
                         if (reference) {
-                            RE::BSTPoint2<float> offset({offsetPitch, offsetYaw});
-                            RotationPoint point(rotationTrans, reference, offset);
+                            RotationPoint point(rotationTrans, PointType::kReference, RE::BSTPoint2<float>{}, offset, reference, isOffsetRelative);
                             AddPoint(point);
                         } else {
                             log::warn("{}: Failed to resolve reference FormID 0x{:X}, using offset as absolute rotation", __FUNCTION__, formID);
-                            RE::BSTPoint2<float> rotation({offsetPitch, offsetYaw});
-                            RotationPoint point(rotationTrans, rotation);
+                            RotationPoint point(rotationTrans, PointType::kWorld, offset, RE::BSTPoint2<float>{});
                             AddPoint(point);
                         }
                     } else {
-                        // Static rotation-based point
-                        float pitch = (data.count("Pitch") ? std::stof(data.at("Pitch")) : 0.0f) * a_conversionFactor;
-                        float yaw = (data.count("Yaw") ? std::stof(data.at("Yaw")) : 0.0f) * a_conversionFactor;
-                        
-                        RE::BSTPoint2<float> rotation({pitch, yaw});
-                        RotationPoint point(rotationTrans, rotation);
+                        // Static rotation-based point (kWorld)
+                        RotationPoint point(rotationTrans, PointType::kWorld, rotation, RE::BSTPoint2<float>{});
                         AddPoint(point);
                     }
                 } catch (const std::exception& e) {
@@ -259,10 +276,22 @@ namespace FCSE {
      
         for (const auto& point : m_points) {
             a_file << "[RotatePoint]\n";
+            a_file << "PointType=" << static_cast<int>(point.m_pointType) << "\n";
             
-            if (point.m_useRef && point.m_reference) {
-                // Reference-based point
-                a_file << "UseRef=1\n";
+            // Write rotation values with appropriate field names
+            if (point.m_pointType == PointType::kWorld) {
+                // kWorld: write as absolute Pitch/Yaw
+                a_file << "Pitch=" << (point.m_point.x * a_conversionFactor) << "\n";
+                a_file << "Yaw=" << (point.m_point.y * a_conversionFactor) << "\n";
+            } else {
+                // kCamera/kReference: write as OffsetPitch/Yaw
+                a_file << "OffsetPitch=" << (point.m_offset.x * a_conversionFactor) << "\n";
+                a_file << "OffsetYaw=" << (point.m_offset.y * a_conversionFactor) << "\n";
+            }
+            
+            if (point.m_pointType == PointType::kReference && point.m_reference) {
+                // Reference-based point - write reference info
+                a_file << "isOffsetRelative=" << (point.m_isOffsetRelative ? 1 : 0) << "\n";
                 
                 // Try to get EditorID for load-order independence
                 // Note: GetFormEditorID() may not work reliably without po3's Tweaks installed
@@ -281,13 +310,6 @@ namespace FCSE {
                     a_file << "RefPlugin=" << file->fileName << "\n";
                 }
                 a_file << "RefFormID=0x" << std::hex << std::uppercase << point.m_reference->GetFormID() << std::dec << "\n";
-                a_file << "OffsetPitch=" << (point.m_offset.x * a_conversionFactor) << "\n";
-                a_file << "OffsetYaw=" << (point.m_offset.y * a_conversionFactor) << "\n";
-            } else {
-                // Static rotation-based point
-                a_file << "UseRef=0\n";
-                a_file << "Pitch=" << (point.m_point.x * a_conversionFactor) << "\n";
-                a_file << "Yaw=" << (point.m_point.y * a_conversionFactor) << "\n";
             }
             
             a_file << "Time=" << point.m_transition.m_time << "\n";

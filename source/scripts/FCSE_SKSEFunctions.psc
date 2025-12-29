@@ -25,7 +25,8 @@ int Function FCSE_AddTranslationPoint(float time, float posX, float posY, float 
 ; Returns: index of the added point
 int Function FCSE_AddTranslationPointAtRef(float time, ObjectReference reference, float offsetX, float offsetY, float offsetZ, bool isOffsetRelative = false, bool easeIn = false, bool easeOut = false, int interpolationMode = 2) global native
 
-; Add a translation point at the current camera position
+; Add a translation point that captures camera position at the start of playback
+; This point can be used to start playback smoothly from the last camera position, and return to it later.
 ; time: time in seconds when this point occurs
 ; easeIn: ease in at the start of interpolation
 ; easeOut: ease out at the end of interpolation
@@ -56,7 +57,8 @@ int Function FCSE_AddRotationPoint(float time, float pitch, float yaw, bool ease
 ; Returns: index of the added point
 int Function FCSE_AddRotationPointAtRef(float time, ObjectReference reference, float offsetPitch, float offsetYaw, bool isOffsetRelative = false, bool easeIn = false, bool easeOut = false, int interpolationMode = 2) global native
 
-; Add a rotation point at the current camera rotation
+; Add a rotation point that captures camera rotation at the start of playback
+; This point can be used to start playback smoothly from the last camera rotation, and return to it later.
 ; time: time in seconds when this point occurs
 ; easeIn: ease in at the start of interpolation
 ; easeOut: ease out at the end of interpolation
@@ -69,27 +71,6 @@ Function FCSE_StartRecording() global native
 
 ; Stop recording camera movements
 Function FCSE_StopRecording() global native
-
-; Edit an existing translation point
-; index: index of the point to edit
-; time: new time in seconds
-; posX, posY, posZ: new position coordinates
-; easeIn: ease in at the start of interpolation
-; easeOut: ease out at the end of interpolation
-; interpolationMode: 0=None, 1=Linear, 2=CubicHermite (default)
-; Returns: new index of the point after potential re-sorting
-int Function FCSE_EditTranslationPoint(int index, float time, float posX, float posY, float posZ, bool easeIn, bool easeOut, int interpolationMode = 2) global native
-
-; Edit an existing rotation point
-; index: index of the point to edit
-; time: new time in seconds
-; pitch: new pitch rotation (in radians or degrees depending on configuration)
-; yaw: new yaw rotation (in radians or degrees depending on configuration)
-; easeIn: ease in at the start of interpolation
-; easeOut: ease out at the end of interpolation
-; interpolationMode: 0=None, 1=Linear, 2=CubicHermite (default)
-; Returns: new index of the point after potential re-sorting
-int Function FCSE_EditRotationPoint(int index, float time, float pitch, float yaw, bool easeIn, bool easeOut, int interpolationMode = 2) global native
 
 ; Remove a translation point from the timeline
 ; index: index of the point to remove

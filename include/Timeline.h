@@ -13,22 +13,17 @@ namespace FCSE {
     template<typename PathType>
     class Timeline {
     public:
-        using PointType = typename PathType::PointType;
+        using TransitionPoint = typename PathType::TransitionPoint;
         
         Timeline() = default;
         ~Timeline() = default;
         
-        size_t AddPoint(const PointType& a_point) { 
+        size_t AddPoint(const TransitionPoint& a_point) { 
             size_t result = m_path.AddPoint(a_point);
             ResetTimeline();
             return result;
         }
-        const PointType& GetPoint(size_t a_index) const { return m_path.GetPoint(a_index); }
-        size_t EditPoint(size_t a_index, const PointType& a_point) { 
-            size_t result = m_path.EditPoint(a_index, a_point);
-            ResetTimeline();
-            return result;
-        }
+        const TransitionPoint& GetPoint(size_t a_index) const { return m_path.GetPoint(a_index); }
         void RemovePoint(size_t a_index) { 
             m_path.RemovePoint(a_index);
             ResetTimeline();
@@ -48,7 +43,7 @@ namespace FCSE {
         bool ExportTimeline(std::ofstream& a_file, float a_conversionFactor = 1.0f) const { 
             return m_path.ExportPath(a_file, a_conversionFactor);
         }
-        PointType GetPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) {
+        TransitionPoint GetPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) {
             return m_path.GetPointAtCamera(a_time, a_easeIn, a_easeOut);
         }
         
@@ -87,10 +82,10 @@ namespace FCSE {
         bool IsPaused() const { return m_isPaused; }
         
         // Get interpolated point at a specific time (for global easing)
-        auto GetPointAtTime(float a_time) const -> decltype(std::declval<PointType>().m_point) {
+        auto GetPointAtTime(float a_time) const -> decltype(std::declval<TransitionPoint>().m_point) {
             auto pointCount = GetPointCount();
             if (pointCount == 0) {
-                return PointType{}.m_point;
+                return TransitionPoint{}.m_point;
             }
             
             // Calculate state for requested time
@@ -159,6 +154,7 @@ namespace FCSE {
         }
         
         void StartPlayback() {
+            m_path.UpdateCameraPoints(); // Store current camera values for kCamera points
             m_isPlaying = true;
             m_isPaused = false;
         }
@@ -204,9 +200,9 @@ namespace FCSE {
         
     private:
         // Get interpolated point for given index and progress
-        auto GetInterpolatedPoint(size_t a_index, float a_progress) const -> decltype(std::declval<PointType>().m_point) {
+        auto GetInterpolatedPoint(size_t a_index, float a_progress) const -> decltype(std::declval<TransitionPoint>().m_point) {
             if (GetPointCount() == 0) {
-                return PointType{}.m_point;
+                return TransitionPoint{}.m_point;
             }
             
             size_t currentIdx = a_index;
@@ -228,11 +224,11 @@ namespace FCSE {
             }
         }
         
-        auto GetPointLinear(size_t a_index, float a_progress) const -> decltype(std::declval<PointType>().m_point) {
+        auto GetPointLinear(size_t a_index, float a_progress) const -> decltype(std::declval<TransitionPoint>().m_point) {
             const size_t pointCount = GetPointCount();
             
             if (pointCount == 0) {
-                return PointType{}.m_point;
+                return TransitionPoint{}.m_point;
             }
             
             size_t currentIdx = a_index;
@@ -265,15 +261,15 @@ namespace FCSE {
                                  currentPoint.m_transition.m_easeIn,
                                  currentPoint.m_transition.m_easeOut);
             
-            PointType result = prevPoint + (currentPoint - prevPoint) * t;
+            TransitionPoint result = prevPoint + (currentPoint - prevPoint) * t;
             return result.m_point;
         }
         
-        auto GetPointCubicHermite(size_t a_index, float a_progress) const -> decltype(std::declval<PointType>().m_point) {
+        auto GetPointCubicHermite(size_t a_index, float a_progress) const -> decltype(std::declval<TransitionPoint>().m_point) {
             const size_t pointCount = GetPointCount();
             
             if (pointCount == 0) {
-                return PointType{}.m_point;
+                return TransitionPoint{}.m_point;
             }
             
             if (pointCount == 1) {
@@ -306,7 +302,7 @@ namespace FCSE {
             }
             
             // Get neighboring points for tangent computation
-            PointType pt0, pt1, pt2, pt3;
+            TransitionPoint pt0, pt1, pt2, pt3;
             
             if (m_playbackMode == PlaybackMode::kLoop) {
                 // Loop mode: modulo all indices to wrap around
@@ -329,7 +325,7 @@ namespace FCSE {
                                  currentPoint.m_transition.m_easeIn,
                                  currentPoint.m_transition.m_easeOut);
             
-            PointType result = pt1.CubicHermite(pt0, pt1, pt2, pt3, t);
+            TransitionPoint result = pt1.CubicHermite(pt0, pt1, pt2, pt3, t);
             return result.m_point;
         }
         
