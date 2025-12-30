@@ -4,8 +4,7 @@ namespace FCSE {
     enum class InterpolationMode {
         kNone,
         kLinear,
-        kCubicHermite,
-        kBezier
+        kCubicHermite
     };
     
     enum class TimelineType {
@@ -17,6 +16,11 @@ namespace FCSE {
         kWorld = 0,      // Static world point
         kReference = 1,  // Dynamic reference-based point
         kCamera = 2      // Static camera-based point (initialized at StartPlayback)
+    };
+
+    enum class PlaybackMode : int {
+        kEnd = 0,   // Stop at end of timeline (default)
+        kLoop = 1   // Restart from beginning when timeline completes
     };
 
     
@@ -34,7 +38,7 @@ namespace FCSE {
     };
 
     inline InterpolationMode ToInterpolationMode(int a_mode) {
-        if (a_mode < 0 || a_mode > static_cast<int>(InterpolationMode::kBezier)) {
+        if (a_mode < 0 || a_mode > static_cast<int>(InterpolationMode::kCubicHermite)) {
             log::warn("Invalid interpolation mode {} passed, defaulting to kNone", a_mode);
             return InterpolationMode::kNone;
         }

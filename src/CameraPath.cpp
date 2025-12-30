@@ -6,7 +6,7 @@ namespace FCSE {
     
     // ===== TranslationPath implementations =====
 
-    TranslationPoint TranslationPath::GetPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) {
+    TranslationPoint TranslationPath::GetPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) const {
         Transition transition(a_time, InterpolationMode::kCubicHermite, a_easeIn, a_easeOut);
         return TranslationPoint(transition, PointType::kCamera);
     }
@@ -166,7 +166,7 @@ namespace FCSE {
 
     // ===== RotationPath implementations =====
     
-    RotationPoint RotationPath::GetPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) {
+    RotationPoint RotationPath::GetPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) const {
         Transition transition(a_time, InterpolationMode::kCubicHermite, a_easeIn, a_easeOut);
         return RotationPoint(transition, PointType::kCamera);
     }

@@ -3,6 +3,7 @@
 #include "APIManager.h"
 #include "TimelineManager.h"
 #include "ModAPI.h"
+#include "CameraTypes.h"
 
 namespace FCSE {
     namespace Interface {
@@ -14,27 +15,27 @@ namespace FCSE {
         }
         
         int AddTranslationPointAtCamera(RE::StaticFunctionTag*, float a_time, bool a_easeIn, bool a_easeOut, int a_interpolationMode) {
-            return static_cast<int>(FCSE::TimelineManager::GetSingleton().AddTranslationPointAtCamera(a_time, a_easeIn, a_easeOut, a_interpolationMode));
+            return static_cast<int>(FCSE::TimelineManager::GetSingleton().AddTranslationPointAtCamera(a_time, a_easeIn, a_easeOut, ToInterpolationMode(a_interpolationMode)));
         }
 
         int AddTranslationPoint(RE::StaticFunctionTag*, float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn, bool a_easeOut, int a_interpolationMode) {
-            return static_cast<int>(FCSE::TimelineManager::GetSingleton().AddTranslationPoint(a_time, a_posX, a_posY, a_posZ, a_easeIn, a_easeOut, a_interpolationMode));
+            return static_cast<int>(FCSE::TimelineManager::GetSingleton().AddTranslationPoint(a_time, a_posX, a_posY, a_posZ, a_easeIn, a_easeOut, ToInterpolationMode(a_interpolationMode)));
         }
 
         int AddTranslationPointAtRef(RE::StaticFunctionTag*, float a_time, RE::TESObjectREFR* a_reference, float a_offsetX, float a_offsetY, float a_offsetZ, bool a_isOffsetRelative, bool a_easeIn, bool a_easeOut, int a_interpolationMode) {
-            return static_cast<int>(FCSE::TimelineManager::GetSingleton().AddTranslationPointAtRef(a_time, a_reference, a_offsetX, a_offsetY, a_offsetZ, a_isOffsetRelative, a_easeIn, a_easeOut, a_interpolationMode));
+            return static_cast<int>(FCSE::TimelineManager::GetSingleton().AddTranslationPointAtRef(a_time, a_reference, a_offsetX, a_offsetY, a_offsetZ, a_isOffsetRelative, a_easeIn, a_easeOut, ToInterpolationMode(a_interpolationMode)));
         }
 
         int AddRotationPointAtCamera(RE::StaticFunctionTag*, float a_time, bool a_easeIn, bool a_easeOut, int a_interpolationMode) {
-            return static_cast<int>(FCSE::TimelineManager::GetSingleton().AddRotationPointAtCamera(a_time, a_easeIn, a_easeOut, a_interpolationMode));
+            return static_cast<int>(FCSE::TimelineManager::GetSingleton().AddRotationPointAtCamera(a_time, a_easeIn, a_easeOut, ToInterpolationMode(a_interpolationMode)));
         }
 
         int AddRotationPoint(RE::StaticFunctionTag*, float a_time, float a_pitch, float a_yaw, bool a_easeIn, bool a_easeOut, int a_interpolationMode) {
-            return static_cast<int>(FCSE::TimelineManager::GetSingleton().AddRotationPoint(a_time, a_pitch, a_yaw, a_easeIn, a_easeOut, a_interpolationMode));
+            return static_cast<int>(FCSE::TimelineManager::GetSingleton().AddRotationPoint(a_time, a_pitch, a_yaw, a_easeIn, a_easeOut, ToInterpolationMode(a_interpolationMode)));
         }
 
         int AddRotationPointAtRef(RE::StaticFunctionTag*, float a_time, RE::TESObjectREFR* a_reference, float a_offsetPitch, float a_offsetYaw, bool a_isOffsetRelative, bool a_easeIn, bool a_easeOut, int a_interpolationMode) {
-            return static_cast<int>(FCSE::TimelineManager::GetSingleton().AddRotationPointAtRef(a_time, a_reference, a_offsetPitch, a_offsetYaw, a_isOffsetRelative, a_easeIn, a_easeOut, a_interpolationMode));
+            return static_cast<int>(FCSE::TimelineManager::GetSingleton().AddRotationPointAtRef(a_time, a_reference, a_offsetPitch, a_offsetYaw, a_isOffsetRelative, a_easeIn, a_easeOut, ToInterpolationMode(a_interpolationMode)));
         }
 
         void StartRecording(RE::StaticFunctionTag*) {

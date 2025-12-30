@@ -1,5 +1,6 @@
 #include "FCSE_Utils.h"
 #include "APIManager.h"
+#include "Offsets.h"
 
 namespace FCSE {
     void ComputeHermiteBasis(float t, float& h00, float& h10, float& h01, float& h11) {
@@ -126,5 +127,38 @@ namespace FCSE {
         }
 
         return true;
+    }
+
+    RE::NiPointer<RE::NiAVObject> GetTargetPoint(RE::Actor* a_actor) {
+        RE::NiPointer<RE::NiAVObject> targetPoint = nullptr;
+
+        if (!a_actor) {
+            return nullptr;
+        }
+
+        auto race = a_actor->GetRace();
+        if (!race) {
+            return nullptr;
+        }
+
+        RE::BGSBodyPartData* bodyPartData = race->bodyPartData;
+        if (!bodyPartData) {
+            return nullptr;
+        }
+
+        auto actor3D = a_actor->Get3D2();
+        if (!actor3D) {
+            return nullptr;
+        }
+    
+        RE::BGSBodyPart* bodyPart = bodyPartData->parts[RE::BGSBodyPartDefs::LIMB_ENUM::kHead];
+        if (!bodyPart) {
+            bodyPart = bodyPartData->parts[RE::BGSBodyPartDefs::LIMB_ENUM::kTotal];
+        }
+        if (bodyPart) {
+            targetPoint = RE::NiPointer<RE::NiAVObject>(NiAVObject_LookupBoneNodeByName(actor3D, bodyPart->targetName, true));
+        }
+
+        return targetPoint;
     }
 } // namespace FCSE

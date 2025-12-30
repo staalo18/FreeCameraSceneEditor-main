@@ -348,7 +348,7 @@ namespace FCSE {
 
         virtual bool AddPathFromFile(std::ifstream& a_file, float a_timeOffset = 0.0f, float a_conversionFactor = 1.0f) = 0;
         virtual bool ExportPath(std::ofstream& a_file, float a_conversionFactor = 1.0f) const = 0;
-        virtual TransitionPoint GetPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) = 0;
+        virtual TransitionPoint GetPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) const = 0;
         
     protected:
         std::vector<TransitionPoint> m_points;
@@ -357,8 +357,9 @@ namespace FCSE {
     class TranslationPath : public CameraPath<TranslationPoint> {
     public:
         using TransitionPoint = TranslationPoint;
+        using ValueType = RE::NiPoint3;  // Type returned by GetPoint()
         
-        TranslationPoint GetPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) override;
+        TranslationPoint GetPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) const override;
         bool AddPathFromFile(std::ifstream& a_file, float a_timeOffset = 0.0f, float a_conversionFactor = 1.0f) override;
         bool ExportPath(std::ofstream& a_file, float a_conversionFactor = 1.0f) const override;
     };
@@ -366,8 +367,9 @@ namespace FCSE {
     class RotationPath : public CameraPath<RotationPoint> {
     public:
         using TransitionPoint = RotationPoint;
+        using ValueType = RE::BSTPoint2<float>;  // Type returned by GetPoint()
         
-        RotationPoint GetPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) override;
+        RotationPoint GetPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut) const override;
         bool AddPathFromFile(std::ifstream& a_file, float a_timeOffset = 0.0f, float a_conversionFactor = 1.0f) override;
         bool ExportPath(std::ofstream& a_file, float a_conversionFactor = 1.0f) const override;
     };

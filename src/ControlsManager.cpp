@@ -37,21 +37,27 @@ namespace FCSE {
                         auto& timelineManager = FCSE::TimelineManager::GetSingleton();
                         bool isOffsetRelative = true;
                         timelineManager.ClearTimeline();
-                        float offsetY = 30.f;
-                        float offsetZ = 120.f;
-
-                        timelineManager.AddTranslationPointAtCamera(0.0f, true, true, 2);
-                        timelineManager.AddRotationPointAtCamera(0.f, true, true, 2);
-                        timelineManager.AddRotationPointAtRef(0.5f, reference, 0.0f, 0.f, false, true, true, 2);
-                        timelineManager.AddRotationPointAtRef(1.5f, reference, 0.0f, 0.f, false, true, true, 2);
-                        timelineManager.AddTranslationPointAtRef(2.f, reference, 0.f, offsetY, offsetZ, isOffsetRelative, true, true, 2);
-                        timelineManager.AddRotationPointAtRef(2.f, reference, 0.0f, 0.f, isOffsetRelative, true, true, 2);
-                        timelineManager.AddTranslationPointAtRef(8.f, reference, 0.f, offsetY, offsetZ, isOffsetRelative, true, true, 2);
-                        timelineManager.AddRotationPointAtRef(8.f, reference, 0.0f, 0.f, isOffsetRelative, true, true, 2);
-                        timelineManager.AddRotationPointAtRef(9.f, RE::PlayerCharacter::GetSingleton(), 0.0f, 0.f, false, true, true, 2);
-                        timelineManager.AddTranslationPointAtCamera(10.0f, true, true, 2);
-                        timelineManager.AddRotationPointAtCamera(10.f, true, true, 2);
-
+                        float offsetX;
+                        float offsetY;
+                        float offsetZ;
+auto headPos = FCSE::GetTargetPoint(reference->As<RE::Actor>());
+if (headPos) {
+    offsetX = headPos->world.translate.x - reference->GetPosition().x;
+    offsetY = headPos->world.translate.y - reference->GetPosition().y + 20.f;
+    offsetZ = headPos->world.translate.z - reference->GetPosition().z;
+}
+log::info("Calculated offsets: X = {}, Y = {}, Z = {}", offsetX, offsetY, offsetZ);
+                        timelineManager.AddTranslationPointAtCamera(0.0f, true, true, InterpolationMode::kCubicHermite);
+                        timelineManager.AddRotationPointAtCamera(0.f, true, true, InterpolationMode::kCubicHermite);
+                        timelineManager.AddRotationPointAtRef(0.5f, reference, 0.0f, 0.f, false, true, true, InterpolationMode::kCubicHermite);
+                        timelineManager.AddRotationPointAtRef(1.5f, reference, 0.0f, 0.f, false, true, true, InterpolationMode::kCubicHermite);
+                        timelineManager.AddTranslationPointAtRef(2.f, reference, offsetX, offsetY, offsetZ, isOffsetRelative, true, true, InterpolationMode::kCubicHermite);
+                        timelineManager.AddRotationPointAtRef(2.f, reference, 0.0f, 0.f, isOffsetRelative, true, true, InterpolationMode::kCubicHermite);
+                        timelineManager.AddTranslationPointAtRef(8.f, reference, offsetX, offsetY, offsetZ, isOffsetRelative, true, true, InterpolationMode::kCubicHermite);
+                        timelineManager.AddRotationPointAtRef(8.f, reference, 0.0f, 0.f, isOffsetRelative, true, true, InterpolationMode::kCubicHermite);
+                        timelineManager.AddRotationPointAtRef(9.f, RE::PlayerCharacter::GetSingleton(), 0.0f, 0.f, false, true, true, InterpolationMode::kCubicHermite);
+                        timelineManager.AddTranslationPointAtCamera(10.0f, true, true, InterpolationMode::kCubicHermite);
+                        timelineManager.AddRotationPointAtCamera(10.f, true, true, InterpolationMode::kCubicHermite);
                         timelineManager.StartPlayback();
                     }
                 } else if (key == 6) {

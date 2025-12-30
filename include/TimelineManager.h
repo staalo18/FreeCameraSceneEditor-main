@@ -18,25 +18,21 @@ namespace FCSE {
             
             void StopRecording();
 
-            // Add a new point at time a_time
-            size_t AddTranslationPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut, int a_interpolationMode);
-            size_t AddTranslationPoint(float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn, bool a_easeOut, int a_interpolationMode);
-            size_t AddTranslationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetX, float a_offsetY, float a_offsetZ, bool a_isOffsetRelative, bool a_easeIn, bool a_easeOut, int a_interpolationMode);
-            size_t AddRotationPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut, int a_interpolationMode);
-            size_t AddRotationPoint(float a_time, float a_pitch, float a_yaw, bool a_easeIn, bool a_easeOut, int a_interpolationMode);
-            size_t AddRotationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetPitch, float a_offsetYaw, bool a_isOffsetRelative, bool a_easeIn, bool a_easeOut, int a_interpolationMode);
+            size_t AddTranslationPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut, InterpolationMode a_interpolationMode);
+            size_t AddTranslationPoint(float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn, bool a_easeOut, InterpolationMode a_interpolationMode);
+            size_t AddTranslationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetX, float a_offsetY, float a_offsetZ, bool a_isOffsetRelative, bool a_easeIn, bool a_easeOut, InterpolationMode a_interpolationMode);
+            size_t AddRotationPointAtCamera(float a_time, bool a_easeIn, bool a_easeOut, InterpolationMode a_interpolationMode);
+            size_t AddRotationPoint(float a_time, float a_pitch, float a_yaw, bool a_easeIn, bool a_easeOut, InterpolationMode a_interpolationMode);
+            size_t AddRotationPointAtRef(float a_time, RE::TESObjectREFR* a_reference, float a_offsetPitch, float a_offsetYaw, bool a_isOffsetRelative, bool a_easeIn, bool a_easeOut, InterpolationMode a_interpolationMode);
             
-            // Remove point
             void RemoveTranslationPoint(size_t a_index);
             void RemoveRotationPoint(size_t a_index);
 
             void ClearTimeline(bool a_notifyUser = true);
             
-            // Access points
-            size_t GetTranslationPointCount() const { return m_translationTimeline.GetPointCount(); }
-            size_t GetRotationPointCount() const { return m_rotationTimeline.GetPointCount(); }
+            size_t GetTranslationPointCount() const { return m_timeline.GetTranslationPointCount(); }
+            size_t GetRotationPointCount() const { return m_timeline.GetRotationPointCount(); }
             
-            // Playback
             void StartPlayback(float a_speed = 1.0f, bool a_globalEaseIn = false, bool a_globalEaseOut = false, bool a_useDuration = false, float a_duration = 0.0f);
             void StopPlayback();
             bool IsPlaybackRunning() const { return m_isPlaybackRunning; }
@@ -47,7 +43,6 @@ namespace FCSE {
             void AllowUserRotation(bool a_allow) { m_allowUserRotation = a_allow; }
             bool IsUserRotationAllowed() const { return m_allowUserRotation; }    
                                     
-            // Import/Export camera timeline from/to file
             bool AddTimelineFromFile(const char* a_filePath, float a_timeOffset = 0.0f);
             bool ExportTimeline(const char* a_filePath) const;
 
@@ -66,8 +61,7 @@ namespace FCSE {
 
             float GetTimelineDuration() const;
 
-            TranslationTimeline m_translationTimeline;
-            RotationTimeline m_rotationTimeline;
+            Timeline m_timeline;
             
             // Recording
             bool m_isRecording = false;

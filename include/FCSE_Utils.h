@@ -18,5 +18,7 @@ namespace FCSE {
         const std::string& a_sectionName,
         std::function<void(const std::map<std::string, std::string>&)> a_processSection
     );
+
+     RE::NiPointer<RE::NiAVObject> GetTargetPoint(RE::Actor* a_actor);
 } // namespace FCSE
 
