@@ -3,6 +3,33 @@
 #include "Offsets.h"
 
 namespace FCSE {
+    SKSE::PluginHandle ModNameToHandle(const char* a_modName) {
+        if (!a_modName || strlen(a_modName) == 0) {
+            log::error("{}: Invalid mod name (null or empty)", __FUNCTION__);
+            return 0;
+        }
+        
+        auto* dataHandler = RE::TESDataHandler::GetSingleton();
+        if (!dataHandler) {
+            log::error("{}: TESDataHandler not available", __FUNCTION__);
+            return 0;
+        }
+        
+        // Search through loaded files for matching mod name
+        for (const auto& file : dataHandler->files) {
+            if (file && file->fileName && std::string(file->fileName) == a_modName) {
+                // Use compile index as plugin handle (unique per mod in load order)
+                auto handle = static_cast<SKSE::PluginHandle>(file->compileIndex);
+                log::info("{}: Mod '{}' found with index {}", __FUNCTION__, a_modName, handle);
+                return handle;
+            }
+        }
+        
+        // Mod not found in load order
+        log::warn("{}: Mod '{}' not found in load order", __FUNCTION__, a_modName);
+        return 0;
+    }
+
     void ComputeHermiteBasis(float t, float& h00, float& h10, float& h01, float& h11) {
         float t2 = t * t;
         float t3 = t2 * t;

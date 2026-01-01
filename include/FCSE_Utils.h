@@ -20,5 +20,8 @@ namespace FCSE {
     );
 
      RE::NiPointer<RE::NiAVObject> GetTargetPoint(RE::Actor* a_actor);
+
+    // Convert mod name (ESP/ESL) to plugin handle via TESDataHandler
+    SKSE::PluginHandle ModNameToHandle(const char* a_modName);
 } // namespace FCSE
 

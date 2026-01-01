@@ -151,7 +151,7 @@ namespace FCSE
 	{
 		auto pointCount = GetPointCount();
 		if (pointCount == 0) {
-			return TransitionPoint{}.m_point;
+			return TransitionPoint{}.GetPoint();
 		}
 
 		// Calculate state for requested time
@@ -248,7 +248,7 @@ namespace FCSE
 	typename PathType::ValueType TimelineTrack<PathType>::GetInterpolatedPoint(size_t a_index, float a_progress) const
 	{
 		if (GetPointCount() == 0) {
-			return TransitionPoint{}.m_point;
+			return TransitionPoint{}.GetPoint();
 		}
 
 		size_t currentIdx = a_index;
@@ -260,7 +260,7 @@ namespace FCSE
 
 		switch (currentPoint.m_transition.m_mode) {
 			case InterpolationMode::kNone:
-				return currentPoint.m_point;
+				return currentPoint.GetPoint();
 			case InterpolationMode::kLinear:
 				return GetPointLinear(a_index, a_progress);
 			case InterpolationMode::kCubicHermite:
@@ -276,7 +276,7 @@ namespace FCSE
 		const size_t pointCount = GetPointCount();
 
 		if (pointCount == 0) {
-			return TransitionPoint{}.m_point;
+			return TransitionPoint{}.GetPoint();
 		}
 
 		size_t currentIdx = a_index;
@@ -295,14 +295,14 @@ namespace FCSE
 
 		// For virtual segment or normal segments starting after point 0
 		if (currentIdx == 0 && !isVirtualSegment) {
-			return currentPoint.m_point;
+			return currentPoint.GetPoint();
 		}
 
 		// Get previous point (for virtual segment, it's the last point)
 		const auto& prevPoint = isVirtualSegment ? m_path.GetPoint(pointCount - 1) : m_path.GetPoint(currentIdx - 1);
 
 		if (prevPoint.IsNearlyEqual(currentPoint)) {
-			return currentPoint.m_point;
+			return currentPoint.GetPoint();
 		}
 
 		float t = _ts_SKSEFunctions::ApplyEasing(a_progress,
@@ -310,7 +310,7 @@ namespace FCSE
 			currentPoint.m_transition.m_easeOut);
 
 		TransitionPoint result = prevPoint + (currentPoint - prevPoint) * t;
-		return result.m_point;
+		return result.GetPoint();
 	}
 
 	template <typename PathType>
@@ -319,11 +319,11 @@ namespace FCSE
 		size_t pointCount = GetPointCount();
 
 		if (pointCount == 0) {
-			return TransitionPoint{}.m_point;
+			return TransitionPoint{}.GetPoint();
 		}
 
 		if (pointCount == 1) {
-			return m_path.GetPoint(0).m_point;
+			return m_path.GetPoint(0).GetPoint();
 		}
 
 		size_t currentIdx = a_index;
@@ -335,12 +335,12 @@ namespace FCSE
 		}
 
 		if (currentIdx >= pointCount) {
-			return m_path.GetPoint(pointCount - 1).m_point;
+			return m_path.GetPoint(pointCount - 1).GetPoint();
 		}
 
 		// For virtual segment or normal segments starting after point 0
 		if (currentIdx == 0 && !isVirtualSegment) {
-			return m_path.GetPoint(0).m_point;
+			return m_path.GetPoint(0).GetPoint();
 		}
 
 		const auto& currentPoint = m_path.GetPoint(currentIdx);
@@ -348,7 +348,7 @@ namespace FCSE
 		const auto& prevPoint = isVirtualSegment ? m_path.GetPoint(pointCount - 1) : m_path.GetPoint(currentIdx - 1);
 
 		if (prevPoint.IsNearlyEqual(currentPoint)) {
-			return prevPoint.m_point;
+			return prevPoint.GetPoint();
 		}
 
 		// Get neighboring points for tangent computation
@@ -376,7 +376,7 @@ namespace FCSE
 			currentPoint.m_transition.m_easeOut);
 
 		TransitionPoint result = pt1.CubicHermite(pt0, pt1, pt2, pt3, t);
-		return result.m_point;
+		return result.GetPoint();
 	}
 
 	template <typename PathType>

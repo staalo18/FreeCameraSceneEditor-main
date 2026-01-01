@@ -27,7 +27,8 @@ namespace Hooks
 
 		if (!RE::UI::GetSingleton()->GameIsPaused()) {
 			timelineManager.SetUserTurning(true);
-			if (timelineManager.IsPlaybackRunning() && !timelineManager.IsUserRotationAllowed()) {
+			size_t activeID = timelineManager.GetActiveTimelineID();
+			if (activeID != 0 && timelineManager.IsPlaybackRunning(activeID) && !timelineManager.IsUserRotationAllowed(activeID)) {
 				return; // ignore look input during playback
 			}
 		}
@@ -41,7 +42,8 @@ namespace Hooks
 
 		if (!RE::UI::GetSingleton()->GameIsPaused()) {
 			timelineManager.SetUserTurning(true);
-			if (timelineManager.IsPlaybackRunning() && !timelineManager.IsUserRotationAllowed()) {
+			size_t activeID = timelineManager.GetActiveTimelineID();
+			if (activeID != 0 && timelineManager.IsPlaybackRunning(activeID) && !timelineManager.IsUserRotationAllowed(activeID)) {
 				return; // ignore look input during playback
 			}
 		}
@@ -52,7 +54,8 @@ namespace Hooks
 	void MovementHook::ProcessThumbstick(RE::MovementHandler* a_this, RE::ThumbstickEvent* a_event, RE::PlayerControlsData* a_data)
 	{
 		auto& timelineManager = FCSE::TimelineManager::GetSingleton();
-		if (a_event && a_event->IsLeft() && timelineManager.IsPlaybackRunning() && !RE::UI::GetSingleton()->GameIsPaused()) {
+		size_t activeID = timelineManager.GetActiveTimelineID();
+		if (a_event && a_event->IsLeft() && activeID != 0 && timelineManager.IsPlaybackRunning(activeID) && !RE::UI::GetSingleton()->GameIsPaused()) {
 			return; // ignore movement input during playback
 		}
 
@@ -75,7 +78,8 @@ namespace Hooks
 			}
 		}
 		auto& timelineManager = FCSE::TimelineManager::GetSingleton();
-		if (bRelevant && timelineManager.IsPlaybackRunning() && !RE::UI::GetSingleton()->GameIsPaused()) {
+		size_t activeID = timelineManager.GetActiveTimelineID();
+		if (bRelevant && activeID != 0 && timelineManager.IsPlaybackRunning(activeID) && !RE::UI::GetSingleton()->GameIsPaused()) {
 			return; // ignore movement input during playback
 		}
 
