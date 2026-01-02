@@ -293,6 +293,24 @@ namespace FCSE {
 
             return FCSE::TimelineManager::GetSingleton().ExportTimeline(static_cast<size_t>(a_timelineID), a_filePath.c_str());
         }
+        
+        void RegisterForTimelineEvents(RE::StaticFunctionTag*, RE::TESForm* a_form) {
+            if (!a_form) {
+                log::error("{}: Null form provided", __FUNCTION__);
+                return;
+            }
+            
+            FCSE::TimelineManager::GetSingleton().RegisterForTimelineEvents(a_form);
+        }
+        
+        void UnregisterForTimelineEvents(RE::StaticFunctionTag*, RE::TESForm* a_form) {
+            if (!a_form) {
+                log::error("{}: Null form provided", __FUNCTION__);
+                return;
+            }
+            
+            FCSE::TimelineManager::GetSingleton().UnregisterForTimelineEvents(a_form);
+        }
 
         bool FCSEFunctions(RE::BSScript::Internal::VirtualMachine * a_vm){
             a_vm->RegisterFunction("FCSE_GetPluginVersion", "FCSE_SKSEFunctions", GetFCSEPluginVersion);
@@ -321,6 +339,8 @@ namespace FCSE {
             a_vm->RegisterFunction("FCSE_IsUserRotationAllowed", "FCSE_SKSEFunctions", IsUserRotationAllowed);
             a_vm->RegisterFunction("FCSE_AddTimelineFromFile", "FCSE_SKSEFunctions", AddTimelineFromFile);
             a_vm->RegisterFunction("FCSE_ExportTimeline", "FCSE_SKSEFunctions", ExportTimeline);
+            a_vm->RegisterFunction("FCSE_RegisterForTimelineEvents", "FCSE_SKSEFunctions", RegisterForTimelineEvents);
+            a_vm->RegisterFunction("FCSE_UnregisterForTimelineEvents", "FCSE_SKSEFunctions", UnregisterForTimelineEvents);
             return true;
         }
     } // namespace Interface

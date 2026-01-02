@@ -8,6 +8,25 @@
 namespace FCSE_API {
 	constexpr const auto FCSEPluginName = "FreeCameraSceneEditor";
 
+	// SKSE Messaging Interface - Timeline Event Types
+	// Consumers can register a listener with SKSE::GetMessagingInterface()->RegisterListener()
+	// and receive these messages from FCSE
+	enum class FCSEMessage : uint32_t {
+		// Dispatched when timeline playback starts
+		// Data: FCSETimelineEventData*
+		kTimelinePlaybackStarted = 0,
+		
+		// Dispatched when timeline playback stops (including natural completion or manual stop)
+		// Data: FCSETimelineEventData*
+		kTimelinePlaybackStopped = 1
+	};
+
+	// Event data structure for timeline events
+	// Cast the 'data' parameter in your message handler to this type
+	struct FCSETimelineEventData {
+		size_t timelineID;  // ID of the timeline that triggered the event
+	};
+
 	// Available FCSE interface versions
 	enum class InterfaceVersion : uint8_t {
 		V1

@@ -37,11 +37,7 @@ size_t timelineID = 0;
                 } else if (key == 3) {
                     tm.StopPlayback(timelineID);
                 } else if (key == 4) {
-                    // Toggle user rotation for current timeline
-                    size_t activeID = tm.GetActiveTimelineID();
-                    if (activeID != 0) {
-                        tm.AllowUserRotation(activeID, !tm.IsUserRotationAllowed(activeID));
-                    }
+                    tm.AllowUserRotation(timelineID, !tm.IsUserRotationAllowed(timelineID));
                 } else if (key == 5) {
                     RE::TESObjectREFR* reference = nullptr;
                     auto* form = RE::TESForm::LookupByID(0xd8c56);

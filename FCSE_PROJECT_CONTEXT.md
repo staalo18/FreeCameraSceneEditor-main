@@ -21,6 +21,9 @@ FreeCameraSceneEditor (FCSE) is an SKSE plugin for Skyrim Anniversary Edition th
 - **Flexible Recording**: Real-time camera path recording with 1-second sampling intervals
 - **Advanced Interpolation**: Support for linear and cubic Hermite interpolation with per-point and global easing
 - **Import/Export**: Save/load camera paths as `.fcse` timeline files with load-order independent reference tracking
+- **Event Callback System**: Notify consumers when timeline playback starts/stops
+  - **SKSE Messaging Interface**: C++ plugins receive events via SKSE messaging system
+  - **Papyrus Events**: Scripts receive `OnTimelinePlaybackStarted` and `OnTimelinePlaybackStopped` events with timeline ID
 - **Three API Surfaces**:
   - **Papyrus Scripts**: Full scripting integration with mod name + timeline ID parameters
   - **C++ Mod API**: Native plugin-to-plugin communication with SKSE plugin handle validation
@@ -85,7 +88,7 @@ include/
   ├─ CameraPath.h         # Point storage templates (TranslationPath, RotationPath)
   ├─ CameraTypes.h        # Core enums (InterpolationMode, PointType, PlaybackMode)
   ├─ TimelineManager.h    # Main orchestrator interface
-  ├─ FCSE_API.h           # C++ Mod API interface definition
+  ├─ FCSE_API.h           # C++ Mod API + event messaging interface definition
   └─ API/TrueHUDAPI.h     # External API header (v3)
 ```
 
@@ -246,6 +249,12 @@ RequestPluginAPI(InterfaceVersion) [Mod API entry]
 | `FCSE_RegisterTimeline` | int | modName | Returns new timeline ID for your mod |
 | `FCSE_UnregisterTimeline` | bool | modName, timelineID | Remove timeline (requires ownership) |
 
+**Event Callback Registration:**
+| Papyrus Function | Return | Parameters | Notes |
+|-----------------|--------|------------|-------|
+| `FCSE_RegisterForTimelineEvents` | void | form | Register a form to receive playback events |
+| `FCSE_UnregisterForTimelineEvents` | void | form | Unregister a form from receiving events |
+
 **Timeline Building Functions:**
 | Papyrus Function | Return | Parameters | Notes |
 |-----------------|--------|------------|-------|
@@ -298,6 +307,28 @@ RequestPluginAPI(InterfaceVersion) [Mod API entry]
 - **Mod Name to Handle**: `ModNameToHandle(modName)` searches loaded files for matching ESP/ESL, returns `file->compileIndex` as plugin handle
 - **Return Values**: TimelineManager returns `int` for point indices, `bool` for operations
 
+**Event System:**
+Papyrus scripts can register forms (Quests, ReferenceAliases, etc.) to receive timeline playback events. Registered forms receive these event callbacks:
+- `OnTimelinePlaybackStarted(int timelineID)` - Fired when any timeline starts playing
+- `OnTimelinePlaybackStopped(int timelineID)` - Fired when any timeline stops playing
+
+**Example Usage:**
+```papyrus
+Scriptname MyQuest extends Quest
+
+Event OnInit()
+    FCSE_SKSEFunctions.FCSE_RegisterForTimelineEvents(self)
+EndEvent
+
+Event OnTimelinePlaybackStarted(int timelineID)
+    Debug.Notification("Timeline " + timelineID + " started")
+EndEvent
+
+Event OnTimelinePlaybackStopped(int timelineID)
+    Debug.Notification("Timeline " + timelineID + " stopped")
+EndEvent
+```
+
 ---
 
 ### **2.3 Mod API (`ModAPI.h`, `FCSE_API.h`)**
@@ -308,6 +339,44 @@ RequestPluginAPI(InterfaceVersion) [Mod API entry]
 auto api = reinterpret_cast<FCSE_API::IVFCSE1*>(
     RequestPluginAPI(FCSE_API::InterfaceVersion::V1)
 );
+```
+
+**SKSE Messaging Interface:**
+C++ plugins can receive timeline playback events via the SKSE messaging system:
+
+**Event Types (FCSE_API.h):**
+```cpp
+enum class FCSEMessage : uint32_t {
+    kTimelinePlaybackStarted = 0,
+    kTimelinePlaybackStopped = 1
+};
+
+struct FCSETimelineEventData {
+    size_t timelineID;
+};
+```
+
+**Example Usage:**
+```cpp
+void MessageHandler(SKSE::MessagingInterface::Message* msg) {
+    if (msg->sender && strcmp(msg->sender, FCSE_API::FCSEPluginName) == 0) {
+        switch (msg->type) {
+            case static_cast<uint32_t>(FCSE_API::FCSEMessage::kTimelinePlaybackStarted): {
+                auto* data = static_cast<FCSE_API::FCSETimelineEventData*>(msg->data);
+                // Handle timeline data->timelineID started
+                break;
+            }
+            case static_cast<uint32_t>(FCSE_API::FCSEMessage::kTimelinePlaybackStopped): {
+                auto* data = static_cast<FCSE_API::FCSETimelineEventData*>(msg->data);
+                // Handle timeline data->timelineID stopped
+                break;
+            }
+        }
+    }
+}
+
+// In SKSEPlugin_Load():
+SKSE::GetMessagingInterface()->RegisterListener(MessageHandler);
 ```
 
 **Interface: `IVFCSE1`** (pure virtual, defined in `FCSE_API.h`)
@@ -504,6 +573,9 @@ bool m_showMenusDuringPlayback{ false };                // UI visibility during 
 bool m_userTurning{ false };                            // User camera control flag
 RE::BSTPoint2<float> m_rotationOffset;                  // Accumulated user rotation delta
 RE::NiPoint2 m_lastFreeRotation;                        // Third-person camera rotation snapshot
+
+// Event System (global)
+std::vector<RE::TESForm*> m_eventReceivers;             // Forms registered for Papyrus events
 ```
 
 **TimelineState Structure** (per-timeline storage):
@@ -540,8 +612,11 @@ struct TimelineState {
 - **Ownership:** Every timeline has `ownerPluginHandle`, validated on all operations
 - **Active Timeline:** Only ONE timeline can be recording/playing at a time (enforced by `m_activeTimelineID`)
 - **Helper Pattern:** All public functions call `GetTimeline(timelineID, pluginHandle)` to validate ownership + existence
+- **Event System (✅ Complete - January 2, 2026):** Dual notification system for timeline playback events
+  - SKSE Messaging: Broadcasts to all C++ plugins via `SKSE::GetMessagingInterface()->Dispatch()`
+  - Papyrus Events: Queues events to registered forms via `SKSE::GetTaskInterface()->AddTask()`
 - **Global vs Per-Timeline State:**
-  - Global (shared): `m_recordingInterval`, `m_isShowingMenus`, `m_showMenusDuringPlayback`, `m_userTurning`, `m_rotationOffset`, `m_lastFreeRotation`
+  - Global (shared): `m_recordingInterval`, `m_isShowingMenus`, `m_showMenusDuringPlayback`, `m_userTurning`, `m_rotationOffset`, `m_lastFreeRotation`, `m_eventReceivers`
   - Per-Timeline (in TimelineState): `m_isRecording`, `m_currentRecordingTime`, `m_lastRecordedPointTime`, `m_isPlaybackRunning`, `m_playbackSpeed`, `m_globalEaseIn`, `m_globalEaseOut`, `m_playbackDuration`, `m_allowUserRotation`
 
 ---
@@ -643,6 +718,9 @@ StartPlayback(timelineID, pluginHandle, speed, globalEaseIn, globalEaseOut, useD
 │   └─> state->lastFreeRotation = ThirdPersonState->freeRotation
 ├─> Reset timelines: state->timeline.ResetTimeline(), UpdateCameraPoints(state)
 ├─> Enter free camera mode: ToggleFreeCameraMode(false)
+├─> Dispatch timeline started events:
+│   ├─> DispatchTimelineEvent(kTimelinePlaybackStarted, timelineID)  [SKSE messaging]
+│   └─> DispatchPapyrusEvent("OnTimelinePlaybackStarted", timelineID)  [Papyrus events]
 ├─> Set state->isPlaybackRunning = true
 └─> Set m_activeTimelineID = timelineID
 
@@ -670,6 +748,9 @@ PlayTimeline(TimelineState* state) [called every frame]
 
 StopPlayback(timelineID, pluginHandle)
 ├─> Validate ownership: GetTimeline(timelineID, pluginHandle)
+├─> Dispatch timeline stopped events:
+│   ├─> DispatchTimelineEvent(kTimelinePlaybackStopped, timelineID)  [SKSE messaging]
+│   └─> DispatchPapyrusEvent("OnTimelinePlaybackStopped", timelineID)  [Papyrus events]
 ├─> If in free camera:
 │   ├─> Exit free camera mode
 │   ├─> Restore state->isShowingMenus
@@ -687,6 +768,19 @@ StopPlayback(timelineID, pluginHandle)
 ```
 
 **Critical Behaviors:**
+- **Event Dispatching:**
+  - **SKSE Messaging (C++ Plugins):**
+    * `DispatchTimelineEvent(messageType, timelineID)` broadcasts via `SKSE::GetMessagingInterface()->Dispatch()`
+    * Message types: `kTimelinePlaybackStarted` (0), `kTimelinePlaybackStopped` (1)
+    * Data: `FCSETimelineEventData{ size_t timelineID }`
+    * Sender: `FCSE_API::FCSEPluginName` ("FreeCameraSceneEditor")
+  - **Papyrus Events (Scripts):**
+    * `DispatchPapyrusEvent(eventName, timelineID)` queues to Papyrus thread
+    * Thread Safety: Uses `SKSE::GetTaskInterface()->AddTask()` with lambda
+    * Event names: "OnTimelinePlaybackStarted", "OnTimelinePlaybackStopped"
+    * Dispatched to all registered forms in `m_eventReceivers` vector
+    * VM access: Queued lambda gets handle, creates args, calls `vm->SendEvent()`
+
 - **User Rotation Control (Per-Timeline):**
   - `state->userTurning` flag set by `LookHook` when user moves mouse/thumbstick
   - `state->allowUserRotation` enables accumulated offset mode
@@ -1097,7 +1191,164 @@ void TimelineManager::DrawTimeline(TimelineState* state) {
 
 ---
 
-### **5.10 Point Modification Rules**
+### **5.10 Event Callback System**
+
+**Purpose:** Notify external consumers when timeline playback starts/stops
+
+**Architecture:** Dual notification system for different consumer types:
+1. **SKSE Messaging Interface** - For C++ plugins
+2. **Papyrus Event System** - For scripts
+
+#### **SKSE Messaging Interface (C++ Plugins)**
+
+**Event Types (FCSE_API.h):**
+```cpp
+namespace FCSE_API {
+    constexpr const auto FCSEPluginName = "FreeCameraSceneEditor";
+    
+    enum class FCSEMessage : uint32_t {
+        kTimelinePlaybackStarted = 0,
+        kTimelinePlaybackStopped = 1
+    };
+    
+    struct FCSETimelineEventData {
+        size_t timelineID;
+    };
+}
+```
+
+**Implementation (TimelineManager.cpp):**
+```cpp
+void TimelineManager::DispatchTimelineEvent(uint32_t a_messageType, size_t a_timelineID) {
+    auto* messaging = SKSE::GetMessagingInterface();
+    if (!messaging) return;
+    
+    FCSE_API::FCSETimelineEventData eventData{ a_timelineID };
+    messaging->Dispatch(
+        a_messageType,
+        &eventData,
+        sizeof(eventData),
+        FCSE_API::FCSEPluginName
+    );
+}
+```
+
+**Consumer Pattern:**
+External plugins register a message listener in `SKSEPlugin_Load()`:
+```cpp
+void MessageHandler(SKSE::MessagingInterface::Message* msg) {
+    if (msg->sender && strcmp(msg->sender, FCSE_API::FCSEPluginName) == 0) {
+        switch (msg->type) {
+            case static_cast<uint32_t>(FCSE_API::FCSEMessage::kTimelinePlaybackStarted): {
+                auto* data = static_cast<FCSE_API::FCSETimelineEventData*>(msg->data);
+                // Handle timeline started: data->timelineID
+                break;
+            }
+            case static_cast<uint32_t>(FCSE_API::FCSEMessage::kTimelinePlaybackStopped): {
+                auto* data = static_cast<FCSE_API::FCSETimelineEventData*>(msg->data);
+                // Handle timeline stopped: data->timelineID
+                break;
+            }
+        }
+    }
+}
+
+SKSE::GetMessagingInterface()->RegisterListener(MessageHandler);
+```
+
+#### **Papyrus Event System (Scripts)**
+
+**Registration API (TimelineManager.h):**
+```cpp
+void RegisterForTimelineEvents(RE::TESForm* a_form);
+void UnregisterForTimelineEvents(RE::TESForm* a_form);
+```
+
+**Event Storage:**
+```cpp
+std::vector<RE::TESForm*> m_eventReceivers;  // Global list of registered forms
+```
+
+**Thread-Safe Event Dispatch (TimelineManager.cpp):**
+```cpp
+void TimelineManager::DispatchPapyrusEvent(const char* a_eventName, size_t a_timelineID) {
+    std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
+    
+    for (auto* receiver : m_eventReceivers) {
+        if (!receiver) continue;
+        
+        auto* task = SKSE::GetTaskInterface();
+        if (task) {
+            task->AddTask([receiver, eventName = std::string(a_eventName), timelineID = a_timelineID]() {
+                auto* vm = RE::BSScript::Internal::VirtualMachine::GetSingleton();
+                auto* policy = vm->GetObjectHandlePolicy();
+                auto handle = policy->GetHandleForObject(receiver->GetFormType(), receiver);
+                
+                auto args = RE::MakeFunctionArguments(static_cast<std::int32_t>(timelineID));
+                vm->SendEvent(handle, RE::BSFixedString(eventName), args);
+            });
+        }
+    }
+}
+```
+
+**Thread Safety Design:**
+- VM methods cannot be called from arbitrary threads (cross-thread safety)
+- Solution: `SKSE::GetTaskInterface()->AddTask()` queues lambda to Papyrus thread
+- Lambda captures: receiver pointer, eventName as std::string copy, timelineID as size_t
+- VM access only happens inside queued lambda (guaranteed Papyrus thread)
+
+**Papyrus Bindings (plugin.cpp):**
+```cpp
+void RegisterForTimelineEvents(RE::StaticFunctionTag*, RE::TESForm* a_form) {
+    if (!a_form) {
+        log::error("{}: Null form provided", __FUNCTION__);
+        return;
+    }
+    FCSE::TimelineManager::GetSingleton().RegisterForTimelineEvents(a_form);
+}
+
+void UnregisterForTimelineEvents(RE::StaticFunctionTag*, RE::TESForm* a_form) {
+    if (!a_form) return;
+    FCSE::TimelineManager::GetSingleton().UnregisterForTimelineEvents(a_form);
+}
+
+// Registration in RegisterPapyrusFunctions():
+a_vm->RegisterFunction("FCSE_RegisterForTimelineEvents", "FCSE_SKSEFunctions", RegisterForTimelineEvents);
+a_vm->RegisterFunction("FCSE_UnregisterForTimelineEvents", "FCSE_SKSEFunctions", UnregisterForTimelineEvents);
+```
+
+**Papyrus Consumer Pattern (FCSE_SKSEFunctions.psc):**
+```papyrus
+Scriptname MyQuest extends Quest
+
+Event OnInit()
+    FCSE_SKSEFunctions.FCSE_RegisterForTimelineEvents(self)
+EndEvent
+
+Event OnTimelinePlaybackStarted(int timelineID)
+    Debug.Notification("Timeline " + timelineID + " started playing")
+EndEvent
+
+Event OnTimelinePlaybackStopped(int timelineID)
+    Debug.Notification("Timeline " + timelineID + " stopped")
+EndEvent
+```
+
+**Event Dispatch Locations:**
+- `StartPlayback()`: Dispatches both SKSE message and Papyrus event for `kTimelinePlaybackStarted`
+- `StopPlayback()`: Dispatches both SKSE message and Papyrus event for `kTimelinePlaybackStopped`
+
+**Key Design Decisions:**
+- **Global Event Receivers:** All registered forms receive events for ALL timelines
+- **No Filtering:** Consumers receive timelineID parameter and filter themselves
+- **No Ownership Required:** Event registration doesn't require timeline ownership
+- **Thread Safety:** Papyrus events queued via task interface (no direct VM access)
+- **Dual System:** SKSE messaging for performance, Papyrus events for script convenience
+
+---
+
+### **5.11 Point Modification Rules**
 
 **Thread Safety:** 
 - TimelineManager uses `std::mutex m_timelineMutex` for thread-safe timeline map access

@@ -24,6 +24,7 @@ namespace FCSE {
         float m_playbackDuration{ 0.0f };
         bool m_showMenusDuringPlayback{ false };
         bool m_allowUserRotation{ false };     // Allow user to control rotation during playback
+        RE::BSTPoint2<float> m_rotationOffset{ 0.0f, 0.0f }; // Per-timeline rotation offset from user input
         
         // Owner tracking
         SKSE::PluginHandle m_ownerHandle;      // Plugin that registered this timeline
@@ -75,10 +76,18 @@ namespace FCSE {
             bool ExportTimeline(size_t a_timelineID, const char* a_filePath) const;
 
             size_t RegisterTimeline(SKSE::PluginHandle a_pluginHandle);
-            bool UnregisterTimeline(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle);            
+            bool UnregisterTimeline(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle);
+            
+            // Papyrus event registration
+            void RegisterForTimelineEvents(RE::TESForm* a_form);
+            void UnregisterForTimelineEvents(RE::TESForm* a_form);
+            
         private:
             TimelineManager() = default;
             ~TimelineManager() = default;
+            
+           void DispatchTimelineEvent(uint32_t a_messageType, size_t a_timelineID);
+           void DispatchPapyrusEvent(const char* a_eventName, size_t a_timelineID);
 
             void DrawTimeline(const TimelineState* a_state);
             void RecordTimeline(TimelineState* a_state);
@@ -102,7 +111,9 @@ namespace FCSE {
             bool m_isShowingMenus = true;         // Whether menus were showing before playback started
             bool m_showMenusDuringPlayback = false; // Whether to show menus during playback
             bool m_userTurning = false;           // Whether user is manually controlling camera during playback
-            RE::BSTPoint2<float> m_rotationOffset; // Offset to apply to rotation to account for user turning
             RE::NiPoint2 m_lastFreeRotation;           // camera free rotation before playback started (third-person only)
+            
+            // Papyrus event registration
+            std::vector<RE::TESForm*> m_eventReceivers;  // Forms registered for timeline events
     }; // class TimelineManager
 } // namespace FCSE

@@ -205,3 +205,16 @@ bool Function FCSE_AddTimelineFromFile(string modName, int timelineID, string fi
 ; filePath: Relative path from Data folder (e.g., "SKSE/Plugins/MyTimeline.dat")
 ; Returns: true if successful, false otherwise
 bool Function FCSE_ExportTimeline(string modName, int timelineID, string filePath) global native
+
+; ===== Event Registration =====
+
+; Register a form (Quest, ReferenceAlias, etc.) to receive timeline playback events
+; The form's script must define these event handlers:
+;   Event OnTimelinePlaybackStarted(int timelineID)
+;   Event OnTimelinePlaybackStopped(int timelineID)
+; form: The form/alias to register (typically 'self' from a script)
+Function FCSE_RegisterForTimelineEvents(Form form) global native
+
+; Unregister a form from receiving timeline playback events
+; form: The form/alias to unregister
+Function FCSE_UnregisterForTimelineEvents(Form form) global native

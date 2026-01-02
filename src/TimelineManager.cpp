@@ -4,6 +4,80 @@
 
 namespace FCSE {
 
+    void TimelineManager::DispatchTimelineEvent(uint32_t a_messageType, size_t a_timelineID) {
+        auto* messaging = SKSE::GetMessagingInterface();
+        if (messaging) {
+            FCSE_API::FCSETimelineEventData eventData{ a_timelineID };
+            messaging->Dispatch(a_messageType, &eventData, sizeof(eventData), FCSE_API::FCSEPluginName);
+            log::trace("{}: Dispatched message type {} for timeline {}", __FUNCTION__, a_messageType, a_timelineID);
+        }
+    }
+
+    void TimelineManager::DispatchPapyrusEvent(const char* a_eventName, size_t a_timelineID) {
+        std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
+        
+        // Send event to all registered forms
+        for (auto* receiver : m_eventReceivers) {
+            if (!receiver) {
+                continue;
+            }
+            
+            // Queue a task to dispatch the event on the Papyrus thread
+            auto* task = SKSE::GetTaskInterface();
+            if (task) {
+                task->AddTask([receiver, eventName = std::string(a_eventName), timelineID = a_timelineID]() {
+                    auto* vm = RE::BSScript::Internal::VirtualMachine::GetSingleton();
+                    if (!vm) {
+                        return;
+                    }
+                    
+                    auto* policy = vm->GetObjectHandlePolicy();
+                    if (!policy) {
+                        return;
+                    }
+                    
+                    auto handle = policy->GetHandleForObject(receiver->GetFormType(), receiver);
+                    auto args = RE::MakeFunctionArguments(static_cast<std::int32_t>(timelineID));
+                    
+                    vm->SendEvent(handle, RE::BSFixedString(eventName), args);
+                });
+            }
+            
+            log::trace("{}: Queued Papyrus event '{}' to form 0x{:X}", __FUNCTION__, a_eventName, receiver->GetFormID());
+        }
+        
+        log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCTION__, a_eventName, a_timelineID, m_eventReceivers.size());
+    }
+
+    void TimelineManager::RegisterForTimelineEvents(RE::TESForm* a_form) {
+        std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
+        
+        if (!a_form) {
+            return;
+        }
+        
+        // Check if already registered
+        auto it = std::find(m_eventReceivers.begin(), m_eventReceivers.end(), a_form);
+        if (it == m_eventReceivers.end()) {
+            m_eventReceivers.push_back(a_form);
+            log::info("{}: Form 0x{:X} registered for timeline events", __FUNCTION__, a_form->GetFormID());
+        }
+    }
+
+    void TimelineManager::UnregisterForTimelineEvents(RE::TESForm* a_form) {
+        std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
+        
+        if (!a_form) {
+            return;
+        }
+        
+        auto it = std::find(m_eventReceivers.begin(), m_eventReceivers.end(), a_form);
+        if (it != m_eventReceivers.end()) {
+            m_eventReceivers.erase(it);
+            log::info("{}: Form 0x{:X} unregistered from timeline events", __FUNCTION__, a_form->GetFormID());
+        }
+    }
+
     void TimelineManager::Update() {
         // Hold lock for entire Update() to prevent race conditions
         // This ensures the timeline cannot be deleted/modified while we're using it
@@ -60,11 +134,14 @@ namespace FCSE {
             return false;
         }
         
-        if (!(playerCamera->currentState && (playerCamera->currentState->id == RE::CameraState::kFree))) {
-            log::error("{}: Must be in free camera mode", __FUNCTION__);
+        if (playerCamera->currentState && (playerCamera->currentState->id == RE::CameraState::kFree)) {
+            log::warn("{}: Already in free camera mode", __FUNCTION__);
             return false;
         }
-        
+
+        // Enter free camera mode
+        playerCamera->ToggleFreeCameraMode(false);
+
         // Set as active timeline
         m_activeTimelineID = a_timelineID;
         state->m_isRecording = true;
@@ -117,6 +194,9 @@ namespace FCSE {
         if (!(playerCamera->currentState && (playerCamera->currentState->id == RE::CameraState::kFree))) {
             log::warn("{}: Not in free camera mode", __FUNCTION__);
         }
+
+        // Leave free camera mode
+        playerCamera->ToggleFreeCameraMode(false);
         
         // Add final point
         RE::NiPoint3 cameraPos = _ts_SKSEFunctions::GetCameraPos();
@@ -359,12 +439,12 @@ namespace FCSE {
         
         // Handle user rotation (uses per-timeline m_allowUserRotation and global m_rotationOffset/m_userTurning)
         if (m_userTurning && a_state->m_allowUserRotation) {
-            m_rotationOffset.x = _ts_SKSEFunctions::NormalRelativeAngle(cameraState->rotation.x - rotation.x);
-            m_rotationOffset.y = _ts_SKSEFunctions::NormalRelativeAngle(cameraState->rotation.y - rotation.y);
+            a_state->m_rotationOffset.x = _ts_SKSEFunctions::NormalRelativeAngle(cameraState->rotation.x - rotation.x);
+            a_state->m_rotationOffset.y = _ts_SKSEFunctions::NormalRelativeAngle(cameraState->rotation.y - rotation.y);
             m_userTurning = false;
         } else {
-            cameraState->rotation.x = _ts_SKSEFunctions::NormalRelativeAngle(rotation.x + m_rotationOffset.x);
-            cameraState->rotation.y = _ts_SKSEFunctions::NormalRelativeAngle(rotation.y + m_rotationOffset.y);
+            cameraState->rotation.x = _ts_SKSEFunctions::NormalRelativeAngle(rotation.x + a_state->m_rotationOffset.x);
+            cameraState->rotation.y = _ts_SKSEFunctions::NormalRelativeAngle(rotation.y + a_state->m_rotationOffset.y);
         }
         
         // Check if timeline completed
@@ -471,7 +551,7 @@ namespace FCSE {
         // Set as active timeline
         m_activeTimelineID = a_timelineID;
         state->m_isPlaybackRunning = true;
-        m_rotationOffset = { 0.0f, 0.0f };  // Global rotation offset
+        state->m_rotationOffset = { 0.0f, 0.0f };  // Reset per-timeline rotation offset
         
         // Save pre-playback state
         if (playerCamera->currentState && 
@@ -500,6 +580,11 @@ namespace FCSE {
         playerCamera->ToggleFreeCameraMode(false);
         
         log::info("{}: Started playback on timeline {}", __FUNCTION__, a_timelineID);
+        
+        // Dispatch playback started event
+        DispatchTimelineEvent(static_cast<uint32_t>(FCSE_API::FCSEMessage::kTimelinePlaybackStarted), a_timelineID);
+        DispatchPapyrusEvent("OnTimelinePlaybackStarted", a_timelineID);
+        
         return true;
     }
 
@@ -547,7 +632,12 @@ namespace FCSE {
         
         auto* playerCamera = RE::PlayerCamera::GetSingleton();
         if (playerCamera && playerCamera->IsInFreeCameraMode()) {
-            playerCamera->ToggleFreeCameraMode(true);
+            if (playerCamera->IsInFreeCameraMode()) {
+                playerCamera->ToggleFreeCameraMode(false);
+            } else {
+                log::warn("{}: Not in free camera mode", __FUNCTION__);
+            }
+
             
             auto* ui = RE::UI::GetSingleton();
             if (ui) {
@@ -569,9 +659,13 @@ namespace FCSE {
         // Clear active state
         m_activeTimelineID = 0;
         state->m_isPlaybackRunning = false;
-        m_rotationOffset = { 0.0f, 0.0f };
         
         log::info("{}: Stopped playback on timeline {}", __FUNCTION__, a_timelineID);
+        
+        // Dispatch playback stopped event
+        DispatchTimelineEvent(static_cast<uint32_t>(FCSE_API::FCSEMessage::kTimelinePlaybackStopped), a_timelineID);
+        DispatchPapyrusEvent("OnTimelinePlaybackStopped", a_timelineID);
+        
         return true;
     }
 
