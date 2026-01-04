@@ -20,7 +20,8 @@ namespace FCSE {
 
     enum class PlaybackMode : int {
         kEnd = 0,   // Stop at end of timeline (default)
-        kLoop = 1   // Restart from beginning when timeline completes
+        kLoop = 1,  // Restart from beginning when timeline completes
+        kWait = 2   // Stay at final position indefinitely (requires manual StopPlayback)
     };
 
     

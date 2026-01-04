@@ -13,6 +13,35 @@ namespace FCSE {
                    static_cast<int>(Plugin::VERSION[1]) * 100 + 
                    static_cast<int>(Plugin::VERSION[2]);
         }
+
+        int RegisterTimeline(RE::StaticFunctionTag*, RE::BSFixedString a_modName) {
+            if (a_modName.empty()) {
+                log::error("{}: Empty mod name provided", __FUNCTION__);
+                return -1;
+            }
+
+            SKSE::PluginHandle handle = FCSE::ModNameToHandle(a_modName.c_str());
+            if (handle == 0) {
+                log::error("{}: Invalid mod name '{}' - mod not loaded or doesn't exist", __FUNCTION__, a_modName.c_str());
+                return -1;
+            }
+
+            return static_cast<int>(FCSE::TimelineManager::GetSingleton().RegisterTimeline(handle));
+        }
+
+        bool UnregisterTimeline(RE::StaticFunctionTag*, RE::BSFixedString a_modName, int a_timelineID) {
+            if (a_modName.empty() || a_timelineID <= 0) {
+                return false;
+            }
+
+            SKSE::PluginHandle handle = FCSE::ModNameToHandle(a_modName.c_str());
+            if (handle == 0) {
+                log::error("{}: Invalid mod name '{}' - mod not loaded or doesn't exist", __FUNCTION__, a_modName.c_str());
+                return false;
+            }
+
+            return FCSE::TimelineManager::GetSingleton().UnregisterTimeline(static_cast<size_t>(a_timelineID), handle);
+        }
         
         int AddTranslationPointAtCamera(RE::StaticFunctionTag*, RE::BSFixedString a_modName, int a_timelineID, float a_time, bool a_easeIn, bool a_easeOut, int a_interpolationMode) {
             if (a_modName.empty() || a_timelineID <= 0) {
@@ -266,6 +295,20 @@ namespace FCSE {
             return FCSE::TimelineManager::GetSingleton().IsUserRotationAllowed(static_cast<size_t>(a_timelineID));
         }
 
+        bool SetPlaybackMode(RE::StaticFunctionTag*, RE::BSFixedString a_modName, std::int32_t a_timelineID, std::int32_t a_playbackMode) {
+            if (a_modName.empty() || a_timelineID <= 0) {
+                return false;
+            }
+
+            SKSE::PluginHandle handle = FCSE::ModNameToHandle(a_modName.c_str());
+            if (handle == 0) {
+                log::error("{}: Invalid mod name '{}' - mod not loaded or doesn't exist", __FUNCTION__, a_modName.c_str());
+                return false;
+            }
+
+            return FCSE::TimelineManager::GetSingleton().SetPlaybackMode(static_cast<size_t>(a_timelineID), handle, a_playbackMode);
+        }
+
         bool AddTimelineFromFile(RE::StaticFunctionTag*, RE::BSFixedString a_modName, std::int32_t a_timelineID, RE::BSFixedString a_filePath, float a_timeOffset) {
             if (a_modName.empty() || a_timelineID <= 0) {
                 return false;
@@ -314,6 +357,8 @@ namespace FCSE {
 
         bool FCSEFunctions(RE::BSScript::Internal::VirtualMachine * a_vm){
             a_vm->RegisterFunction("FCSE_GetPluginVersion", "FCSE_SKSEFunctions", GetFCSEPluginVersion);
+            a_vm->RegisterFunction("FCSE_RegisterTimeline", "FCSE_SKSEFunctions", RegisterTimeline);
+            a_vm->RegisterFunction("FCSE_UnregisterTimeline", "FCSE_SKSEFunctions", UnregisterTimeline);
             a_vm->RegisterFunction("FCSE_AddTranslationPointAtCamera", "FCSE_SKSEFunctions", AddTranslationPointAtCamera);
             a_vm->RegisterFunction("FCSE_AddTranslationPoint", "FCSE_SKSEFunctions", AddTranslationPoint);
             a_vm->RegisterFunction("FCSE_AddTranslationPointAtRef", "FCSE_SKSEFunctions", AddTranslationPointAtRef);
@@ -337,6 +382,7 @@ namespace FCSE {
             a_vm->RegisterFunction("FCSE_GetActiveTimelineID", "FCSE_SKSEFunctions", GetActiveTimelineID);
             a_vm->RegisterFunction("FCSE_AllowUserRotation", "FCSE_SKSEFunctions", AllowUserRotation);
             a_vm->RegisterFunction("FCSE_IsUserRotationAllowed", "FCSE_SKSEFunctions", IsUserRotationAllowed);
+            a_vm->RegisterFunction("FCSE_SetPlaybackMode", "FCSE_SKSEFunctions", SetPlaybackMode);
             a_vm->RegisterFunction("FCSE_AddTimelineFromFile", "FCSE_SKSEFunctions", AddTimelineFromFile);
             a_vm->RegisterFunction("FCSE_ExportTimeline", "FCSE_SKSEFunctions", ExportTimeline);
             a_vm->RegisterFunction("FCSE_RegisterForTimelineEvents", "FCSE_SKSEFunctions", RegisterForTimelineEvents);

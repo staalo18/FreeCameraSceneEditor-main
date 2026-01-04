@@ -20,6 +20,16 @@ int Messaging::FCSEInterface::GetFCSEPluginVersion() const noexcept {
 	       static_cast<int>(Plugin::VERSION[2]);
 }
 
+size_t Messaging::FCSEInterface::RegisterTimeline(SKSE::PluginHandle a_pluginHandle) const noexcept {
+	size_t result = FCSE::TimelineManager::GetSingleton().RegisterTimeline(a_pluginHandle);
+	log::info("{}: API wrapper returning timeline ID {}", __FUNCTION__, result);
+	return result;
+}
+
+bool Messaging::FCSEInterface::UnregisterTimeline(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle) const noexcept {
+	return FCSE::TimelineManager::GetSingleton().UnregisterTimeline(a_timelineID, a_pluginHandle);
+}
+
 int Messaging::FCSEInterface::AddTranslationPoint(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn, bool a_easeOut, int a_interpolationMode) const noexcept {
 	return FCSE::TimelineManager::GetSingleton().AddTranslationPoint(a_timelineID, a_pluginHandle, a_time, a_posX, a_posY, a_posZ, a_easeIn, a_easeOut, FCSE::ToInterpolationMode(a_interpolationMode));
 }
@@ -110,7 +120,13 @@ void Messaging::FCSEInterface::AllowUserRotation(size_t a_timelineID, bool a_all
 
 bool Messaging::FCSEInterface::IsUserRotationAllowed(size_t a_timelineID) const noexcept {
     return FCSE::TimelineManager::GetSingleton().IsUserRotationAllowed(a_timelineID);
-}bool Messaging::FCSEInterface::AddTimelineFromFile(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, const char* a_filePath, float a_timeOffset) const noexcept {
+}
+
+bool Messaging::FCSEInterface::SetPlaybackMode(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, int a_playbackMode) const noexcept {
+    return FCSE::TimelineManager::GetSingleton().SetPlaybackMode(a_timelineID, a_pluginHandle, a_playbackMode);
+}
+
+bool Messaging::FCSEInterface::AddTimelineFromFile(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, const char* a_filePath, float a_timeOffset) const noexcept {
     return FCSE::TimelineManager::GetSingleton().AddTimelineFromFile(a_timelineID, a_pluginHandle, a_filePath, a_timeOffset);
 }
 

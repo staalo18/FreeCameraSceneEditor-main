@@ -21,15 +21,17 @@ namespace Messaging
 		// InterfaceVersion1
         virtual unsigned long GetFCSEThreadId(void) const noexcept override;
 		virtual int GetFCSEPluginVersion() const noexcept override;
+		virtual size_t RegisterTimeline(SKSE::PluginHandle a_pluginHandle) const noexcept override;
+		virtual bool UnregisterTimeline(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle) const noexcept override;
         virtual int AddTranslationPoint(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept override;
         virtual int AddTranslationPointAtRef(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, float a_time, RE::TESObjectREFR* a_reference, float a_offsetX = 0.0f, float a_offsetY = 0.0f, float a_offsetZ = 0.0f, bool a_isOffsetRelative = false, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept override;
 		virtual int AddTranslationPointAtCamera(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, float a_time, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept override;
 		virtual int AddRotationPoint(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, float a_time, float a_pitch, float a_yaw, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept override;
 		virtual int AddRotationPointAtRef(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, float a_time, RE::TESObjectREFR* a_reference, float a_offsetPitch, float a_offsetYaw, bool a_isOffsetRelative = false, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept override;
 		virtual int AddRotationPointAtCamera(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, float a_time, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept override;
+		virtual bool RemoveTranslationPoint(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, size_t a_index) const noexcept override;
 		virtual bool StartRecording(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle) const noexcept override;
 		virtual bool StopRecording(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle) const noexcept override;
-		virtual bool RemoveTranslationPoint(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, size_t a_index) const noexcept override;
 		virtual bool RemoveRotationPoint(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, size_t a_index) const noexcept override;
 		virtual bool ClearTimeline(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, bool a_notifyUser = true) const noexcept override;
 		virtual int GetTranslationPointCount(size_t a_timelineID) const noexcept override;
@@ -44,6 +46,7 @@ namespace Messaging
 		virtual size_t GetActiveTimelineID() const noexcept override;
 		virtual void AllowUserRotation(size_t a_timelineID, bool a_allow) const noexcept override;
 		virtual bool IsUserRotationAllowed(size_t a_timelineID) const noexcept override;
+		virtual bool SetPlaybackMode(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, int a_playbackMode) const noexcept override;
 		virtual bool AddTimelineFromFile(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, const char* a_filePath, float a_timeOffset = 0.0f) const noexcept override;
 		virtual bool ExportTimeline(size_t a_timelineID, const char* a_filePath) const noexcept override;
 

@@ -8,12 +8,11 @@ namespace FCSE {
         auto* messaging = SKSE::GetMessagingInterface();
         if (messaging) {
             FCSE_API::FCSETimelineEventData eventData{ a_timelineID };
-            messaging->Dispatch(a_messageType, &eventData, sizeof(eventData), FCSE_API::FCSEPluginName);
-            log::trace("{}: Dispatched message type {} for timeline {}", __FUNCTION__, a_messageType, a_timelineID);
+            messaging->Dispatch(a_messageType, &eventData, sizeof(eventData), nullptr);
         }
     }
 
-    void TimelineManager::DispatchPapyrusEvent(const char* a_eventName, size_t a_timelineID) {
+    void TimelineManager::DispatchTimelineEventPapyrus(const char* a_eventName, size_t a_timelineID) {
         std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
         
         // Send event to all registered forms
@@ -43,10 +42,10 @@ namespace FCSE {
                 });
             }
             
-            log::trace("{}: Queued Papyrus event '{}' to form 0x{:X}", __FUNCTION__, a_eventName, receiver->GetFormID());
+log::info("{}: Queued Papyrus event '{}' to form 0x{:X}", __FUNCTION__, a_eventName, receiver->GetFormID());
         }
         
-        log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCTION__, a_eventName, a_timelineID, m_eventReceivers.size());
+log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCTION__, a_eventName, a_timelineID, m_eventReceivers.size());
     }
 
     void TimelineManager::RegisterForTimelineEvents(RE::TESForm* a_form) {
@@ -447,9 +446,16 @@ namespace FCSE {
             cameraState->rotation.y = _ts_SKSEFunctions::NormalRelativeAngle(rotation.y + a_state->m_rotationOffset.y);
         }
         
-        // Check if timeline completed
-        if (!a_state->m_timeline.IsPlaying()) {
-            // Call StopPlayback to properly cleanup (exit free camera, restore UI, etc.)
+        if (a_state->m_timeline.GetPlaybackMode() == PlaybackMode::kWait) {
+            float playbackTime = a_state->m_timeline.GetPlaybackTime();
+            float timelineDuration = a_state->m_timeline.GetDuration();
+            if ((playbackTime >= timelineDuration) && !a_state->m_isCompletedAndWaiting) {
+                DispatchTimelineEvent(static_cast<uint32_t>(FCSE_API::FCSEMessage::kTimelinePlaybackCompleted), a_state->m_id);
+                DispatchTimelineEventPapyrus("OnTimelinePlaybackCompleted", a_state->m_id);
+                a_state->m_isCompletedAndWaiting = true;
+            }
+            // Keep playback running - user must manually call StopPlayback
+        } else if (!a_state->m_timeline.IsPlaying()) {
             size_t timelineID = a_state->m_id;
             StopPlayback(timelineID);
         }
@@ -513,14 +519,14 @@ namespace FCSE {
         }
         
         float timelineDuration = state->m_timeline.GetDuration();
-        if (timelineDuration <= 0.0f && !a_useDuration) {
-            log::error("{}: Timeline duration is zero", __FUNCTION__);
+        if (timelineDuration < 0.0f && !a_useDuration) {
+            log::error("{}: Timeline duration is negative", __FUNCTION__);
             return false;
         }
         
         // Calculate playback speed
         if (a_useDuration) {
-            if (a_duration <= 0.0f) {
+            if (a_duration < 0.0f) {
                 log::warn("{}: Invalid duration {}, defaulting to timeline duration", __FUNCTION__, a_duration);
                 state->m_playbackDuration = timelineDuration;
                 state->m_playbackSpeed = 1.0f;
@@ -539,8 +545,8 @@ namespace FCSE {
             }
         }
         
-        if (state->m_playbackDuration <= 0.0f) {
-            log::error("{}: Playback duration is zero", __FUNCTION__);
+        if (state->m_playbackDuration < 0.0f) {
+            log::error("{}: Playback duration is negative", __FUNCTION__);
             return false;
         }
         
@@ -552,6 +558,7 @@ namespace FCSE {
         m_activeTimelineID = a_timelineID;
         state->m_isPlaybackRunning = true;
         state->m_rotationOffset = { 0.0f, 0.0f };  // Reset per-timeline rotation offset
+        state->m_isCompletedAndWaiting = false;   // Reset completion event flag for kWait mode
         
         // Save pre-playback state
         if (playerCamera->currentState && 
@@ -583,7 +590,7 @@ namespace FCSE {
         
         // Dispatch playback started event
         DispatchTimelineEvent(static_cast<uint32_t>(FCSE_API::FCSEMessage::kTimelinePlaybackStarted), a_timelineID);
-        DispatchPapyrusEvent("OnTimelinePlaybackStarted", a_timelineID);
+        DispatchTimelineEventPapyrus("OnTimelinePlaybackStarted", a_timelineID);
         
         return true;
     }
@@ -664,7 +671,7 @@ namespace FCSE {
         
         // Dispatch playback stopped event
         DispatchTimelineEvent(static_cast<uint32_t>(FCSE_API::FCSEMessage::kTimelinePlaybackStopped), a_timelineID);
-        DispatchPapyrusEvent("OnTimelinePlaybackStopped", a_timelineID);
+        DispatchTimelineEventPapyrus("OnTimelinePlaybackStopped", a_timelineID);
         
         return true;
     }
@@ -759,6 +766,25 @@ namespace FCSE {
         }
         
         return state->m_allowUserRotation;
+    }
+
+    bool TimelineManager::SetPlaybackMode(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, int a_playbackMode) {
+        std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
+        
+        TimelineState* state = GetTimeline(a_timelineID, a_pluginHandle);
+        if (!state) {
+            return false;
+        }
+        
+        if (a_playbackMode < 0 || a_playbackMode > 2) {
+            log::error("{}: Invalid playback mode {} for timeline {}", __FUNCTION__, a_playbackMode, a_timelineID);
+            return false;
+        }
+        
+        PlaybackMode mode = static_cast<PlaybackMode>(a_playbackMode);
+        state->m_timeline.SetPlaybackMode(mode);
+        
+        return true;
     }
 
     bool TimelineManager::AddTimelineFromFile(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, const char* a_filePath, float a_timeOffset) {
@@ -904,9 +930,12 @@ namespace FCSE {
     }
 
     size_t TimelineManager::RegisterTimeline(SKSE::PluginHandle a_pluginHandle) {
+        log::info("{}: ENTER - Plugin handle {}", __FUNCTION__, a_pluginHandle);
+        
         std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
         
         size_t newID = m_nextTimelineID.fetch_add(1);
+        log::info("{}: Generated new ID {} (counter now at {})", __FUNCTION__, newID, m_nextTimelineID.load());
         
         TimelineState state;
         state.m_id = newID;
@@ -914,10 +943,14 @@ namespace FCSE {
         state.m_ownerHandle = a_pluginHandle;
         
         state.m_ownerName = std::format("Plugin_{}", a_pluginHandle);
+        log::info("{}: Created state with owner name '{}'", __FUNCTION__, state.m_ownerName);
+        
+        // Log before move to avoid use-after-move undefined behavior
+        log::info("{}: Timeline {} registered by plugin '{}' (handle {})", __FUNCTION__, newID, state.m_ownerName, a_pluginHandle);
         
         m_timelines[newID] = std::move(state);
+        log::info("{}: Inserted into map, returning ID {}", __FUNCTION__, newID);
         
-        log::info("{}: Timeline {} registered by plugin '{}' (handle {})", __FUNCTION__, newID, state.m_ownerName, a_pluginHandle);
         return newID;
     }
 

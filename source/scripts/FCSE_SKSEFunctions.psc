@@ -5,6 +5,26 @@ Scriptname FCSE_SKSEFunctions
 ; Example: version 1.2.3 returns 10203
 int Function FCSE_GetPluginVersion() global native
 
+; ===== Timeline Management =====
+
+; Register a new timeline and get its unique ID
+; Each mod can register multiple independent timelines
+; IMPORTANT: Timeline IDs are permanent once registered. To update a timeline's
+; content, use ClearTimeline() followed by Add...Point() calls. Only unregister
+; when you no longer need the timeline at all (e.g., plugin shutdown).
+; modName: name of your mod's ESP/ESL file (e.g., "MyMod.esp")
+; Returns: new timeline ID (>0) on success, or -1 on failure
+int Function FCSE_RegisterTimeline(string modName) global native
+
+; Unregister a timeline and free its resources
+; This will stop any active playback/recording on the timeline before removing it
+; modName: name of your mod's ESP/ESL file (e.g., "MyMod.esp")
+; timelineID: timeline ID to unregister
+; Returns: true if successfully unregistered, false on failure
+bool Function FCSE_UnregisterTimeline(string modName, int timelineID) global native
+
+; ===== Timeline Building =====
+
 ; Add a translation point at a specified position
 ; modName: name of your mod's ESP/ESL file (e.g., "MyMod.esp")
 ; timelineID: timeline ID to add the point to
@@ -191,6 +211,14 @@ Function FCSE_AllowUserRotation(string modName, int timelineID, bool allow) glob
 ; Returns: true if user can control rotation, false otherwise
 bool Function FCSE_IsUserRotationAllowed(int timelineID) global native
 
+; Set the playback mode for a timeline
+; This determines what happens when the timeline reaches its end
+; modName: name of your mod's ESP/ESL file (e.g., "MyMod.esp")
+; timelineID: timeline ID to configure
+; playbackMode: 0=kEnd (stop at end), 1=kLoop (wrap to beginning), 2=kWait (stay at final position until StopPlayback is called)
+; Returns: true if successfully set, false on failure
+bool Function FCSE_SetPlaybackMode(string modName, int timelineID, int playbackMode) global native
+
 ; Adds camera timeline imported from filePath at timeOffset to the specified timeline.
 ; modName: Name of your mod (case-sensitive, as defined in SKSE plugin)
 ; timelineID: ID of the timeline to add points to
@@ -212,6 +240,7 @@ bool Function FCSE_ExportTimeline(string modName, int timelineID, string filePat
 ; The form's script must define these event handlers:
 ;   Event OnTimelinePlaybackStarted(int timelineID)
 ;   Event OnTimelinePlaybackStopped(int timelineID)
+;   Event OnTimelinePlaybackCompleted(int timelineID)  ; For kWait mode: timeline reached end and is waiting
 ; form: The form/alias to register (typically 'self' from a script)
 Function FCSE_RegisterForTimelineEvents(Form form) global native
 

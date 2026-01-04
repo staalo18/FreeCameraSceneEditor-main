@@ -105,11 +105,13 @@ namespace FCSE
 		// Get timeline duration (includes loop offset if in loop mode)
 		float timelineDuration = GetDuration();
 
-		// Check for completion and handle loop
+		// Check for completion and handle based on playback mode
 		if (m_playbackTime >= timelineDuration) {
 			if (m_playbackMode == PlaybackMode::kLoop) {
 				// Loop: use modulo to wrap time seamlessly
 				m_playbackTime = std::fmod(m_playbackTime, timelineDuration);
+			} else if (m_playbackMode == PlaybackMode::kWait) {
+				m_playbackTime = timelineDuration;
 			} else {
 				// End: clamp to final position and stop
 				m_playbackTime = timelineDuration;
@@ -229,6 +231,7 @@ namespace FCSE
 	template <typename PathType>
 	void TimelineTrack<PathType>::SetPlaybackMode(PlaybackMode a_mode)
 	{
+log::info("{}: Setting playbackMode: {}", __FUNCTION__, static_cast<int>(a_mode));
 		m_playbackMode = a_mode;
 	}
 

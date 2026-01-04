@@ -16,9 +16,13 @@ namespace FCSE_API {
 		// Data: FCSETimelineEventData*
 		kTimelinePlaybackStarted = 0,
 		
-		// Dispatched when timeline playback stops (including natural completion or manual stop)
+		// Dispatched when timeline playback stops (manual stop or kEnd mode completion)
 		// Data: FCSETimelineEventData*
-		kTimelinePlaybackStopped = 1
+		kTimelinePlaybackStopped = 1,
+		
+		// Dispatched when timeline reaches end in kWait mode (stays at final position)
+		// Data: FCSETimelineEventData*
+		kTimelinePlaybackCompleted = 2
 	};
 
 	// Event data structure for timeline events
@@ -50,6 +54,27 @@ namespace FCSE_API {
 		/// </summary>
 		/// <returns>Version encoded as integer</returns>
 		[[nodiscard]] virtual int GetFCSEPluginVersion() const noexcept = 0;
+
+		/// <summary>
+		/// Register a new timeline and get its unique ID.
+		/// Each plugin can register multiple timelines for independent camera paths.
+		/// 
+		/// IMPORTANT: Timeline IDs are permanent once registered. To update a timeline's
+		/// content, use ClearTimeline() followed by Add...Point() calls. Only unregister
+		/// when you no longer need the timeline at all (e.g., plugin shutdown).
+		/// </summary>
+		/// <param name="a_pluginHandle">Plugin handle of the calling plugin (use SKSE::GetPluginHandle())</param>
+		/// <returns>New timeline ID (>0) on success, or 0 on failure</returns>
+		[[nodiscard]] virtual size_t RegisterTimeline(SKSE::PluginHandle a_pluginHandle) const noexcept = 0;
+
+		/// <summary>
+		/// Unregister a timeline and free its resources.
+		/// This will stop any active playback/recording on the timeline before removing it.
+		/// </summary>
+		/// <param name="a_timelineID">Timeline ID to unregister</param>
+		/// <param name="a_pluginHandle">Plugin handle for ownership validation</param>
+		/// <returns>true if successfully unregistered, false on failure</returns>
+		[[nodiscard]] virtual bool UnregisterTimeline(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle) const noexcept = 0;
 
 		/// <summary>
 		/// Add a translation point at a specified position.
@@ -280,6 +305,15 @@ namespace FCSE_API {
 		[[nodiscard]] virtual bool IsUserRotationAllowed(size_t a_timelineID) const noexcept = 0;
 
 		/// <summary>
+		/// Set the playback mode for a timeline.
+		/// </summary>
+		/// <param name="a_timelineID">Timeline ID to configure</param>
+		/// <param name="a_pluginHandle">Plugin handle for ownership validation</param>
+		/// <param name="a_playbackMode">Playback mode: 0=kEnd (stop at end), 1=kLoop (wrap to beginning), 2=kWait (stay at final point until StopPlayback is called)</param>
+		/// <returns>True if successfully set, false on failure</returns>
+		[[nodiscard]] virtual bool SetPlaybackMode(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, int a_playbackMode) const noexcept = 0;
+
+		/// <summary>
 		/// Adds camera timeline imported from a_filePath at time a_timeOffset to the specified timeline.
 		/// </summary>
 		/// <param name="a_timelineID">ID of the timeline to add points to</param>
@@ -301,13 +335,13 @@ namespace FCSE_API {
 	typedef void* (*_RequestPluginAPI)(const InterfaceVersion interfaceVersion);
 
 	/// <summary>
-	/// Request the IDRC API interface.
+	/// Request the FCSE API interface.
 	/// Recommended: Send your request during or after SKSEMessagingInterface::kMessage_PostLoad to make sure the dll has already been loaded
 	/// </summary>
 	/// <param name="a_interfaceVersion">The interface version to request</param>
 	/// <returns>The pointer to the API singleton, or nullptr if request failed</returns>
 	[[nodiscard]] inline void* RequestPluginAPI(const InterfaceVersion a_interfaceVersion = InterfaceVersion::V1) {
-		auto pluginHandle = GetModuleHandle("IntuitiveDragonRideControl.dll");
+		auto pluginHandle = GetModuleHandle("FreeCameraSceneEditor.dll");
 		_RequestPluginAPI requestAPIFunction = (_RequestPluginAPI)GetProcAddress(pluginHandle, "RequestPluginAPI");
 		if (requestAPIFunction) {
 			return requestAPIFunction(a_interfaceVersion);

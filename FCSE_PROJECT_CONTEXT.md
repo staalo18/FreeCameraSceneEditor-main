@@ -21,9 +21,9 @@ FreeCameraSceneEditor (FCSE) is an SKSE plugin for Skyrim Anniversary Edition th
 - **Flexible Recording**: Real-time camera path recording with 1-second sampling intervals
 - **Advanced Interpolation**: Support for linear and cubic Hermite interpolation with per-point and global easing
 - **Import/Export**: Save/load camera paths as `.fcse` timeline files with load-order independent reference tracking
-- **Event Callback System**: Notify consumers when timeline playback starts/stops
+- **Event Callback System**: Notify consumers when timeline playback starts/stops/completes
   - **SKSE Messaging Interface**: C++ plugins receive events via SKSE messaging system
-  - **Papyrus Events**: Scripts receive `OnTimelinePlaybackStarted` and `OnTimelinePlaybackStopped` events with timeline ID
+  - **Papyrus Events**: Scripts receive `OnTimelinePlaybackStarted`, `OnTimelinePlaybackStopped`, and `OnTimelinePlaybackCompleted` events with timeline ID
 - **Three API Surfaces**:
   - **Papyrus Scripts**: Full scripting integration with mod name + timeline ID parameters
   - **C++ Mod API**: Native plugin-to-plugin communication with SKSE plugin handle validation
@@ -145,6 +145,12 @@ Apply to RE::FreeCameraState (position/rotation)
 
 **Note**: Keyboard controls operate on the most recently used timeline ID (stored in `ControlsManager`)
 
+**Common Pitfalls & Debugging:**
+- **C++ API Returns 0 or -1**: Check that `RegisterTimeline()` succeeded before using returned ID. ID of 0 indicates registration failure (check logs for errors).
+- **Crash on API Call**: All API functions validate timeline ID and ownership before proceeding. If crashing, check for use-after-move bugs or null pointer dereferences in wrapper code.
+- **Timeline Operations Fail Silently**: Verify ownership - only the plugin that registered a timeline can modify it (Add/Remove points, Start/Stop recording). Read-only operations (queries, playback control) don't require ownership.
+- **Missing Log Output**: Ensure `FreeCameraSceneEditor.ini` has correct `LogLevel` (0-6, default 3=info). Use-after-move bugs can cause logging to crash before return values propagate.
+
 ---
 
 ## **Quick Reference**
@@ -188,9 +194,10 @@ Update Loop (Hooks.cpp):
 - **Transition:** `{time, mode, easeIn, easeOut}` - Keyframe metadata
 - **PointType:** `kWorld` (static), `kReference` (dynamic), `kCamera` (baked)
 - **InterpolationMode:** `kNone`, `kLinear`, `kCubicHermite`
-- **PlaybackMode:** `kEnd` (stop), `kLoop` (wrap with offset)
+- **PlaybackMode:** `kEnd` (stop), `kLoop` (wrap with offset), `kWait` (stay at final position)
 
 ### **Critical Patterns:**
+- **Timeline Registration:** Call `RegisterTimeline(pluginHandle)` to get unique timeline ID (required first step)
 - **Ownership Validation:** `GetTimeline(timelineID, pluginHandle)` validates before all operations
 - **Exclusive Active Timeline:** Only ONE timeline can record/play at a time (m_activeTimelineID)
 - **Point Construction:** Always pass `Transition` object (not raw time)
@@ -289,16 +296,18 @@ RequestPluginAPI(InterfaceVersion) [Mod API entry]
 | `FCSE_GetActiveTimelineID` | int | - | Get ID of currently active timeline (0 if none) |
 | `FCSE_AllowUserRotation` | void | **modName, timelineID**, allow | Enable/disable user camera control for specific timeline |
 | `FCSE_IsUserRotationAllowed` | bool | **timelineID** | Query user rotation state for specific timeline |
+| `FCSE_SetPlaybackMode` | bool | **modName, timelineID**, playbackMode | Set playback mode (0=kEnd, 1=kLoop, 2=kWait) - requires ownership |
 
-**Import/Export Functions:**
+**Import/Export Functions:****
 | Papyrus Function | Return | Parameters | Notes |
 |-----------------|--------|------------|-------|
 | `FCSE_AddTimelineFromFile` | bool | **modName, timelineID**, filePath, timeOffset | Import INI file (requires ownership) |
 | `FCSE_ExportTimeline` | bool | **modName, timelineID**, filePath | Export to INI file (no ownership required) |
 
 **Parameter Notes:**
-- **modName**: Your mod's ESP/ESL filename (e.g., `"MyMod.esp"`), case-sensitive. Required for write/control operations only (RegisterTimeline, AddPoint, RemovePoint, ClearTimeline, Start/Stop Recording/Playback, AllowUserRotation).
+- **modName**: Your mod's ESP/ESL filename (e.g., `"MyMod.esp"`), case-sensitive. Required for write/control operations only (RegisterTimeline, AddPoint, RemovePoint, ClearTimeline, Start/Stop Recording/Playback, AllowUserRotation, SetPlaybackMode).
 - **timelineID**: Integer ID returned by `RegisterTimeline()`, must be > 0
+- **playbackMode**: Integer value for PlaybackMode enum (0=kEnd, 1=kLoop, 2=kWait)
 - **Ownership Validation**: Only applied to write/control operations. Read-only queries (IsRecording, IsPlaybackRunning, IsPlaybackPaused, IsUserRotationAllowed, GetPointCount) don't require modName.
 - **Return Values**: `-1` for query functions on error, `false` for boolean functions on error
 
@@ -310,7 +319,8 @@ RequestPluginAPI(InterfaceVersion) [Mod API entry]
 **Event System:**
 Papyrus scripts can register forms (Quests, ReferenceAliases, etc.) to receive timeline playback events. Registered forms receive these event callbacks:
 - `OnTimelinePlaybackStarted(int timelineID)` - Fired when any timeline starts playing
-- `OnTimelinePlaybackStopped(int timelineID)` - Fired when any timeline stops playing
+- `OnTimelinePlaybackStopped(int timelineID)` - Fired when any timeline stops playing (manual stop or kEnd mode completion)
+- `OnTimelinePlaybackCompleted(int timelineID)` - Fired when timeline reaches end in kWait mode (stays at final position)
 
 **Example Usage:**
 ```papyrus
@@ -320,12 +330,37 @@ Event OnInit()
     FCSE_SKSEFunctions.FCSE_RegisterForTimelineEvents(self)
 EndEvent
 
+Function SetupTimeline()
+    ; First, register a new timeline to get its ID
+    int timelineID = FCSE_SKSEFunctions.FCSE_RegisterTimeline("MyMod.esp")
+    
+    ; Add some points...
+    FCSE_SKSEFunctions.FCSE_AddTranslationPoint("MyMod.esp", timelineID, 0.0, 100.0, 200.0, 300.0, false, false, 2)
+    FCSE_SKSEFunctions.FCSE_AddTranslationPoint("MyMod.esp", timelineID, 5.0, 400.0, 500.0, 600.0, false, false, 2)
+    
+    ; Set playback mode to kWait (2) - timeline will stay at final position
+    FCSE_SKSEFunctions.FCSE_SetPlaybackMode("MyMod.esp", timelineID, 2)
+    
+    ; Start playback
+    FCSE_SKSEFunctions.FCSE_StartPlayback("MyMod.esp", timelineID, 1.0, false, false, false, 0.0)
+EndFunction
+
+Function Cleanup()
+    ; When done with timeline, unregister it to free resources
+    FCSE_SKSEFunctions.FCSE_UnregisterTimeline("MyMod.esp", timelineID)
+EndFunction
+
 Event OnTimelinePlaybackStarted(int timelineID)
     Debug.Notification("Timeline " + timelineID + " started")
 EndEvent
 
 Event OnTimelinePlaybackStopped(int timelineID)
     Debug.Notification("Timeline " + timelineID + " stopped")
+EndEvent
+
+Event OnTimelinePlaybackCompleted(int timelineID)
+    Debug.Notification("Timeline " + timelineID + " completed (kWait mode)")
+    ; Timeline is now waiting at final position - call FCSE_StopPlayback when ready
 EndEvent
 ```
 
@@ -348,7 +383,8 @@ C++ plugins can receive timeline playback events via the SKSE messaging system:
 ```cpp
 enum class FCSEMessage : uint32_t {
     kTimelinePlaybackStarted = 0,
-    kTimelinePlaybackStopped = 1
+    kTimelinePlaybackStopped = 1,
+    kTimelinePlaybackCompleted = 2  // kWait mode: reached end, staying at final position
 };
 
 struct FCSETimelineEventData {
@@ -382,9 +418,17 @@ SKSE::GetMessagingInterface()->RegisterListener(MessageHandler);
 **Interface: `IVFCSE1`** (pure virtual, defined in `FCSE_API.h`)
 - **Thread Safety:** `GetFCSEThreadId()` returns TID for thread validation
 - **Version Check:** `GetFCSEPluginVersion()` returns encoded version
+- **Timeline Management:**
+  - `RegisterTimeline(pluginHandle)` - Returns new timeline ID (size_t, >0) for your plugin
+  - `UnregisterTimeline(timelineID, pluginHandle)` - Frees timeline resources (stops active operations first)
 - **Multi-Timeline API:** All functions require `size_t timelineID` and `SKSE::PluginHandle` parameters
   - External plugins pass their own plugin handle (via `SKSE::GetPluginHandle()` in their code)
-  - FCSE validates ownership on modification operations
+  - Timeline manipulation requires ownership validation (Register/Unregister/Add/Remove/Clear/SetPlaybackMode)
+  - Query/playback operations don't require ownership validation
+- **Signatures:** Similar to Papyrus but with native C++ types (`size_t`, `SKSE::PluginHandle` instead of `string`, `int`)
+  - All functions marked `const noexcept`
+  - `SetPlaybackMode(timelineID, pluginHandle, playbackMode)` - playbackMode as int (0=kEnd, 1=kLoop, 2=kWait)
+  - All functions delegate to `TimelineManager::GetSingleton()`
   - Query/playback operations don't require ownership validation
 - **Signatures:** Similar to Papyrus but with native C++ types (`size_t`, `SKSE::PluginHandle` instead of `string`, `int`)
   - All functions marked `const noexcept`
@@ -514,11 +558,13 @@ enum struct PointType {
 ```cpp
 enum class PlaybackMode : int {
     kEnd = 0,   // Stop at end of timeline (default)
-    kLoop = 1   // Restart from beginning when timeline completes
+    kLoop = 1,  // Restart from beginning when timeline completes
+    kWait = 2   // Stay at final position indefinitely (requires manual StopPlayback)
 };
 ```
 - **Stored in INI:** Saved/loaded with timeline files
 - **Applied to both tracks:** Timeline class synchronizes mode across translation and rotation
+- **kWait Behavior:** Timeline reaches end, dispatches kTimelinePlaybackCompleted event, then continues playing at final frame position (allowing dynamic reference tracking). User must call StopPlayback() to end playback.
 
 ### **3.2 Naming Conventions**
     - **Member Variables:** `m_` prefix (e.g., `m_translationTrack`, `m_isPlaying`)
@@ -598,6 +644,7 @@ struct TimelineState {
     float m_playbackDuration{ 0.0f };
     bool m_showMenusDuringPlayback{ false };
     bool m_allowUserRotation{ false };     // Allow user to control rotation during playback
+    bool m_isCompletedAndWaiting{ false }; // Track if kTimelinePlaybackCompleted event was dispatched (for kWait mode)
     
     // Owner tracking
     SKSE::PluginHandle m_ownerHandle;      // Plugin that registered this timeline
@@ -617,7 +664,7 @@ struct TimelineState {
   - Papyrus Events: Queues events to registered forms via `SKSE::GetTaskInterface()->AddTask()`
 - **Global vs Per-Timeline State:**
   - Global (shared): `m_recordingInterval`, `m_isShowingMenus`, `m_showMenusDuringPlayback`, `m_userTurning`, `m_rotationOffset`, `m_lastFreeRotation`, `m_eventReceivers`
-  - Per-Timeline (in TimelineState): `m_isRecording`, `m_currentRecordingTime`, `m_lastRecordedPointTime`, `m_isPlaybackRunning`, `m_playbackSpeed`, `m_globalEaseIn`, `m_globalEaseOut`, `m_playbackDuration`, `m_allowUserRotation`
+  - Per-Timeline (in TimelineState): `m_isRecording`, `m_currentRecordingTime`, `m_lastRecordedPointTime`, `m_isPlaybackRunning`, `m_playbackSpeed`, `m_globalEaseIn`, `m_globalEaseOut`, `m_playbackDuration`, `m_allowUserRotation`, `m_isCompletedAndWaiting`
 
 ---
 
@@ -720,7 +767,7 @@ StartPlayback(timelineID, pluginHandle, speed, globalEaseIn, globalEaseOut, useD
 ├─> Enter free camera mode: ToggleFreeCameraMode(false)
 ├─> Dispatch timeline started events:
 │   ├─> DispatchTimelineEvent(kTimelinePlaybackStarted, timelineID)  [SKSE messaging]
-│   └─> DispatchPapyrusEvent("OnTimelinePlaybackStarted", timelineID)  [Papyrus events]
+│   └─> DispatchTimelineEventPapyrus("OnTimelinePlaybackStarted", timelineID)  [Papyrus events]
 ├─> Set state->isPlaybackRunning = true
 └─> Set m_activeTimelineID = timelineID
 
@@ -750,13 +797,20 @@ StopPlayback(timelineID, pluginHandle)
 ├─> Validate ownership: GetTimeline(timelineID, pluginHandle)
 ├─> Dispatch timeline stopped events:
 │   ├─> DispatchTimelineEvent(kTimelinePlaybackStopped, timelineID)  [SKSE messaging]
-│   └─> DispatchPapyrusEvent("OnTimelinePlaybackStopped", timelineID)  [Papyrus events]
+│   └─> DispatchTimelineEventPapyrus("OnTimelinePlaybackStopped", timelineID)  [Papyrus events]
 ├─> If in free camera:
 │   ├─> Exit free camera mode
 │   ├─> Restore state->isShowingMenus
 │   └─> Restore state->lastFreeRotation (for third-person)
 ├─> Set state->isPlaybackRunning = false
 └─> Set m_activeTimelineID = 0
+
+SetPlaybackMode(timelineID, pluginHandle, playbackMode)
+├─> Validate ownership: GetTimeline(timelineID, pluginHandle)
+├─> Validate playback mode: 0 (kEnd), 1 (kLoop), or 2 (kWait)
+├─> Cast int to PlaybackMode enum
+└─> Call state->timeline.SetPlaybackMode(mode)
+    └─> Sets mode on both translation and rotation tracks
 ```
 
 **Multi-Timeline Changes:**
@@ -775,7 +829,7 @@ StopPlayback(timelineID, pluginHandle)
     * Data: `FCSETimelineEventData{ size_t timelineID }`
     * Sender: `FCSE_API::FCSEPluginName` ("FreeCameraSceneEditor")
   - **Papyrus Events (Scripts):**
-    * `DispatchPapyrusEvent(eventName, timelineID)` queues to Papyrus thread
+    * `DispatchTimelineEventPapyrus(eventName, timelineID)` queues to Papyrus thread
     * Thread Safety: Uses `SKSE::GetTaskInterface()->AddTask()` with lambda
     * Event names: "OnTimelinePlaybackStarted", "OnTimelinePlaybackStopped"
     * Dispatched to all registered forms in `m_eventReceivers` vector
@@ -799,6 +853,16 @@ StopPlayback(timelineID, pluginHandle)
   - Directly writes `FreeCameraState->translation` and `->rotation`
   - Movement/look hooks block user input ONLY during playback (not recording)
   - Hooks check: `IsPlaybackRunning(activeID)` to distinguish from recording
+
+- **PlaybackMode Behaviors:**
+  - **kEnd (0):** Timeline reaches end → dispatches kTimelinePlaybackStopped → stops playback automatically
+  - **kLoop (1):** Timeline reaches end → wraps to beginning seamlessly using modulo time
+  - **kWait (2):** Timeline reaches end → dispatches kTimelinePlaybackCompleted event → continues playing at final frame
+    * Stays in playback state (`IsPlaybackRunning() == true`)
+    * Camera updates every frame at final position (allows dynamic reference tracking)
+    * User must manually call `StopPlayback()` to end
+    * Event dispatched only once (tracked via `m_isCompletedAndWaiting` flag)
+    * Use case: Hold camera on moving NPC, wait for player trigger, cinematic "freeze" effects
 
 ---
 
@@ -969,11 +1033,26 @@ const PathType& GetPath() const { return m_path; }  // For internal const access
 | Method | Behavior |
 |--------|----------|
 | `AddPoint(point)` | Insert sorted by time, calls `ResetTimeline()` |
-| `UpdateTimeline(deltaTime)` | Advance `m_playbackTime`, handle loop wrap or end |
+| `UpdateTimeline(deltaTime)` | Advance `m_playbackTime`, handle loop wrap, end, or wait based on `m_playbackMode` |
 | `GetPointAtTime(time)` | Calculate segment index + progress, interpolate (returns ValueType) |
 | `StartPlayback()` | Call `UpdateCameraPoints()` (bake kCamera), set playing |
 | `ResetTimeline()` | Zero playback time, clear playing/paused flags |
 | `GetPlaybackTime()` | Returns current playback position |
+
+**UpdateTimeline PlaybackMode Logic:**
+```cpp
+if (m_playbackTime >= timelineDuration) {
+    if (m_playbackMode == PlaybackMode::kLoop) {
+        m_playbackTime = std::fmod(m_playbackTime, timelineDuration);  // Wrap time
+    } else if (m_playbackMode == PlaybackMode::kWait) {
+        m_playbackTime = timelineDuration;  // Clamp to final frame
+        // m_isPlaying stays true - continues updating at final position
+    } else {  // kEnd
+        m_playbackTime = timelineDuration;  // Clamp to final frame
+        m_isPlaying = false;  // Stop playback
+    }
+}
+```
 
 **Interpolation Dispatch:**
 ```cpp
@@ -1271,7 +1350,7 @@ std::vector<RE::TESForm*> m_eventReceivers;  // Global list of registered forms
 
 **Thread-Safe Event Dispatch (TimelineManager.cpp):**
 ```cpp
-void TimelineManager::DispatchPapyrusEvent(const char* a_eventName, size_t a_timelineID) {
+void TimelineManager::DispatchTimelineEventPapyrus(const char* a_eventName, size_t a_timelineID) {
     std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
     
     for (auto* receiver : m_eventReceivers) {

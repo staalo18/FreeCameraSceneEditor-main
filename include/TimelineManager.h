@@ -24,6 +24,7 @@ namespace FCSE {
         float m_playbackDuration{ 0.0f };
         bool m_showMenusDuringPlayback{ false };
         bool m_allowUserRotation{ false };     // Allow user to control rotation during playback
+        bool m_isCompletedAndWaiting{ false }; // Track if kTimelinePlaybackCompleted event was dispatched (for kWait mode)
         RE::BSTPoint2<float> m_rotationOffset{ 0.0f, 0.0f }; // Per-timeline rotation offset from user input
         
         // Owner tracking
@@ -70,6 +71,7 @@ namespace FCSE {
             void SetUserTurning(bool a_turning);
             bool AllowUserRotation(size_t a_timelineID, bool a_allow);
             bool IsUserRotationAllowed(size_t a_timelineID) const;
+            bool SetPlaybackMode(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, int a_playbackMode);
             size_t GetActiveTimelineID() const { return m_activeTimelineID; }    
                                     
             bool AddTimelineFromFile(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, const char* a_filePath, float a_timeOffset = 0.0f); // Requires ownership
@@ -87,7 +89,7 @@ namespace FCSE {
             ~TimelineManager() = default;
             
            void DispatchTimelineEvent(uint32_t a_messageType, size_t a_timelineID);
-           void DispatchPapyrusEvent(const char* a_eventName, size_t a_timelineID);
+           void DispatchTimelineEventPapyrus(const char* a_eventName, size_t a_timelineID);
 
             void DrawTimeline(const TimelineState* a_state);
             void RecordTimeline(TimelineState* a_state);

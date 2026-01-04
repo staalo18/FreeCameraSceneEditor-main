@@ -17,7 +17,7 @@ size_t timelineID = 0;
                 if (!buttonEvent || !buttonEvent->IsDown()) {
                     continue;
                 }
-                
+//continue;                
                 const char* relativePath = "SKSE/Plugins/FCSE_CameraPath.ini";
 
                 // Register timeline once for all operations
@@ -40,7 +40,7 @@ size_t timelineID = 0;
                     tm.AllowUserRotation(timelineID, !tm.IsUserRotationAllowed(timelineID));
                 } else if (key == 5) {
                     RE::TESObjectREFR* reference = nullptr;
-                    auto* form = RE::TESForm::LookupByID(0xd8c56);
+                    auto* form = RE::TESForm::LookupByID(0xd8c58);
                     reference = form ? form->As<RE::TESObjectREFR>() : nullptr;
                     if (reference) {
                         bool isOffsetRelative = true;
