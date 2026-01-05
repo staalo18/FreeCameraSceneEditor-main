@@ -38,6 +38,7 @@ namespace Messaging
 		virtual int GetRotationPointCount(size_t a_timelineID) const noexcept override;
 		virtual bool StartPlayback(size_t a_timelineID, float a_speed = 1.0f, bool a_globalEaseIn = false, bool a_globalEaseOut = false, bool a_useDuration = false, float a_duration = 0.0f) const noexcept override;
 		virtual bool StopPlayback(size_t a_timelineID) const noexcept override;
+		virtual bool SwitchPlayback(size_t a_fromTimelineID, size_t a_toTimelineID, SKSE::PluginHandle a_pluginHandle) const noexcept override;
 		virtual bool PausePlayback(size_t a_timelineID) const noexcept override;
 		virtual bool ResumePlayback(size_t a_timelineID) const noexcept override;
 		virtual bool IsPlaybackRunning(size_t a_timelineID) const noexcept override;

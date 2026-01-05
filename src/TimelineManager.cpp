@@ -676,6 +676,97 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         return true;
     }
 
+    bool TimelineManager::SwitchPlayback(size_t a_fromTimelineID, size_t a_toTimelineID, SKSE::PluginHandle a_pluginHandle) {
+        std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
+        
+        // Validate target timeline exists and is owned by caller
+        TimelineState* toState = GetTimeline(a_toTimelineID, a_pluginHandle);
+        if (!toState) {
+            log::error("{}: Target timeline {} not found or not owned by plugin handle {}", __FUNCTION__, a_toTimelineID, a_pluginHandle);
+            return false;
+        }
+        
+        // Find source timeline to switch from
+        TimelineState* fromState = nullptr;
+        
+        if (a_fromTimelineID == 0) {
+            // Switch from any timeline owned by this plugin that is currently playing
+            for (auto& [id, state] : m_timelines) {
+                if (state.m_ownerHandle == a_pluginHandle && state.m_isPlaybackRunning && m_activeTimelineID == id) {
+                    fromState = &state;
+                    a_fromTimelineID = id;  // Store for logging
+                    break;
+                }
+            }
+            
+            if (!fromState) {
+                log::warn("{}: No active timeline found for plugin handle {}", __FUNCTION__, a_pluginHandle);
+                return false;
+            }
+        } else {
+            // Validate specific source timeline
+            fromState = GetTimeline(a_fromTimelineID);
+            if (!fromState) {
+                log::error("{}: Source timeline {} not found", __FUNCTION__, a_fromTimelineID);
+                return false;
+            }
+            
+            // Verify source timeline is actively playing
+            if (!fromState->m_isPlaybackRunning || m_activeTimelineID != a_fromTimelineID) {
+                log::warn("{}: Source timeline {} is not actively playing", __FUNCTION__, a_fromTimelineID);
+                return false;
+            }
+        }
+        
+        // Validate target timeline has points
+        if (toState->m_timeline.GetTranslationPointCount() == 0 && toState->m_timeline.GetRotationPointCount() == 0) {
+            log::error("{}: Target timeline {} has no points", __FUNCTION__, a_toTimelineID);
+            return false;
+        }
+        
+        // Validate camera is in free camera mode
+        auto* playerCamera = RE::PlayerCamera::GetSingleton();
+        if (!playerCamera || !playerCamera->IsInFreeCameraMode()) {
+            log::error("{}: Not in free camera mode", __FUNCTION__);
+            return false;
+        }
+        
+        log::info("{}: Switching playback from timeline {} to timeline {}", 
+                  __FUNCTION__, a_fromTimelineID, a_toTimelineID);
+        
+        // Stop source timeline WITHOUT exiting free camera mode
+        fromState->m_isPlaybackRunning = false;
+        m_activeTimelineID = 0;  // Temporarily clear to allow new timeline activation
+        
+        // Dispatch stop event for source timeline
+        DispatchTimelineEvent(static_cast<uint32_t>(FCSE_API::FCSEMessage::kTimelinePlaybackStopped), a_fromTimelineID);
+        DispatchTimelineEventPapyrus("OnTimelinePlaybackStopped", a_fromTimelineID);
+        
+        // Initialize target timeline (StartPlayback will call UpdateCameraPoints internally)
+        toState->m_timeline.ResetPlayback();
+        toState->m_timeline.StartPlayback();
+        
+        // Copy playback settings from source timeline
+        toState->m_playbackSpeed = fromState->m_playbackSpeed;
+        toState->m_rotationOffset = fromState->m_rotationOffset;
+        // Note: m_allowUserRotation uses target timeline's setting (not copied from source)
+        toState->m_showMenusDuringPlayback = fromState->m_showMenusDuringPlayback;
+        toState->m_globalEaseIn = fromState->m_globalEaseIn;
+        toState->m_globalEaseOut = fromState->m_globalEaseOut;
+        
+        // Activate target timeline (camera stays in free mode)
+        m_activeTimelineID = a_toTimelineID;
+        toState->m_isPlaybackRunning = true;
+        toState->m_isCompletedAndWaiting = false;
+        
+        // Dispatch start event for target timeline
+        DispatchTimelineEvent(static_cast<uint32_t>(FCSE_API::FCSEMessage::kTimelinePlaybackStarted), a_toTimelineID);
+        DispatchTimelineEventPapyrus("OnTimelinePlaybackStarted", a_toTimelineID);
+        
+        log::info("{}: Successfully switched to timeline {}", __FUNCTION__, a_toTimelineID);
+        return true;
+    }
+
     void TimelineManager::SetUserTurning(bool a_turning) {
         m_userTurning = a_turning;
     }

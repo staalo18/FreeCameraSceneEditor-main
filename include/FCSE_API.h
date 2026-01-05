@@ -250,6 +250,17 @@ namespace FCSE_API {
 		[[nodiscard]] virtual bool StopPlayback(size_t a_timelineID) const noexcept = 0;
 
 		/// <summary>
+		/// Switch playback from one timeline to another without exiting free camera mode.
+		/// If a_fromTimelineID is 0, switches from any timeline owned by the calling plugin.
+		/// Otherwise, only switches if the specified source timeline is actively playing.
+		/// </summary>
+		/// <param name="a_fromTimelineID">Source timeline ID (0 = any owned timeline currently playing)</param>
+		/// <param name="a_toTimelineID">Target timeline ID to switch to</param>
+		/// <param name="a_pluginHandle">Plugin handle for ownership validation</param>
+		/// <returns>true on successful switch, false on failure</returns>
+		[[nodiscard]] virtual bool SwitchPlayback(size_t a_fromTimelineID, size_t a_toTimelineID, SKSE::PluginHandle a_pluginHandle) const noexcept = 0;
+
+		/// <summary>
 		/// Pause playback of a camera path timeline.
 		/// </summary>
 		/// <param name="a_timelineID">Timeline ID to pause</param>

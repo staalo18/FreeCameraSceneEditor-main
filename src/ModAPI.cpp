@@ -90,6 +90,10 @@ bool Messaging::FCSEInterface::StopPlayback(size_t a_timelineID) const noexcept 
 	return FCSE::TimelineManager::GetSingleton().StopPlayback(a_timelineID);
 }
 
+bool Messaging::FCSEInterface::SwitchPlayback(size_t a_fromTimelineID, size_t a_toTimelineID, SKSE::PluginHandle a_pluginHandle) const noexcept {
+	return FCSE::TimelineManager::GetSingleton().SwitchPlayback(a_fromTimelineID, a_toTimelineID, a_pluginHandle);
+}
+
 bool Messaging::FCSEInterface::PausePlayback(size_t a_timelineID) const noexcept {
 	return FCSE::TimelineManager::GetSingleton().PausePlayback(a_timelineID);
 }

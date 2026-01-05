@@ -63,6 +63,7 @@ namespace FCSE {
             
             bool StartPlayback(size_t a_timelineID, float a_speed = 1.0f, bool a_globalEaseIn = false, bool a_globalEaseOut = false, bool a_useDuration = false, float a_duration = 0.0f);
             bool StopPlayback(size_t a_timelineID);
+            bool SwitchPlayback(size_t a_fromTimelineID, size_t a_toTimelineID, SKSE::PluginHandle a_pluginHandle);
             bool IsPlaybackRunning(size_t a_timelineID) const;
             bool IsRecording(size_t a_timelineID) const;
             bool PausePlayback(size_t a_timelineID);

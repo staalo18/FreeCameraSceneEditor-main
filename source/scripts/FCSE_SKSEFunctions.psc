@@ -166,6 +166,13 @@ bool Function FCSE_StartPlayback(string modName, int timelineID, float speed = 1
 ; Returns: true on success, false on failure
 bool Function FCSE_StopPlayback(string modName, int timelineID) global native
 
+; Switch playback from one timeline to another without exiting free camera mode
+; modName: name of your mod's ESP/ESL file (e.g., "MyMod.esp")
+; fromTimelineID: source timeline ID (0 = any owned timeline currently playing)
+; toTimelineID: target timeline ID to switch to
+; Returns: true on successful switch, false on failure
+bool Function FCSE_SwitchPlayback(string modName, int fromTimelineID, int toTimelineID) global native
+
 ; Pause the camera timeline playback
 ; Pause playback of a camera path timeline
 ; modName: name of your mod's ESP/ESL file (e.g., "MyMod.esp")

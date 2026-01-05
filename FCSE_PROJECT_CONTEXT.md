@@ -288,6 +288,7 @@ RequestPluginAPI(InterfaceVersion) [Mod API entry]
 |-----------------|--------|------------|-------|
 | `FCSE_StartPlayback` | bool | **modName, timelineID**, speed, globalEaseIn, globalEaseOut, useDuration, duration | Begin timeline playback (no ownership required) |
 | `FCSE_StopPlayback` | bool | **modName, timelineID** | Stop playback (no ownership required) |
+| `FCSE_SwitchPlayback` | bool | **modName, fromTimelineID, toTimelineID** | Glitch-free timeline switch (requires ownership of target timeline) |
 | `FCSE_PausePlayback` | bool | **modName, timelineID** | Pause playback (no ownership required) |
 | `FCSE_ResumePlayback` | bool | **modName, timelineID** | Resume from pause (no ownership required) |
 | `FCSE_IsPlaybackPaused` | bool | **timelineID** | Query pause state for specific timeline |
@@ -811,6 +812,35 @@ SetPlaybackMode(timelineID, pluginHandle, playbackMode)
 ├─> Cast int to PlaybackMode enum
 └─> Call state->timeline.SetPlaybackMode(mode)
     └─> Sets mode on both translation and rotation tracks
+
+SwitchPlayback(fromTimelineID, toTimelineID, pluginHandle)
+├─> Validate target timeline exists and is owned by caller
+├─> Find source timeline:
+│   ├─> If fromTimelineID == 0: search for any owned timeline that is actively playing
+│   └─> Else: validate specific source timeline is actively playing
+├─> Validate target timeline has points
+├─> Validate camera is in free camera mode
+├─> Stop source timeline WITHOUT exiting free camera:
+│   ├─> Set fromState->isPlaybackRunning = false
+│   ├─> Clear m_activeTimelineID temporarily
+│   ├─> Dispatch kTimelinePlaybackStopped for source timeline
+│   └─> Dispatch "OnTimelinePlaybackStopped" Papyrus event
+├─> Initialize target timeline (camera already in free mode):
+│   ├─> toState->timeline.ResetPlayback()
+│   └─> toState->timeline.StartPlayback() (bakes kCamera points internally)
+├─> Copy playback settings from source to target:
+│   ├─> playbackSpeed
+│   ├─> rotationOffset (preserve user rotation)
+│   ├─> showMenusDuringPlayback
+│   ├─> globalEaseIn, globalEaseOut
+│   └─> Reset isCompletedAndWaiting flag
+│   Note: allowUserRotation uses target timeline's existing setting (not copied)
+├─> Activate target timeline:
+│   ├─> Set m_activeTimelineID = toTimelineID
+│   ├─> Set toState->isPlaybackRunning = true
+│   ├─> Dispatch kTimelinePlaybackStarted for target timeline
+│   └─> Dispatch "OnTimelinePlaybackStarted" Papyrus event
+└─> Return true (no camera mode toggle, glitch-free transition)
 ```
 
 **Multi-Timeline Changes:**

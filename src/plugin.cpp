@@ -233,6 +233,20 @@ namespace FCSE {
             return FCSE::TimelineManager::GetSingleton().StopPlayback(static_cast<size_t>(a_timelineID));
         }
         
+        bool SwitchPlayback(RE::StaticFunctionTag*, RE::BSFixedString a_modName, int a_fromTimelineID, int a_toTimelineID) {
+            if (a_modName.empty() || a_toTimelineID <= 0 || a_fromTimelineID < 0) {
+                return false;
+            }
+
+            SKSE::PluginHandle handle = FCSE::ModNameToHandle(a_modName.c_str());
+            if (handle == 0) {
+                log::error("{}: Invalid mod name '{}' - mod not loaded or doesn't exist", __FUNCTION__, a_modName.c_str());
+                return false;
+            }
+
+            return FCSE::TimelineManager::GetSingleton().SwitchPlayback(static_cast<size_t>(a_fromTimelineID), static_cast<size_t>(a_toTimelineID), handle);
+        }
+        
         bool PausePlayback(RE::StaticFunctionTag*, RE::BSFixedString a_modName, int a_timelineID) {
             if (a_modName.empty() || a_timelineID <= 0) {
                 return false;
@@ -374,6 +388,7 @@ namespace FCSE {
             a_vm->RegisterFunction("FCSE_GetRotationPointCount", "FCSE_SKSEFunctions", GetRotationPointCount);
             a_vm->RegisterFunction("FCSE_StartPlayback", "FCSE_SKSEFunctions", StartPlayback);
             a_vm->RegisterFunction("FCSE_StopPlayback", "FCSE_SKSEFunctions", StopPlayback);
+            a_vm->RegisterFunction("FCSE_SwitchPlayback", "FCSE_SKSEFunctions", SwitchPlayback);
             a_vm->RegisterFunction("FCSE_PausePlayback", "FCSE_SKSEFunctions", PausePlayback);
             a_vm->RegisterFunction("FCSE_ResumePlayback", "FCSE_SKSEFunctions", ResumePlayback);
             a_vm->RegisterFunction("FCSE_IsPlaybackPaused", "FCSE_SKSEFunctions", IsPlaybackPaused);
