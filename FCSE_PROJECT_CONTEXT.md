@@ -56,9 +56,15 @@ FCSE follows a **singleton manager pattern** with **multi-timeline storage** and
 - **Multi-Timeline Storage**: `std::unordered_map<size_t, TimelineState>` with atomic ID generation
   - Thread-safe access via `std::mutex m_timelineMutex`
   - Each `TimelineState` contains: `Timeline`, ownership info, recording/playback state
-- **Ownership Validation**: Two-tier system
-  - `GetTimeline(timelineID, pluginHandle)` - validates ownership, returns nullptr if denied
-  - `GetTimeline(timelineID)` - read-only access without ownership check
+- **Ownership Validation**: Two-tier system for external API vs internal operations
+  - **External API (C++, Papyrus, Keyboard):** `GetTimeline(timelineID, pluginHandle)` validates ownership for ALL modification and query operations
+    - Returns nullptr if timeline not found OR not owned by calling plugin
+    - Security model: Prevents plugins from accessing/modifying each other's timelines
+  - **Internal Operations (Hooks, Update Loop):** Bypass ownership validation
+    - Hooks use overloaded query methods: `IsPlaybackRunning(timelineID)`, `IsUserRotationAllowed(timelineID)` (no pluginHandle parameter)
+    - Update loop uses direct map access: `m_timelines.find(m_activeTimelineID)`
+    - TimelineManager helpers access state members directly: `state->m_isPlaybackRunning`, `state->m_allowUserRotation`
+    - Rationale: Internal FCSE code must check ANY active timeline regardless of owner (for input blocking during playback from external plugins)
 - **Exclusive Active Timeline**: `m_activeTimelineID` tracks single active timeline (recording OR playback)
 - **Paired Tracks**: `Timeline` class coordinates independent `TimelineTrack<TranslationPath>` and `TimelineTrack<RotationPath>`
 - **Three-Tier Encapsulation**: 
@@ -148,7 +154,7 @@ Apply to RE::FreeCameraState (position/rotation)
 **Common Pitfalls & Debugging:**
 - **C++ API Returns 0 or -1**: Check that `RegisterTimeline()` succeeded before using returned ID. ID of 0 indicates registration failure (check logs for errors).
 - **Crash on API Call**: All API functions validate timeline ID and ownership before proceeding. If crashing, check for use-after-move bugs or null pointer dereferences in wrapper code.
-- **Timeline Operations Fail Silently**: Verify ownership - only the plugin that registered a timeline can modify it (Add/Remove points, Start/Stop recording). Read-only operations (queries, playback control) don't require ownership.
+- **Timeline Operations Fail Silently**: Verify ownership - only the plugin that registered a timeline can access it. ALL operations (queries, playback control, modification) require ownership validation and will fail if the timeline doesn't belong to the calling plugin.
 - **Missing Log Output**: Ensure `FreeCameraSceneEditor.ini` has correct `LogLevel` (0-6, default 3=info). Use-after-move bugs can cause logging to crash before return values propagate.
 
 ---
@@ -274,8 +280,8 @@ RequestPluginAPI(InterfaceVersion) [Mod API entry]
 | `FCSE_RemoveTranslationPoint` | bool | **modName, timelineID**, index | Remove by index (requires ownership) |
 | `FCSE_RemoveRotationPoint` | bool | **modName, timelineID**, index | Remove by index (requires ownership) |
 | `FCSE_ClearTimeline` | bool | **modName, timelineID**, notifyUser | Clear all points (requires ownership) |
-| `FCSE_GetTranslationPointCount` | int | **timelineID** | Query point count (-1 if timeline not found) |
-| `FCSE_GetRotationPointCount` | int | **timelineID** | Query point count (-1 if timeline not found) |
+| `FCSE_GetTranslationPointCount` | int | **modName, timelineID** | Query point count (-1 if timeline not found) |
+| `FCSE_GetRotationPointCount` | int | **modName, timelineID** | Query point count (-1 if timeline not found) |
 
 **Recording Functions:**
 | Papyrus Function | Return | Parameters | Notes |
@@ -286,30 +292,30 @@ RequestPluginAPI(InterfaceVersion) [Mod API entry]
 **Playback Functions:**
 | Papyrus Function | Return | Parameters | Notes |
 |-----------------|--------|------------|-------|
-| `FCSE_StartPlayback` | bool | **modName, timelineID**, speed, globalEaseIn, globalEaseOut, useDuration, duration | Begin timeline playback (no ownership required) |
-| `FCSE_StopPlayback` | bool | **modName, timelineID** | Stop playback (no ownership required) |
-| `FCSE_SwitchPlayback` | bool | **modName, fromTimelineID, toTimelineID** | Glitch-free timeline switch (requires ownership of target timeline) |
-| `FCSE_PausePlayback` | bool | **modName, timelineID** | Pause playback (no ownership required) |
-| `FCSE_ResumePlayback` | bool | **modName, timelineID** | Resume from pause (no ownership required) |
-| `FCSE_IsPlaybackPaused` | bool | **timelineID** | Query pause state for specific timeline |
-| `FCSE_IsPlaybackRunning` | bool | **timelineID** | Query playback state for specific timeline |
-| `FCSE_IsRecording` | bool | **timelineID** | Query recording state for specific timeline |
+| `FCSE_StartPlayback` | bool | **modName, timelineID**, speed, globalEaseIn, globalEaseOut, useDuration, duration | Begin timeline playback (validates ownership) |
+| `FCSE_StopPlayback` | bool | **modName, timelineID** | Stop playback (validates ownership) |
+| `FCSE_SwitchPlayback` | bool | **modName, fromTimelineID, toTimelineID** | Glitch-free timeline switch (validates ownership of both source and target timelines) |
+| `FCSE_PausePlayback` | bool | **modName, timelineID** | Pause playback (validates ownership) |
+| `FCSE_ResumePlayback` | bool | **modName, timelineID** | Resume from pause (validates ownership) |
+| `FCSE_IsPlaybackPaused` | bool | **modName, timelineID** | Query pause state (validates ownership) |
+| `FCSE_IsPlaybackRunning` | bool | **modName, timelineID** | Query playback state (validates ownership) |
+| `FCSE_IsRecording` | bool | **modName, timelineID** | Query recording state (validates ownership) |
 | `FCSE_GetActiveTimelineID` | int | - | Get ID of currently active timeline (0 if none) |
-| `FCSE_AllowUserRotation` | void | **modName, timelineID**, allow | Enable/disable user camera control for specific timeline |
-| `FCSE_IsUserRotationAllowed` | bool | **timelineID** | Query user rotation state for specific timeline |
+| `FCSE_AllowUserRotation` | void | **modName, timelineID**, allow | Enable/disable user camera control (validates ownership) |
+| `FCSE_IsUserRotationAllowed` | bool | **modName, timelineID** | Query user rotation state (validates ownership) |
 | `FCSE_SetPlaybackMode` | bool | **modName, timelineID**, playbackMode | Set playback mode (0=kEnd, 1=kLoop, 2=kWait) - requires ownership |
 
-**Import/Export Functions:****
+**Import/Export Functions:**
 | Papyrus Function | Return | Parameters | Notes |
 |-----------------|--------|------------|-------|
 | `FCSE_AddTimelineFromFile` | bool | **modName, timelineID**, filePath, timeOffset | Import INI file (requires ownership) |
-| `FCSE_ExportTimeline` | bool | **modName, timelineID**, filePath | Export to INI file (no ownership required) |
+| `FCSE_ExportTimeline` | bool | **modName, timelineID**, filePath | Export to INI file (validates ownership) |
 
 **Parameter Notes:**
-- **modName**: Your mod's ESP/ESL filename (e.g., `"MyMod.esp"`), case-sensitive. Required for write/control operations only (RegisterTimeline, AddPoint, RemovePoint, ClearTimeline, Start/Stop Recording/Playback, AllowUserRotation, SetPlaybackMode).
+- **modName**: Your mod's ESP/ESL filename (e.g., `"MyMod.esp"`), case-sensitive. Required for ALL timeline operations to validate that the calling plugin has access to the specified timeline.
 - **timelineID**: Integer ID returned by `RegisterTimeline()`, must be > 0
 - **playbackMode**: Integer value for PlaybackMode enum (0=kEnd, 1=kLoop, 2=kWait)
-- **Ownership Validation**: Only applied to write/control operations. Read-only queries (IsRecording, IsPlaybackRunning, IsPlaybackPaused, IsUserRotationAllowed, GetPointCount) don't require modName.
+- **Ownership Validation**: Applied universally to all timeline API calls. The pluginHandle/modName parameter is required as the FIRST parameter and is always validated - operations fail if the timeline doesn't exist or doesn't belong to the calling plugin.
 - **Return Values**: `-1` for query functions on error, `false` for boolean functions on error
 
 **Type Conversion Layer:**
@@ -508,8 +514,9 @@ SKSE::GetMessagingInterface()->RegisterListener(MessageHandler);
    - **Multi-Timeline Behavior:**
      * Gets active timeline ID: `activeID = GetActiveTimelineID()`
      * Blocks input ONLY if: `activeID != 0 && IsPlaybackRunning(activeID) && !IsUserRotationAllowed(activeID)`
-     * Critical: Checks `IsPlaybackRunning()` to distinguish playback from recording
-   - Sets `SetUserTurning(activeID, true)` when input detected during playback
+     * Uses overloaded methods WITHOUT pluginHandle (checks ANY active timeline, not just FCSE-owned)
+     * Critical: Must work for timelines owned by external plugins (e.g., plugin A plays timeline, hooks must block input)
+   - Sets `SetUserTurning(true)` when input detected during playback
 
 3. **MovementHook** (VTable hooks on `RE::MovementHandler`)
    - **ProcessThumbstick** (vfunc 0x2): Gamepad movement
@@ -517,11 +524,16 @@ SKSE::GetMessagingInterface()->RegisterListener(MessageHandler);
    - **Multi-Timeline Behavior:**
      * Gets active timeline ID: `activeID = GetActiveTimelineID()`
      * Blocks forward/back/strafe input ONLY if: `activeID != 0 && IsPlaybackRunning(activeID)`
-     * Critical: Allows movement during recording, blocks only during playback
+     * Uses overloaded method WITHOUT pluginHandle (checks ANY active timeline)
+     * Critical: Allows movement during recording, blocks only during playback (regardless of timeline owner)
    - Checks against `userEvents->forward/back/strafeLeft/strafeRight`
 
 **Hook Philosophy:**
 - Preserve original behavior via `_OriginalFunction` pattern
+- **Cross-Plugin Support:** Hooks use `IsPlaybackRunning(timelineID)` / `IsUserRotationAllowed(timelineID)` overloads WITHOUT pluginHandle
+  - Rationale: External plugins can start playback, hooks must block input for ANY active timeline
+  - Design: Overloaded methods bypass ownership validation (internal operations)
+  - Example: Plugin A owns timeline ID 5 and starts playback → hooks check `IsPlaybackRunning(5)` and block input
 - Only intercept when `IsPlaybackRunning(activeID)` and game not paused
 - Recording vs Playback: `m_activeTimelineID` is set for BOTH, use `IsPlaybackRunning()` to distinguish
 - Track user interaction state (`SetUserTurning(activeID, true)`) for recording
@@ -659,7 +671,12 @@ struct TimelineState {
 - **Old Code Removed:** All single-timeline functions and obsolete member variables cleaned up
 - **Ownership:** Every timeline has `ownerPluginHandle`, validated on all operations
 - **Active Timeline:** Only ONE timeline can be recording/playing at a time (enforced by `m_activeTimelineID`)
-- **Helper Pattern:** All public functions call `GetTimeline(timelineID, pluginHandle)` to validate ownership + existence
+- **Helper Pattern:** All public API functions call `GetTimeline(timelineID, pluginHandle)` to validate ownership + existence before operations
+- **Internal Query Methods (✅ Complete - January 5, 2026):** Overloaded methods for internal FCSE operations
+  - `IsPlaybackRunning(size_t timelineID)` - No ownership check, used by hooks to check ANY active timeline
+  - `IsUserRotationAllowed(size_t timelineID)` - No ownership check, used by hooks for input blocking
+  - External API variants still require pluginHandle: `IsPlaybackRunning(SKSE::PluginHandle, size_t)`
+  - Rationale: Hooks must block input during playback regardless of which plugin owns the timeline
 - **Event System (✅ Complete - January 2, 2026):** Dual notification system for timeline playback events
   - SKSE Messaging: Broadcasts to all C++ plugins via `SKSE::GetMessagingInterface()->Dispatch()`
   - Papyrus Events: Queues events to registered forms via `SKSE::GetTaskInterface()->AddTask()`
@@ -695,7 +712,7 @@ void TimelineManager::Update() {
 
 **Multi-Timeline Changes:**
 - Gets active timeline ID from `m_activeTimelineID` (atomic read)
-- Fetches `TimelineState*` via internal `GetTimeline(timelineID)` (no ownership check in Update loop)
+- Fetches `TimelineState*` via direct map access (bypasses ownership check for internal Update loop)
 - Passes `TimelineState*` to all helper functions
 - Only ONE timeline can be active (recording or playing) at a time
 
@@ -1656,7 +1673,7 @@ SetHUDMenuVisible(visible)
 
 1. **Update() Loop** - ✅ COMPLETE
    - Gets active timeline ID from `m_activeTimelineID`
-   - Fetches `TimelineState*` via `GetTimeline(timelineID)`
+   - Fetches `TimelineState*` via direct map access (no ownership check needed)
    - Passes state to Play/Record/Draw helpers
 
 2. **Camera State Management** - ✅ COMPLETE

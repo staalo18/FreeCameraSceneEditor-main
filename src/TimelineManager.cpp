@@ -87,10 +87,11 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
             return;
         }
         
-        TimelineState* activeState = GetTimeline(m_activeTimelineID);
-        if (!activeState) {
+        auto it = m_timelines.find(m_activeTimelineID);
+        if (it == m_timelines.end()) {
             return;
         }
+        TimelineState* activeState = &it->second;
         
         auto* ui = RE::UI::GetSingleton();
         
@@ -113,7 +114,7 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         RecordTimeline(activeState);
     }
 
-    bool TimelineManager::StartRecording(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle) {
+    bool TimelineManager::StartRecording(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID) {
         std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
         
         // Check if any timeline is already active
@@ -167,7 +168,7 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         return true;
     }
 
-    bool TimelineManager::StopRecording(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle) {
+    bool TimelineManager::StopRecording(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID) {
         std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
         
         TimelineState* state = GetTimeline(a_timelineID, a_pluginHandle);
@@ -218,7 +219,7 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         return true;
     }
 
-    int TimelineManager::AddTranslationPointAtCamera(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, float a_time, bool a_easeIn, bool a_easeOut, InterpolationMode a_interpolationMode) {
+    int TimelineManager::AddTranslationPointAtCamera(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, float a_time, bool a_easeIn, bool a_easeOut, InterpolationMode a_interpolationMode) {
         std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
         
         TimelineState* state = GetTimeline(a_timelineID, a_pluginHandle);
@@ -228,7 +229,7 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         
         if (state->m_isPlaybackRunning) {
             log::info("{}: Timeline modified during playback, stopping playback", __FUNCTION__);
-            StopPlayback(a_timelineID);
+            StopPlayback(a_pluginHandle, a_timelineID);
         }
         
         Transition transition(a_time, a_interpolationMode, a_easeIn, a_easeOut);
@@ -238,7 +239,7 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         return static_cast<int>(state->m_timeline.AddTranslationPoint(point));
     }
 
-    int TimelineManager::AddTranslationPoint(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn, bool a_easeOut, InterpolationMode a_interpolationMode) {
+    int TimelineManager::AddTranslationPoint(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn, bool a_easeOut, InterpolationMode a_interpolationMode) {
         std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
         
         TimelineState* state = GetTimeline(a_timelineID, a_pluginHandle);
@@ -248,7 +249,7 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         
         if (state->m_isPlaybackRunning) {
             log::info("{}: Timeline modified during playback, stopping playback", __FUNCTION__);
-            StopPlayback(a_timelineID);
+            StopPlayback(a_pluginHandle, a_timelineID);
         }
         
         Transition transition(a_time, a_interpolationMode, a_easeIn, a_easeOut);
@@ -257,7 +258,7 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         return static_cast<int>(state->m_timeline.AddTranslationPoint(point));
     }
 
-    int TimelineManager::AddTranslationPointAtRef(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, float a_time, RE::TESObjectREFR* a_reference, float a_offsetX, float a_offsetY, float a_offsetZ, bool a_isOffsetRelative, bool a_easeIn, bool a_easeOut, InterpolationMode a_interpolationMode) {
+    int TimelineManager::AddTranslationPointAtRef(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, float a_time, RE::TESObjectREFR* a_reference, float a_offsetX, float a_offsetY, float a_offsetZ, bool a_isOffsetRelative, bool a_easeIn, bool a_easeOut, InterpolationMode a_interpolationMode) {
         std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
         
         TimelineState* state = GetTimeline(a_timelineID, a_pluginHandle);
@@ -272,7 +273,7 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         
         if (state->m_isPlaybackRunning) {
             log::info("{}: Timeline modified during playback, stopping playback", __FUNCTION__);
-            StopPlayback(a_timelineID);
+            StopPlayback(a_pluginHandle, a_timelineID);
         }
         
         Transition transition(a_time, a_interpolationMode, a_easeIn, a_easeOut);
@@ -282,7 +283,7 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         return static_cast<int>(state->m_timeline.AddTranslationPoint(point));
     }
 
-    int TimelineManager::AddRotationPointAtCamera(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, float a_time, bool a_easeIn, bool a_easeOut, InterpolationMode a_interpolationMode) {
+    int TimelineManager::AddRotationPointAtCamera(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, float a_time, bool a_easeIn, bool a_easeOut, InterpolationMode a_interpolationMode) {
         std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
         
         TimelineState* state = GetTimeline(a_timelineID, a_pluginHandle);
@@ -292,7 +293,7 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         
         if (state->m_isPlaybackRunning) {
             log::info("{}: Timeline modified during playback, stopping playback", __FUNCTION__);
-            StopPlayback(a_timelineID);
+            StopPlayback(a_pluginHandle, a_timelineID);
         }
         
         Transition transition(a_time, a_interpolationMode, a_easeIn, a_easeOut);
@@ -302,7 +303,7 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         return static_cast<int>(state->m_timeline.AddRotationPoint(point));
     }
 
-    int TimelineManager::AddRotationPoint(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, float a_time, float a_pitch, float a_yaw, bool a_easeIn, bool a_easeOut, InterpolationMode a_interpolationMode) {
+    int TimelineManager::AddRotationPoint(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, float a_time, float a_pitch, float a_yaw, bool a_easeIn, bool a_easeOut, InterpolationMode a_interpolationMode) {
         std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
         
         TimelineState* state = GetTimeline(a_timelineID, a_pluginHandle);
@@ -312,7 +313,7 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         
         if (state->m_isPlaybackRunning) {
             log::info("{}: Timeline modified during playback, stopping playback", __FUNCTION__);
-            StopPlayback(a_timelineID);
+            StopPlayback(a_pluginHandle, a_timelineID);
         }
         
         Transition transition(a_time, a_interpolationMode, a_easeIn, a_easeOut);
@@ -321,7 +322,7 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         return static_cast<int>(state->m_timeline.AddRotationPoint(point));
     }
 
-    int TimelineManager::AddRotationPointAtRef(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, float a_time, RE::TESObjectREFR* a_reference, float a_offsetPitch, float a_offsetYaw, bool a_isOffsetRelative, bool a_easeIn, bool a_easeOut, InterpolationMode a_interpolationMode) {
+    int TimelineManager::AddRotationPointAtRef(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, float a_time, RE::TESObjectREFR* a_reference, float a_offsetPitch, float a_offsetYaw, bool a_isOffsetRelative, bool a_easeIn, bool a_easeOut, InterpolationMode a_interpolationMode) {
         std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
         
         TimelineState* state = GetTimeline(a_timelineID, a_pluginHandle);
@@ -336,7 +337,7 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         
         if (state->m_isPlaybackRunning) {
             log::info("{}: Timeline modified during playback, stopping playback", __FUNCTION__);
-            StopPlayback(a_timelineID);
+            StopPlayback(a_pluginHandle, a_timelineID);
         }
         
         Transition transition(a_time, a_interpolationMode, a_easeIn, a_easeOut);
@@ -346,7 +347,7 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         return static_cast<int>(state->m_timeline.AddRotationPoint(point));
     }
 
-    bool TimelineManager::RemoveTranslationPoint(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, size_t a_index) {
+    bool TimelineManager::RemoveTranslationPoint(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, size_t a_index) {
         std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
         
         TimelineState* state = GetTimeline(a_timelineID, a_pluginHandle);
@@ -356,14 +357,14 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         
         if (state->m_isPlaybackRunning) {
             log::info("{}: Timeline modified during playback, stopping playback", __FUNCTION__);
-            StopPlayback(a_timelineID);
+            StopPlayback(a_pluginHandle, a_timelineID);
         }
         
         state->m_timeline.RemoveTranslationPoint(a_index);
         return true;
     }
 
-    bool TimelineManager::RemoveRotationPoint(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, size_t a_index) {
+    bool TimelineManager::RemoveRotationPoint(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, size_t a_index) {
         std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
         
         TimelineState* state = GetTimeline(a_timelineID, a_pluginHandle);
@@ -373,7 +374,7 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         
         if (state->m_isPlaybackRunning) {
             log::info("{}: Timeline modified during playback, stopping playback", __FUNCTION__);
-            StopPlayback(a_timelineID);
+            StopPlayback(a_pluginHandle, a_timelineID);
         }
         
         state->m_timeline.RemoveRotationPoint(a_index);
@@ -457,11 +458,12 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
             // Keep playback running - user must manually call StopPlayback
         } else if (!a_state->m_timeline.IsPlaying()) {
             size_t timelineID = a_state->m_id;
-            StopPlayback(timelineID);
+            SKSE::PluginHandle ownerHandle = a_state->m_ownerHandle;
+            StopPlayback(ownerHandle, timelineID);
         }
     }
 
-    bool TimelineManager::ClearTimeline(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, bool a_notifyUser) {
+    bool TimelineManager::ClearTimeline(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, bool a_notifyUser) {
         std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
         
         TimelineState* state = GetTimeline(a_timelineID, a_pluginHandle);
@@ -479,7 +481,7 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         
         if (state->m_isPlaybackRunning) {
             log::info("{}: Timeline modified during playback, stopping playback", __FUNCTION__);
-            StopPlayback(a_timelineID);
+            StopPlayback(a_pluginHandle, a_timelineID);
         }
         
         state->m_timeline.ClearPoints();
@@ -487,7 +489,7 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         return true;
     }
 
-    bool TimelineManager::StartPlayback(size_t a_timelineID, float a_speed, bool a_globalEaseIn, bool a_globalEaseOut, bool a_useDuration, float a_duration) {
+    bool TimelineManager::StartPlayback(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, float a_speed, bool a_globalEaseIn, bool a_globalEaseOut, bool a_useDuration, float a_duration) {
         std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
         
         // Check if any timeline is already active
@@ -496,7 +498,7 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
             return false;
         }
         
-        TimelineState* state = GetTimeline(a_timelineID);
+        TimelineState* state = GetTimeline(a_timelineID, a_pluginHandle);
         if (!state) {
             return false;
         }
@@ -595,10 +597,10 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         return true;
     }
 
-    int TimelineManager::GetTranslationPointCount(size_t a_timelineID) const {
+    int TimelineManager::GetTranslationPointCount(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID) const {
         std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
         
-        const TimelineState* state = GetTimeline(a_timelineID);
+        const TimelineState* state = GetTimeline(a_timelineID, a_pluginHandle);
         if (!state) {
             return -1;
         }
@@ -606,10 +608,10 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         return static_cast<int>(state->m_timeline.GetTranslationPointCount());
     }
 
-    int TimelineManager::GetRotationPointCount(size_t a_timelineID) const {
+    int TimelineManager::GetRotationPointCount(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID) const {
         std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
         
-        const TimelineState* state = GetTimeline(a_timelineID);
+        const TimelineState* state = GetTimeline(a_timelineID, a_pluginHandle);
         if (!state) {
             return -1;
         }
@@ -619,10 +621,10 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
 
     
 
-    bool TimelineManager::StopPlayback(size_t a_timelineID) {
+    bool TimelineManager::StopPlayback(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID) {
         std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
         
-        TimelineState* state = GetTimeline(a_timelineID);
+        TimelineState* state = GetTimeline(a_timelineID, a_pluginHandle);
         if (!state) {
             return false;
         }
@@ -676,7 +678,7 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         return true;
     }
 
-    bool TimelineManager::SwitchPlayback(size_t a_fromTimelineID, size_t a_toTimelineID, SKSE::PluginHandle a_pluginHandle) {
+    bool TimelineManager::SwitchPlayback(SKSE::PluginHandle a_pluginHandle, size_t a_fromTimelineID, size_t a_toTimelineID) {
         std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
         
         // Validate target timeline exists and is owned by caller
@@ -704,10 +706,9 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
                 return false;
             }
         } else {
-            // Validate specific source timeline
-            fromState = GetTimeline(a_fromTimelineID);
+            fromState = GetTimeline(a_fromTimelineID, a_pluginHandle);
             if (!fromState) {
-                log::error("{}: Source timeline {} not found", __FUNCTION__, a_fromTimelineID);
+                log::warn("{}: Source timeline {} not found or not owned by plugin handle {}", __FUNCTION__, a_fromTimelineID, a_pluginHandle);
                 return false;
             }
             
@@ -748,8 +749,15 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         
         // Copy playback settings from source timeline
         toState->m_playbackSpeed = fromState->m_playbackSpeed;
-        toState->m_rotationOffset = fromState->m_rotationOffset;
-        // Note: m_allowUserRotation uses target timeline's setting (not copied from source)
+        
+        // Only preserve rotation offset if target timeline allows user rotation
+        // If target doesn't allow user rotation, reset to zero so timeline plays its intended rotation
+        if (toState->m_allowUserRotation) {
+            toState->m_rotationOffset = fromState->m_rotationOffset;
+        } else {
+            toState->m_rotationOffset = { 0.0f, 0.0f };
+        }
+        
         toState->m_showMenusDuringPlayback = fromState->m_showMenusDuringPlayback;
         toState->m_globalEaseIn = fromState->m_globalEaseIn;
         toState->m_globalEaseOut = fromState->m_globalEaseOut;
@@ -771,10 +779,10 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         m_userTurning = a_turning;
     }
 
-    bool TimelineManager::PausePlayback(size_t a_timelineID) {
+    bool TimelineManager::PausePlayback(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID) {
         std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
         
-        TimelineState* state = GetTimeline(a_timelineID);
+        TimelineState* state = GetTimeline(a_timelineID, a_pluginHandle);
         if (!state) {
             return false;
         }
@@ -787,10 +795,10 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         return true;
     }
 
-    bool TimelineManager::ResumePlayback(size_t a_timelineID) {
+    bool TimelineManager::ResumePlayback(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID) {
         std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
         
-        TimelineState* state = GetTimeline(a_timelineID);
+        TimelineState* state = GetTimeline(a_timelineID, a_pluginHandle);
         if (!state) {
             return false;
         }
@@ -803,10 +811,10 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         return true;
     }
 
-    bool TimelineManager::IsPlaybackRunning(size_t a_timelineID) const {
+    bool TimelineManager::IsPlaybackRunning(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID) const {
         std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
         
-        const TimelineState* state = GetTimeline(a_timelineID);
+        const TimelineState* state = GetTimeline(a_timelineID, a_pluginHandle);
         if (!state) {
             return false;
         }
@@ -814,10 +822,10 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         return state->m_isPlaybackRunning;
     }
 
-    bool TimelineManager::IsRecording(size_t a_timelineID) const {
+    bool TimelineManager::IsRecording(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID) const {
         std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
         
-        const TimelineState* state = GetTimeline(a_timelineID);
+        const TimelineState* state = GetTimeline(a_timelineID, a_pluginHandle);
         if (!state) {
             return false;
         }
@@ -825,10 +833,10 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         return state->m_isRecording;
     }
 
-    bool TimelineManager::IsPlaybackPaused(size_t a_timelineID) const {
+    bool TimelineManager::IsPlaybackPaused(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID) const {
         std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
         
-        const TimelineState* state = GetTimeline(a_timelineID);
+        const TimelineState* state = GetTimeline(a_timelineID, a_pluginHandle);
         if (!state) {
             return false;
         }
@@ -836,10 +844,10 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         return state->m_timeline.IsPaused();
     }
 
-    bool TimelineManager::AllowUserRotation(size_t a_timelineID, bool a_allow) {
+    bool TimelineManager::AllowUserRotation(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, bool a_allow) {
         std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
         
-        TimelineState* state = GetTimeline(a_timelineID);
+        TimelineState* state = GetTimeline(a_timelineID, a_pluginHandle);
         if (!state) {
             return false;
         }
@@ -848,10 +856,10 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         return true;
     }
 
-    bool TimelineManager::IsUserRotationAllowed(size_t a_timelineID) const {
+    bool TimelineManager::IsUserRotationAllowed(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID) const {
         std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
         
-        const TimelineState* state = GetTimeline(a_timelineID);
+        const TimelineState* state = GetTimeline(a_timelineID, a_pluginHandle);
         if (!state) {
             return false;
         }
@@ -859,7 +867,7 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         return state->m_allowUserRotation;
     }
 
-    bool TimelineManager::SetPlaybackMode(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, int a_playbackMode) {
+    bool TimelineManager::SetPlaybackMode(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, int a_playbackMode) {
         std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
         
         TimelineState* state = GetTimeline(a_timelineID, a_pluginHandle);
@@ -878,7 +886,7 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         return true;
     }
 
-    bool TimelineManager::AddTimelineFromFile(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, const char* a_filePath, float a_timeOffset) {
+    bool TimelineManager::AddTimelineFromFile(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, const char* a_filePath, float a_timeOffset) {
         std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
         
         TimelineState* state = GetTimeline(a_timelineID, a_pluginHandle);
@@ -888,7 +896,7 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         
         if (state->m_isPlaybackRunning) {
             log::info("{}: Timeline modified during playback, stopping playback", __FUNCTION__);
-            StopPlayback(a_timelineID);
+            StopPlayback(a_pluginHandle, a_timelineID);
         }
         
         std::filesystem::path fullPath = std::filesystem::current_path() / "Data" / a_filePath;
@@ -962,10 +970,10 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         return true;
     }
     
-    bool TimelineManager::ExportTimeline(size_t a_timelineID, const char* a_filePath) const {
+    bool TimelineManager::ExportTimeline(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, const char* a_filePath) const {
         std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
         
-        const TimelineState* state = GetTimeline(a_timelineID);
+        const TimelineState* state = GetTimeline(a_timelineID, a_pluginHandle);
         if (!state) {
             return false;
         }
@@ -1045,7 +1053,7 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         return newID;
     }
 
-    bool TimelineManager::UnregisterTimeline(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle) {
+    bool TimelineManager::UnregisterTimeline(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID) {
         std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
         
         TimelineState* state = GetTimeline(a_timelineID, a_pluginHandle);
@@ -1057,35 +1065,16 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         if (m_activeTimelineID == a_timelineID) {
             if (state->m_isPlaybackRunning) {
                 log::info("{}: Stopping playback before unregistering timeline {}", __FUNCTION__, a_timelineID);
-                StopPlayback(a_timelineID);
+                StopPlayback(a_pluginHandle, a_timelineID);
             } else if (state->m_isRecording) {
                 log::info("{}: Stopping recording before unregistering timeline {}", __FUNCTION__, a_timelineID);
-                // With recursive_mutex, we can safely call StopRecording which will re-lock
-                StopRecording(a_timelineID, a_pluginHandle);
+                StopRecording(a_pluginHandle, a_timelineID);
             }
         }
         
         log::info("{}: Timeline {} unregistered (owner: {})", __FUNCTION__, a_timelineID, state->m_ownerName);
         m_timelines.erase(a_timelineID);
         return true;
-    }
-
-    TimelineState* TimelineManager::GetTimeline(size_t a_timelineID) {
-        auto it = m_timelines.find(a_timelineID);
-        if (it == m_timelines.end()) {
-            log::error("{}: Timeline {} not found", __FUNCTION__, a_timelineID);
-            return nullptr;
-        }
-        return &it->second;
-    }
-
-    const TimelineState* TimelineManager::GetTimeline(size_t a_timelineID) const {
-        auto it = m_timelines.find(a_timelineID);
-        if (it == m_timelines.end()) {
-            log::error("{}: Timeline {} not found", __FUNCTION__, a_timelineID);
-            return nullptr;
-        }
-        return &it->second;
     }
 
     TimelineState* TimelineManager::GetTimeline(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle) {
@@ -1118,6 +1107,29 @@ log::info("{}: Sent Papyrus event '{}' for timeline {} to {} receivers", __FUNCT
         }
         
         return &it->second;
+    }
+
+    // Overloads for internal use (no ownership validation)
+    bool TimelineManager::IsPlaybackRunning(size_t a_timelineID) const {
+        std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
+        
+        auto it = m_timelines.find(a_timelineID);
+        if (it == m_timelines.end()) {
+            return false;
+        }
+        
+        return it->second.m_isPlaybackRunning;
+    }
+
+    bool TimelineManager::IsUserRotationAllowed(size_t a_timelineID) const {
+        std::lock_guard<std::recursive_mutex> lock(m_timelineMutex);
+        
+        auto it = m_timelines.find(a_timelineID);
+        if (it == m_timelines.end()) {
+            return false;
+        }
+        
+        return it->second.m_allowUserRotation;
     }
 
     void TimelineManager::RecordTimeline(TimelineState* a_state) {

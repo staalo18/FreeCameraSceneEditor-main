@@ -29,15 +29,15 @@ size_t timelineID = 0;
 
                 const uint32_t key = buttonEvent->GetIDCode();
                 if (key == 2) {
-                    if (tm.IsPlaybackPaused(timelineID)) {
-                        tm.ResumePlayback(timelineID);
+                    if (tm.IsPlaybackPaused(handle, timelineID)) {
+                        tm.ResumePlayback(handle, timelineID);
                     } else {
-                        tm.PausePlayback(timelineID);
+                        tm.PausePlayback(handle, timelineID);
                     }
                 } else if (key == 3) {
-                    tm.StopPlayback(timelineID);
+                    tm.StopPlayback(handle, timelineID);
                 } else if (key == 4) {
-                    tm.AllowUserRotation(timelineID, !tm.IsUserRotationAllowed(timelineID));
+                    tm.AllowUserRotation(handle, timelineID, !tm.IsUserRotationAllowed(handle, timelineID));
                 } else if (key == 5) {
                     RE::TESObjectREFR* reference = nullptr;
                     auto* form = RE::TESForm::LookupByID(0xd8c58);
@@ -56,39 +56,39 @@ size_t timelineID = 0;
                         log::info("Calculated offsets: X = {}, Y = {}, Z = {}", offsetX, offsetY, offsetZ);
                         
                         // Build timeline with exact same structure as original
-                        tm.AddTranslationPointAtCamera(timelineID, handle, 0.0f, true, true, InterpolationMode::kCubicHermite);
-                        tm.AddRotationPointAtCamera(timelineID, handle, 0.f, true, true, InterpolationMode::kCubicHermite);
-                        tm.AddRotationPointAtRef(timelineID, handle, 0.5f, reference, 0.0f, 0.f, false, true, true, InterpolationMode::kCubicHermite);
-                        tm.AddRotationPointAtRef(timelineID, handle, 1.5f, reference, 0.0f, 0.f, false, true, true, InterpolationMode::kCubicHermite);
-                        tm.AddTranslationPointAtRef(timelineID, handle, 2.f, reference, offsetX, offsetY, offsetZ, isOffsetRelative, true, true, InterpolationMode::kCubicHermite);
-                        tm.AddRotationPointAtRef(timelineID, handle, 2.f, reference, 0.0f, 0.f, isOffsetRelative, true, true, InterpolationMode::kCubicHermite);
-                        tm.AddTranslationPointAtRef(timelineID, handle, 8.f, reference, offsetX, offsetY, offsetZ, isOffsetRelative, true, true, InterpolationMode::kCubicHermite);
-                        tm.AddRotationPointAtRef(timelineID, handle, 8.f, reference, 0.0f, 0.f, isOffsetRelative, true, true, InterpolationMode::kCubicHermite);
-                        tm.AddRotationPointAtRef(timelineID, handle, 9.f, RE::PlayerCharacter::GetSingleton(), 0.0f, 0.f, false, true, true, InterpolationMode::kCubicHermite);
-                        tm.AddTranslationPointAtCamera(timelineID, handle, 10.0f, true, true, InterpolationMode::kCubicHermite);
-                        tm.AddRotationPointAtCamera(timelineID, handle, 10.f, true, true, InterpolationMode::kCubicHermite);
+                        tm.AddTranslationPointAtCamera(handle, timelineID, 0.0f, true, true, InterpolationMode::kCubicHermite);
+                        tm.AddRotationPointAtCamera(handle, timelineID, 0.f, true, true, InterpolationMode::kCubicHermite);
+                        tm.AddRotationPointAtRef(handle, timelineID, 0.5f, reference, 0.0f, 0.f, false, true, true, InterpolationMode::kCubicHermite);
+                        tm.AddRotationPointAtRef(handle, timelineID, 1.5f, reference, 0.0f, 0.f, false, true, true, InterpolationMode::kCubicHermite);
+                        tm.AddTranslationPointAtRef(handle, timelineID, 2.f, reference, offsetX, offsetY, offsetZ, isOffsetRelative, true, true, InterpolationMode::kCubicHermite);
+                        tm.AddRotationPointAtRef(handle, timelineID, 2.f, reference, 0.0f, 0.f, isOffsetRelative, true, true, InterpolationMode::kCubicHermite);
+                        tm.AddTranslationPointAtRef(handle, timelineID, 8.f, reference, offsetX, offsetY, offsetZ, isOffsetRelative, true, true, InterpolationMode::kCubicHermite);
+                        tm.AddRotationPointAtRef(handle, timelineID, 8.f, reference, 0.0f, 0.f, isOffsetRelative, true, true, InterpolationMode::kCubicHermite);
+                        tm.AddRotationPointAtRef(handle, timelineID, 9.f, RE::PlayerCharacter::GetSingleton(), 0.0f, 0.f, false, true, true, InterpolationMode::kCubicHermite);
+                        tm.AddTranslationPointAtCamera(handle, timelineID, 10.0f, true, true, InterpolationMode::kCubicHermite);
+                        tm.AddRotationPointAtCamera(handle, timelineID, 10.f, true, true, InterpolationMode::kCubicHermite);
                         
                         log::info("Created timeline {} with reference tracking", timelineID);
-                        tm.StartPlayback(timelineID, 1.0f, false, false, false, 0.0f);
+                        tm.StartPlayback(handle, timelineID, 1.0f, false, false, false, 0.0f);
                     }
                 } else if (key == 6) {
-                    tm.ClearTimeline(timelineID, handle, false);
+                    tm.ClearTimeline(handle, timelineID, false);
                 } else if (key == 7) {
-                    tm.StartPlayback(timelineID, 1.0f, false, false, false, 0.0f);
+                    tm.StartPlayback(handle, timelineID, 1.0f, false, false, false, 0.0f);
                 } else if (key == 8) {
-                    tm.StartRecording(timelineID, handle);
+                    tm.StartRecording(handle, timelineID);
                 } else if (key == 9) {
-                    tm.StopRecording(timelineID, handle);
+                    tm.StopRecording(handle, timelineID);
                 } else if (key == 10) {
                     RE::DebugNotification("Exporting camera path...");
-                    tm.ExportTimeline(timelineID, relativePath);
+                    tm.ExportTimeline(handle, timelineID, relativePath);
                 } else if (key == 11) {
                     RE::DebugNotification("Importing camera path...");
-                    tm.AddTimelineFromFile(timelineID, handle, relativePath);
+                    tm.AddTimelineFromFile(handle, timelineID, relativePath);
                 } else if (key == 20) { // T
                     timelineID = tm.RegisterTimeline(handle);
                 } else if (key == 21) { // Y
-                    tm.UnregisterTimeline(timelineID, handle);
+                    tm.UnregisterTimeline(handle, timelineID);
                     timelineID -= 1;
                     if (timelineID < 0) { timelineID = 0;}
                 } else if (key == 22) { // U

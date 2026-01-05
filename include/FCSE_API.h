@@ -71,16 +71,16 @@ namespace FCSE_API {
 		/// Unregister a timeline and free its resources.
 		/// This will stop any active playback/recording on the timeline before removing it.
 		/// </summary>
-		/// <param name="a_timelineID">Timeline ID to unregister</param>
 		/// <param name="a_pluginHandle">Plugin handle for ownership validation</param>
+		/// <param name="a_timelineID">Timeline ID to unregister</param>
 		/// <returns>true if successfully unregistered, false on failure</returns>
-		[[nodiscard]] virtual bool UnregisterTimeline(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle) const noexcept = 0;
+		[[nodiscard]] virtual bool UnregisterTimeline(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID) const noexcept = 0;
 
 		/// <summary>
 		/// Add a translation point at a specified position.
 		/// </summary>
-		/// <param name="a_timelineID">Timeline ID to add the point to</param>
 		/// <param name="a_pluginHandle">Plugin handle of the calling plugin (use SKSE::GetPluginHandle())</param>
+		/// <param name="a_timelineID">Timeline ID to add the point to</param>
 		/// <param name="a_time">Time in seconds when this point occurs</param>
 		/// <param name="a_posX">X position coordinate</param>
 		/// <param name="a_posY">Y position coordinate</param>
@@ -89,15 +89,15 @@ namespace FCSE_API {
 		/// <param name="a_easeOut">Apply ease-out at the end of interpolation (default: false)</param>
 		/// <param name="a_interpolationMode">Interpolation mode: 0=None, 1=Linear, 2=CubicHermite (default)</param>
 		/// <returns>Index of the added point, or -1 on failure</returns>
-		[[nodiscard]] virtual int AddTranslationPoint(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
+		[[nodiscard]] virtual int AddTranslationPoint(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
 
 		/// <summary>
 		/// Add a translation point to the camera timeline relative to a reference object.
 		/// The point will track the reference's position plus the offset.
 		/// If a_isOffsetRelative is true, the offset is relative to the reference's heading, else world space.
 		/// </summary>
-		/// <param name="a_timelineID">Timeline ID to add the point to</param>
 		/// <param name="a_pluginHandle">Plugin handle of the calling plugin (use SKSE::GetPluginHandle())</param>
+		/// <param name="a_timelineID">Timeline ID to add the point to</param>
 		/// <param name="a_time">Time in seconds when this point occurs</param>
 		/// <param name="a_reference">The object reference to track</param>
 		/// <param name="a_offsetX">X offset from reference position (default: 0.0)</param>
@@ -108,26 +108,26 @@ namespace FCSE_API {
 		/// <param name="a_easeOut">Apply ease-out at the end of interpolation (default: false)</param>
 		/// <param name="a_interpolationMode">Interpolation mode: 0=None, 1=Linear, 2=CubicHermite (default)</param>
 		/// <returns>Index of the added point, or -1 on failure</returns>
-		[[nodiscard]] virtual int AddTranslationPointAtRef(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, float a_time, RE::TESObjectREFR* a_reference, float a_offsetX = 0.0f, float a_offsetY = 0.0f, float a_offsetZ = 0.0f, bool a_isOffsetRelative = false, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
+		[[nodiscard]] virtual int AddTranslationPointAtRef(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, float a_time, RE::TESObjectREFR* a_reference, float a_offsetX = 0.0f, float a_offsetY = 0.0f, float a_offsetZ = 0.0f, bool a_isOffsetRelative = false, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
 
 		/// <summary>
 		/// Add a translation point that captures camera position at the start of playback.
 		/// This point can be used to start playback smoothly from the last camera position, and return to it later.
 		/// </summary>
-		/// <param name="a_timelineID">Timeline ID to add the point to</param>
 		/// <param name="a_pluginHandle">Plugin handle of the calling plugin (use SKSE::GetPluginHandle())</param>
+		/// <param name="a_timelineID">Timeline ID to add the point to</param>
 		/// <param name="a_time">Time in seconds when this point occurs</param>
 		/// <param name="a_easeIn">Apply ease-in at the start of interpolation (default: false)</param>
 		/// <param name="a_easeOut">Apply ease-out at the end of interpolation (default: false)</param>
 		/// <param name="a_interpolationMode">Interpolation mode: 0=None, 1=Linear, 2=CubicHermite (default)</param>
 		/// <returns> Index of the added point, or -1 on failure</returns>
-		[[nodiscard]] virtual int AddTranslationPointAtCamera(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, float a_time, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
+		[[nodiscard]] virtual int AddTranslationPointAtCamera(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, float a_time, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
 
         /// <summary>
         /// Add a rotation point to the camera timeline with specified pitch and yaw.
         /// </summary>
-        /// <param name="a_timelineID">Timeline ID to add the point to</param>
         /// <param name="a_pluginHandle">Plugin handle of the calling plugin (use SKSE::GetPluginHandle())</param>
+        /// <param name="a_timelineID">Timeline ID to add the point to</param>
         /// <param name="a_time">Time in seconds when this point occurs</param>
         /// <param name="a_pitch">Pitch rotation in radians (relative to world coordinates)</param>
         /// <param name="a_yaw">Yaw rotation in radians (relative to world coordinates)</param>
@@ -135,13 +135,13 @@ namespace FCSE_API {
         /// <param name="a_easeOut">Apply ease-out at the end of interpolation (default: false)</param>
         /// <param name="a_interpolationMode">Interpolation mode: 0=None, 1=Linear, 2=CubicHermite (default)</param>
         /// <returns>Index of the added point, or -1 on failure</returns>
-        [[nodiscard]] virtual int AddRotationPoint(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, float a_time, float a_pitch, float a_yaw, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
+        [[nodiscard]] virtual int AddRotationPoint(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, float a_time, float a_pitch, float a_yaw, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
 		
 		/// <summary>
 		/// Add a rotation point that sets the rotation relative to camera-to-reference direction, or alternatively the ref's heading
 		/// </summary>
-        /// <param name="a_timelineID">Timeline ID to add the point to</param>
         /// <param name="a_pluginHandle">Plugin handle of the calling plugin (use SKSE::GetPluginHandle())</param>
+        /// <param name="a_timelineID">Timeline ID to add the point to</param>
 		/// <param name="a_time">Time in seconds when this point occurs</param>
 		/// <param name="a_reference">The object reference to track</param>
 		/// <param name="a_offsetPitch">Pitch offset from camera-to-reference direction (a_isOffsetRelative == false) / the ref's heading (a_isOffsetRelative == true)</param>
@@ -152,78 +152,80 @@ namespace FCSE_API {
 		/// <param name="a_easeOut">Ease out at the end of interpolation</param>
 		/// <param name="a_interpolationMode">0=None, 1=Linear, 2=CubicHermite (default)</param>
 		/// <returns> Index of the added point on success, -1 on failure</returns>
-		[[nodiscard]] virtual int AddRotationPointAtRef(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, float a_time, RE::TESObjectREFR* a_reference, float a_offsetPitch, float a_offsetYaw, bool a_isOffsetRelative = false, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
+		[[nodiscard]] virtual int AddRotationPointAtRef(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, float a_time, RE::TESObjectREFR* a_reference, float a_offsetPitch, float a_offsetYaw, bool a_isOffsetRelative = false, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
 
         /// <summary>
         /// Add a rotation point that captures camera rotation at the start of playback.
         /// This point can be used to start playback smoothly from the last camera rotation, and return to it later.
         /// </summary>
-        /// <param name="a_timelineID">Timeline ID to add the point to</param>
         /// <param name="a_pluginHandle">Plugin handle of the calling plugin (use SKSE::GetPluginHandle())</param>
+        /// <param name="a_timelineID">Timeline ID to add the point to</param>
         /// <param name="a_time">Time in seconds when this point occurs</param>
         /// <param name="a_easeIn">Apply ease-in at the start of interpolation (default: false)</param>
         /// <param name="a_easeOut">Apply ease-out at the end of interpolation (default: false)</param>
         /// <param name="a_interpolationMode">Interpolation mode: 0=None, 1=Linear, 2=CubicHermite (default)</param>
 		/// <returns>Index of the added point, or -1 on failure</returns>
-		[[nodiscard]] virtual int AddRotationPointAtCamera(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, float a_time, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
+		[[nodiscard]] virtual int AddRotationPointAtCamera(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, float a_time, bool a_easeIn = false, bool a_easeOut = false, int a_interpolationMode = 2) const noexcept = 0;
 
 		/// <summary>
 		/// Remove a translation point from a timeline
 		/// </summary>
-		/// <param name="a_timelineID">Timeline ID to remove the point from</param>
 		/// <param name="a_pluginHandle">Plugin handle of the calling plugin (use SKSE::GetPluginHandle())</param>
+		/// <param name="a_timelineID">Timeline ID to remove the point from</param>
 		/// <param name="a_index">Index of the point to remove</param>
 		/// <returns>true if the point was removed, false on failure</returns>
-		[[nodiscard]] virtual bool RemoveTranslationPoint(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, size_t a_index) const noexcept = 0;
+		[[nodiscard]] virtual bool RemoveTranslationPoint(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, size_t a_index) const noexcept = 0;
+
+		/// <summary>
+		/// Remove a rotation point from a timeline
+		/// </summary>
+		/// <param name="a_pluginHandle">Plugin handle of the calling plugin (use SKSE::GetPluginHandle())</param>
+		/// <param name="a_timelineID">Timeline ID to remove the point from</param>
+		/// <param name="a_index">Index of the point to remove</param>
+		/// <returns>true if the point was removed, false on failure</returns>
+		virtual bool RemoveRotationPoint(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, size_t a_index) const noexcept = 0;
 
         /// <summary>
         /// Start recording camera movement to a timeline.
         /// </summary>
-        /// <param name="a_timelineID">Timeline ID to record to</param>
         /// <param name="a_pluginHandle">Plugin handle of the calling plugin (use SKSE::GetPluginHandle())</param>
+        /// <param name="a_timelineID">Timeline ID to record to</param>
         /// <returns>True on success, false on failure</returns>
-        virtual bool StartRecording(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle) const noexcept = 0;
+        virtual bool StartRecording(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID) const noexcept = 0;
 
 		/// <summary>
 		/// Stop recording camera movements on a timeline.
 		/// Adds a final point with ease-out at the current camera position.
 		/// </summary>
+		/// <param name="a_pluginHandle">Plugin handle of the calling plugin (use SKSE::GetPluginHandle())</param>
 		/// <param name="a_timelineID">Timeline ID to stop recording on</param>
-		/// <param name="a_pluginHandle">Plugin handle of the calling plugin (use SKSE::GetPluginHandle())</param>
 		/// <returns>true on success, false on failure</returns>
-		virtual bool StopRecording(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle) const noexcept = 0;
-
-		/// <summary>
-		/// Remove a rotation point from a timeline
-		/// </summary>
-		/// <param name="a_timelineID">Timeline ID to remove the point from</param>
-		/// <param name="a_pluginHandle">Plugin handle of the calling plugin (use SKSE::GetPluginHandle())</param>
-		/// <param name="a_index">Index of the point to remove</param>
-		/// <returns>true if the point was removed, false on failure</returns>
-		virtual bool RemoveRotationPoint(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, size_t a_index) const noexcept = 0;
+		virtual bool StopRecording(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID) const noexcept = 0;
 
 		/// <summary>
 		/// Clear the entire timeline. Prints a notification if a_notifyUser is true.
 		/// </summary>
-		/// <param name="a_timelineID">Timeline ID to clear</param>
 		/// <param name="a_pluginHandle">Plugin handle of the calling plugin (use SKSE::GetPluginHandle())</param>
+		/// <param name="a_timelineID">Timeline ID to clear</param>
 		/// <param name="a_notifyUser">Whether to show a notification to the user (default: true)</param>
 		/// <returns>true if cleared successfully, false on failure</returns>
-		virtual bool ClearTimeline(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, bool a_notifyUser = true) const noexcept = 0;
+		virtual bool ClearTimeline(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, bool a_notifyUser = true) const noexcept = 0;
 
         /// <summary>
         /// Get the number of translation points in the timeline.
         /// </summary>
+        /// <param name="a_pluginHandle">Plugin handle for ownership validation</param>
         /// <param name="a_timelineID">Timeline ID to query</param>
-        /// <returns>Number of translation points, or -1 if timeline not found</returns>
-        [[nodiscard]] virtual int GetTranslationPointCount(size_t a_timelineID) const noexcept = 0;
+        /// <returns>Number of translation points, or -1 if timeline not found or not owned</returns>
+        [[nodiscard]] virtual int GetTranslationPointCount(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID) const noexcept = 0;
 
 		/// <summary>
 		/// Get the number of rotation points in the timeline.
 		/// </summary>
+		/// <param name="a_pluginHandle">Plugin handle for ownership validation</param>
 		/// <param name="a_timelineID">Timeline ID to query</param>
-		/// <returns>Number of rotation points, or -1 if timeline not found</returns>
-		[[nodiscard]] virtual int GetRotationPointCount(size_t a_timelineID) const noexcept = 0;
+		/// <returns>Number of rotation points, or -1 if timeline not found or not owned</returns>
+		[[nodiscard]] virtual int GetRotationPointCount(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID) const noexcept = 0;
 
 		/// <summary>
 		/// Start playing the camera timeline.
@@ -233,67 +235,73 @@ namespace FCSE_API {
         ///     plays timeline with a_speed as speed multiplier.
         /// Global easing (a_globalEaseIn/Out) applies to overall playback in both modes.
 		/// </summary>
-		/// <param name="a_timelineID">Timeline ID to clear</param>
-		/// <param name="a_pluginHandle">Plugin handle of the calling plugin (use SKSE::GetPluginHandle())</param>
+		/// <param name="a_pluginHandle">Plugin handle for ownership validation</param>
+		/// <param name="a_timelineID">Timeline ID to start playback on</param>
 		/// <param name="a_speed">Playback speed multiplier, only used if a_useDuration is false (default: 1.0)</param>
 		/// <param name="a_globalEaseIn">Apply ease-in at the start of entire playback (default: false)</param>
 		/// <param name="a_globalEaseOut">Apply ease-out at the end of entire playback (default: false)</param>
 		/// <param name="a_useDuration">If true, plays complete timeline with total time a_duration seconds; if false, uses a_speed multiplier (default: false)</param>
 		/// <param name="a_duration">Total duration in seconds for entire timeline, only used if a_useDuration is true (default: 0.0)</param>
-		virtual bool StartPlayback(size_t a_timelineID, float a_speed = 1.0f, bool a_globalEaseIn = false, bool a_globalEaseOut = false, bool a_useDuration = false, float a_duration = 0.0f) const noexcept = 0;
+		virtual bool StartPlayback(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, float a_speed = 1.0f, bool a_globalEaseIn = false, bool a_globalEaseOut = false, bool a_useDuration = false, float a_duration = 0.0f) const noexcept = 0;
 
 		/// <summary>
 		/// Stop playback of a camera timeline.
 		/// </summary>
+		/// <param name="a_pluginHandle">Plugin handle for ownership validation</param>
 		/// <param name="a_timelineID">Timeline ID to stop</param>
 		/// <returns>true on success, false on failure</returns>
-		[[nodiscard]] virtual bool StopPlayback(size_t a_timelineID) const noexcept = 0;
+		[[nodiscard]] virtual bool StopPlayback(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID) const noexcept = 0;
 
 		/// <summary>
 		/// Switch playback from one timeline to another without exiting free camera mode.
 		/// If a_fromTimelineID is 0, switches from any timeline owned by the calling plugin.
 		/// Otherwise, only switches if the specified source timeline is actively playing.
 		/// </summary>
+		/// <param name="a_pluginHandle">Plugin handle for ownership validation</param>
 		/// <param name="a_fromTimelineID">Source timeline ID (0 = any owned timeline currently playing)</param>
 		/// <param name="a_toTimelineID">Target timeline ID to switch to</param>
-		/// <param name="a_pluginHandle">Plugin handle for ownership validation</param>
 		/// <returns>true on successful switch, false on failure</returns>
-		[[nodiscard]] virtual bool SwitchPlayback(size_t a_fromTimelineID, size_t a_toTimelineID, SKSE::PluginHandle a_pluginHandle) const noexcept = 0;
+		[[nodiscard]] virtual bool SwitchPlayback(SKSE::PluginHandle a_pluginHandle, size_t a_fromTimelineID, size_t a_toTimelineID) const noexcept = 0;
 
 		/// <summary>
 		/// Pause playback of a camera path timeline.
 		/// </summary>
+		/// <param name="a_pluginHandle">Plugin handle for ownership validation</param>
 		/// <param name="a_timelineID">Timeline ID to pause</param>
 		/// <returns>true on success, false on failure</returns>
-		[[nodiscard]] virtual bool PausePlayback(size_t a_timelineID) const noexcept = 0;
+		[[nodiscard]] virtual bool PausePlayback(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID) const noexcept = 0;
 
 		/// <summary>
 		/// Resume playback of a camera path timeline.
 		/// </summary>
+		/// <param name="a_pluginHandle">Plugin handle for ownership validation</param>
 		/// <param name="a_timelineID">Timeline ID to resume</param>
 		/// <returns>true on success, false on failure</returns>
-		[[nodiscard]] virtual bool ResumePlayback(size_t a_timelineID) const noexcept = 0;
+		[[nodiscard]] virtual bool ResumePlayback(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID) const noexcept = 0;
 
 		/// <summary>
 		/// Check if a timeline is currently playing back.
 		/// </summary>
+		/// <param name="a_pluginHandle">Plugin handle for ownership validation</param>
 		/// <param name="a_timelineID">Timeline ID to check</param>
-		/// <returns>true if playing, false otherwise</returns>
-		[[nodiscard]] virtual bool IsPlaybackRunning(size_t a_timelineID) const noexcept = 0;
+		/// <returns>true if playing, false otherwise or if not owned</returns>
+		[[nodiscard]] virtual bool IsPlaybackRunning(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID) const noexcept = 0;
 
 		/// <summary>
 		/// Check if a timeline is currently recording.
 		/// </summary>
+		/// <param name="a_pluginHandle">Plugin handle for ownership validation</param>
 		/// <param name="a_timelineID">Timeline ID to check</param>
-		/// <returns>true if recording, false otherwise</returns>
-		[[nodiscard]] virtual bool IsRecording(size_t a_timelineID) const noexcept = 0;
+		/// <returns>true if recording, false otherwise or if not owned</returns>
+		[[nodiscard]] virtual bool IsRecording(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID) const noexcept = 0;
 
 		/// <summary>
 		/// Check if timeline playback is currently paused.
 		/// </summary>
+		/// <param name="a_pluginHandle">Plugin handle for ownership validation</param>
 		/// <param name="a_timelineID">Timeline ID to check</param>
-		/// <returns>True if paused, false otherwise</returns>
-		[[nodiscard]] virtual bool IsPlaybackPaused(size_t a_timelineID) const noexcept = 0;
+		/// <returns>True if paused, false otherwise or if not owned</returns>
+		[[nodiscard]] virtual bool IsPlaybackPaused(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID) const noexcept = 0;
 
 		/// <summary>
 		/// Get the ID of the currently active timeline (recording or playing).
@@ -304,43 +312,46 @@ namespace FCSE_API {
 		/// <summary>
 		/// Enable or disable user rotation control during playback for a specific timeline.
 		/// </summary>
+		/// <param name="a_pluginHandle">Plugin handle for ownership validation</param>
 		/// <param name="a_timelineID">Timeline ID to configure</param>
 		/// <param name="a_allow">True to allow user to control rotation, false to disable</param>
-		virtual void AllowUserRotation(size_t a_timelineID, bool a_allow) const noexcept = 0;
+		virtual void AllowUserRotation(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, bool a_allow) const noexcept = 0;
 
 		/// <summary>
 		/// Check if user rotation is currently allowed for a specific timeline.
 		/// </summary>
+		/// <param name="a_pluginHandle">Plugin handle for ownership validation</param>
 		/// <param name="a_timelineID">Timeline ID to check</param>
-		/// <returns>True if user can control rotation, false otherwise</returns>
-		[[nodiscard]] virtual bool IsUserRotationAllowed(size_t a_timelineID) const noexcept = 0;
+		/// <returns>True if user can control rotation, false otherwise or if not owned</returns>
+		[[nodiscard]] virtual bool IsUserRotationAllowed(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID) const noexcept = 0;
 
 		/// <summary>
 		/// Set the playback mode for a timeline.
 		/// </summary>
-		/// <param name="a_timelineID">Timeline ID to configure</param>
 		/// <param name="a_pluginHandle">Plugin handle for ownership validation</param>
+		/// <param name="a_timelineID">Timeline ID to configure</param>
 		/// <param name="a_playbackMode">Playback mode: 0=kEnd (stop at end), 1=kLoop (wrap to beginning), 2=kWait (stay at final point until StopPlayback is called)</param>
 		/// <returns>True if successfully set, false on failure</returns>
-		[[nodiscard]] virtual bool SetPlaybackMode(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, int a_playbackMode) const noexcept = 0;
+		[[nodiscard]] virtual bool SetPlaybackMode(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, int a_playbackMode) const noexcept = 0;
 
 		/// <summary>
 		/// Adds camera timeline imported from a_filePath at time a_timeOffset to the specified timeline.
 		/// </summary>
-		/// <param name="a_timelineID">ID of the timeline to add points to</param>
 		/// <param name="a_pluginHandle">Plugin handle for ownership validation</param>
+		/// <param name="a_timelineID">ID of the timeline to add points to</param>
 		/// <param name="a_filePath">Relative path from Data folder (e.g., "SKSE/Plugins/MyTimeline.dat")</param>
 		/// <param name="a_timeOffset">Time offset in seconds to add to all imported point times (default: 0.0)</param>
 		/// <returns> True if successful, false otherwise</returns>
-		[[nodiscard]] virtual bool AddTimelineFromFile(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, const char* a_filePath, float a_timeOffset = 0.0f) const noexcept = 0;
+		[[nodiscard]] virtual bool AddTimelineFromFile(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, const char* a_filePath, float a_timeOffset = 0.0f) const noexcept = 0;
 
 		/// <summary>
 		/// Export camera timeline to a file.
 		/// </summary>
+		/// <param name="a_pluginHandle">Plugin handle for ownership validation</param>
 		/// <param name="a_timelineID">ID of the timeline to export</param>
 		/// <param name="a_filePath">Relative path from Data folder (e.g., "SKSE/Plugins/MyTimeline.dat")</param>
 		/// <returns> True if successful, false otherwise</returns>
-		[[nodiscard]] virtual bool ExportTimeline(size_t a_timelineID, const char* a_filePath) const noexcept = 0;
+		[[nodiscard]] virtual bool ExportTimeline(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, const char* a_filePath) const noexcept = 0;
 	};
 
 	typedef void* (*_RequestPluginAPI)(const InterfaceVersion interfaceVersion);

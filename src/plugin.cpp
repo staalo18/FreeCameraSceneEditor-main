@@ -40,7 +40,7 @@ namespace FCSE {
                 return false;
             }
 
-            return FCSE::TimelineManager::GetSingleton().UnregisterTimeline(static_cast<size_t>(a_timelineID), handle);
+            return FCSE::TimelineManager::GetSingleton().UnregisterTimeline(handle, static_cast<size_t>(a_timelineID));
         }
         
         int AddTranslationPointAtCamera(RE::StaticFunctionTag*, RE::BSFixedString a_modName, int a_timelineID, float a_time, bool a_easeIn, bool a_easeOut, int a_interpolationMode) {
@@ -54,7 +54,7 @@ namespace FCSE {
                 return -1;
             }
 
-            return FCSE::TimelineManager::GetSingleton().AddTranslationPointAtCamera(static_cast<size_t>(a_timelineID), handle, a_time, a_easeIn, a_easeOut, ToInterpolationMode(a_interpolationMode));
+            return FCSE::TimelineManager::GetSingleton().AddTranslationPointAtCamera(handle, static_cast<size_t>(a_timelineID), a_time, a_easeIn, a_easeOut, ToInterpolationMode(a_interpolationMode));
         }
 
         int AddTranslationPoint(RE::StaticFunctionTag*, RE::BSFixedString a_modName, int a_timelineID, float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn, bool a_easeOut, int a_interpolationMode) {
@@ -138,7 +138,7 @@ namespace FCSE {
                 return false;
             }
 
-            return FCSE::TimelineManager::GetSingleton().StartRecording(static_cast<size_t>(a_timelineID), handle);
+            return FCSE::TimelineManager::GetSingleton().StartRecording(handle, static_cast<size_t>(a_timelineID));
         }
 
         bool StopRecording(RE::StaticFunctionTag*, RE::BSFixedString a_modName, int a_timelineID) {
@@ -152,7 +152,7 @@ namespace FCSE {
                 return false;
             }
 
-            return FCSE::TimelineManager::GetSingleton().StopRecording(static_cast<size_t>(a_timelineID), handle);
+            return FCSE::TimelineManager::GetSingleton().StopRecording(handle, static_cast<size_t>(a_timelineID));
         }
         
         bool RemoveTranslationPoint(RE::StaticFunctionTag*, RE::BSFixedString a_modName, int a_timelineID, int a_index) {
@@ -166,7 +166,7 @@ namespace FCSE {
                 return false;
             }
 
-            return FCSE::TimelineManager::GetSingleton().RemoveTranslationPoint(static_cast<size_t>(a_timelineID), handle, static_cast<size_t>(a_index));
+            return FCSE::TimelineManager::GetSingleton().RemoveTranslationPoint(handle, static_cast<size_t>(a_timelineID), static_cast<size_t>(a_index));
         }
 
         bool RemoveRotationPoint(RE::StaticFunctionTag*, RE::BSFixedString a_modName, int a_timelineID, int a_index) {
@@ -180,7 +180,7 @@ namespace FCSE {
                 return false;
             }
 
-            return FCSE::TimelineManager::GetSingleton().RemoveRotationPoint(static_cast<size_t>(a_timelineID), handle, static_cast<size_t>(a_index));
+            return FCSE::TimelineManager::GetSingleton().RemoveRotationPoint(handle, static_cast<size_t>(a_timelineID), static_cast<size_t>(a_index));
         }
 
         bool ClearTimeline(RE::StaticFunctionTag*, RE::BSFixedString a_modName, int a_timelineID, bool a_notifyUser) {
@@ -194,15 +194,35 @@ namespace FCSE {
                 return false;
             }
 
-            return FCSE::TimelineManager::GetSingleton().ClearTimeline(static_cast<size_t>(a_timelineID), handle, a_notifyUser);
+            return FCSE::TimelineManager::GetSingleton().ClearTimeline(handle, static_cast<size_t>(a_timelineID), a_notifyUser);
         }
 
-        int GetTranslationPointCount(RE::StaticFunctionTag*, int a_timelineID) {
-            return FCSE::TimelineManager::GetSingleton().GetTranslationPointCount(static_cast<size_t>(a_timelineID));
+        int GetTranslationPointCount(RE::StaticFunctionTag*, RE::BSFixedString a_modName, int a_timelineID) {
+            if (a_modName.empty() || a_timelineID <= 0) {
+                return 0;
+            }
+
+            SKSE::PluginHandle handle = FCSE::ModNameToHandle(a_modName.c_str());
+            if (handle == 0) {
+                log::error("{}: Invalid mod name '{}' - mod not loaded or doesn't exist", __FUNCTION__, a_modName.c_str());
+                return 0;
+            }
+            
+            return FCSE::TimelineManager::GetSingleton().GetTranslationPointCount(handle, static_cast<size_t>(a_timelineID));
         }
 
-        int GetRotationPointCount(RE::StaticFunctionTag*, int a_timelineID) {
-            return FCSE::TimelineManager::GetSingleton().GetRotationPointCount(static_cast<size_t>(a_timelineID));
+        int GetRotationPointCount(RE::StaticFunctionTag*, RE::BSFixedString a_modName, int a_timelineID) {
+            if (a_modName.empty() || a_timelineID <= 0) {
+                return 0;
+            }
+
+            SKSE::PluginHandle handle = FCSE::ModNameToHandle(a_modName.c_str());
+            if (handle == 0) {
+                log::error("{}: Invalid mod name '{}' - mod not loaded or doesn't exist", __FUNCTION__, a_modName.c_str());
+                return 0;
+            }
+            
+            return FCSE::TimelineManager::GetSingleton().GetRotationPointCount(handle, static_cast<size_t>(a_timelineID));
         }
 
         bool StartPlayback(RE::StaticFunctionTag*, RE::BSFixedString a_modName, int a_timelineID, float a_speed, bool a_globalEaseIn, bool a_globalEaseOut, bool a_useDuration, float a_duration) {
@@ -216,7 +236,7 @@ namespace FCSE {
                 return false;
             }
 
-            return FCSE::TimelineManager::GetSingleton().StartPlayback(static_cast<size_t>(a_timelineID), a_speed, a_globalEaseIn, a_globalEaseOut, a_useDuration, a_duration);
+            return FCSE::TimelineManager::GetSingleton().StartPlayback(handle, static_cast<size_t>(a_timelineID), a_speed, a_globalEaseIn, a_globalEaseOut, a_useDuration, a_duration);
         }
         
         bool StopPlayback(RE::StaticFunctionTag*, RE::BSFixedString a_modName, int a_timelineID) {
@@ -230,7 +250,7 @@ namespace FCSE {
                 return false;
             }
 
-            return FCSE::TimelineManager::GetSingleton().StopPlayback(static_cast<size_t>(a_timelineID));
+            return FCSE::TimelineManager::GetSingleton().StopPlayback(handle, static_cast<size_t>(a_timelineID));
         }
         
         bool SwitchPlayback(RE::StaticFunctionTag*, RE::BSFixedString a_modName, int a_fromTimelineID, int a_toTimelineID) {
@@ -244,7 +264,7 @@ namespace FCSE {
                 return false;
             }
 
-            return FCSE::TimelineManager::GetSingleton().SwitchPlayback(static_cast<size_t>(a_fromTimelineID), static_cast<size_t>(a_toTimelineID), handle);
+            return FCSE::TimelineManager::GetSingleton().SwitchPlayback(handle, static_cast<size_t>(a_fromTimelineID), static_cast<size_t>(a_toTimelineID));
         }
         
         bool PausePlayback(RE::StaticFunctionTag*, RE::BSFixedString a_modName, int a_timelineID) {
@@ -258,7 +278,7 @@ namespace FCSE {
                 return false;
             }
 
-            return FCSE::TimelineManager::GetSingleton().PausePlayback(static_cast<size_t>(a_timelineID));
+            return FCSE::TimelineManager::GetSingleton().PausePlayback(handle, static_cast<size_t>(a_timelineID));
         }
         
         bool ResumePlayback(RE::StaticFunctionTag*, RE::BSFixedString a_modName, int a_timelineID) {
@@ -272,19 +292,49 @@ namespace FCSE {
                 return false;
             }
 
-            return FCSE::TimelineManager::GetSingleton().ResumePlayback(static_cast<size_t>(a_timelineID));
+            return FCSE::TimelineManager::GetSingleton().ResumePlayback(handle, static_cast<size_t>(a_timelineID));
         }
 
-        bool IsPlaybackPaused(RE::StaticFunctionTag*, int a_timelineID) {
-            return FCSE::TimelineManager::GetSingleton().IsPlaybackPaused(static_cast<size_t>(a_timelineID));
+        bool IsPlaybackPaused(RE::StaticFunctionTag*, RE::BSFixedString a_modName, int a_timelineID) {
+            if (a_modName.empty() || a_timelineID <= 0) {
+                return false;
+            }
+
+            SKSE::PluginHandle handle = FCSE::ModNameToHandle(a_modName.c_str());
+            if (handle == 0) {
+                log::error("{}: Invalid mod name '{}' - mod not loaded or doesn't exist", __FUNCTION__, a_modName.c_str());
+                return false;
+            }
+        
+            return FCSE::TimelineManager::GetSingleton().IsPlaybackPaused(handle, static_cast<size_t>(a_timelineID));
         }
         
-        bool IsPlaybackRunning(RE::StaticFunctionTag*, std::int32_t a_timelineID) {
-            return FCSE::TimelineManager::GetSingleton().IsPlaybackRunning(static_cast<size_t>(a_timelineID));
+        bool IsPlaybackRunning(RE::StaticFunctionTag*, RE::BSFixedString a_modName, std::int32_t a_timelineID) {
+            if (a_modName.empty() || a_timelineID <= 0) {
+                return false;
+            }
+
+            SKSE::PluginHandle handle = FCSE::ModNameToHandle(a_modName.c_str());
+            if (handle == 0) {
+                log::error("{}: Invalid mod name '{}' - mod not loaded or doesn't exist", __FUNCTION__, a_modName.c_str());
+                return false;
+            }
+        
+            return FCSE::TimelineManager::GetSingleton().IsPlaybackRunning(handle, static_cast<size_t>(a_timelineID));
         }
 
-        bool IsRecording(RE::StaticFunctionTag*, std::int32_t a_timelineID) {
-            return FCSE::TimelineManager::GetSingleton().IsRecording(static_cast<size_t>(a_timelineID));
+        bool IsRecording(RE::StaticFunctionTag*, RE::BSFixedString a_modName, std::int32_t a_timelineID) {
+            if (a_modName.empty() || a_timelineID <= 0) {
+                return false;
+            }
+
+            SKSE::PluginHandle handle = FCSE::ModNameToHandle(a_modName.c_str());
+            if (handle == 0) {
+                log::error("{}: Invalid mod name '{}' - mod not loaded or doesn't exist", __FUNCTION__, a_modName.c_str());
+                return false;
+            }
+        
+            return FCSE::TimelineManager::GetSingleton().IsRecording(handle, static_cast<size_t>(a_timelineID));
         }
 
         std::int32_t GetActiveTimelineID(RE::StaticFunctionTag*) {
@@ -302,11 +352,21 @@ namespace FCSE {
                 return false;
             }
 
-            return FCSE::TimelineManager::GetSingleton().AllowUserRotation(static_cast<size_t>(a_timelineID), a_allow);
+            return FCSE::TimelineManager::GetSingleton().AllowUserRotation(handle, static_cast<size_t>(a_timelineID), a_allow);
         }
 
-        bool IsUserRotationAllowed(RE::StaticFunctionTag*, std::int32_t a_timelineID) {
-            return FCSE::TimelineManager::GetSingleton().IsUserRotationAllowed(static_cast<size_t>(a_timelineID));
+        bool IsUserRotationAllowed(RE::StaticFunctionTag*, RE::BSFixedString a_modName, std::int32_t a_timelineID) {
+            if (a_modName.empty() || a_timelineID <= 0) {
+                return false;
+            }
+
+            SKSE::PluginHandle handle = FCSE::ModNameToHandle(a_modName.c_str());
+            if (handle == 0) {
+                log::error("{}: Invalid mod name '{}' - mod not loaded or doesn't exist", __FUNCTION__, a_modName.c_str());
+                return false;
+            }
+        
+            return FCSE::TimelineManager::GetSingleton().IsUserRotationAllowed(handle, static_cast<size_t>(a_timelineID));
         }
 
         bool SetPlaybackMode(RE::StaticFunctionTag*, RE::BSFixedString a_modName, std::int32_t a_timelineID, std::int32_t a_playbackMode) {
@@ -320,7 +380,7 @@ namespace FCSE {
                 return false;
             }
 
-            return FCSE::TimelineManager::GetSingleton().SetPlaybackMode(static_cast<size_t>(a_timelineID), handle, a_playbackMode);
+            return FCSE::TimelineManager::GetSingleton().SetPlaybackMode(handle, static_cast<size_t>(a_timelineID), a_playbackMode);
         }
 
         bool AddTimelineFromFile(RE::StaticFunctionTag*, RE::BSFixedString a_modName, std::int32_t a_timelineID, RE::BSFixedString a_filePath, float a_timeOffset) {
@@ -334,7 +394,7 @@ namespace FCSE {
                 return false;
             }
             
-            return FCSE::TimelineManager::GetSingleton().AddTimelineFromFile(static_cast<size_t>(a_timelineID), handle, a_filePath.c_str(), a_timeOffset);
+            return FCSE::TimelineManager::GetSingleton().AddTimelineFromFile(handle, static_cast<size_t>(a_timelineID), a_filePath.c_str(), a_timeOffset);
         }
 
         bool ExportTimeline(RE::StaticFunctionTag*, RE::BSFixedString a_modName, std::int32_t a_timelineID, RE::BSFixedString a_filePath) {
@@ -348,7 +408,7 @@ namespace FCSE {
                 return false;
             }            
 
-            return FCSE::TimelineManager::GetSingleton().ExportTimeline(static_cast<size_t>(a_timelineID), a_filePath.c_str());
+            return FCSE::TimelineManager::GetSingleton().ExportTimeline(handle, static_cast<size_t>(a_timelineID), a_filePath.c_str());
         }
         
         void RegisterForTimelineEvents(RE::StaticFunctionTag*, RE::TESForm* a_form) {

@@ -43,43 +43,47 @@ namespace FCSE {
 
             void Update();
 
-            bool StartRecording(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle);
-            bool StopRecording(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle);
+            bool StartRecording(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID);
+            bool StopRecording(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID);
 
-            int AddTranslationPointAtCamera(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, float a_time, bool a_easeIn, bool a_easeOut, InterpolationMode a_interpolationMode);
-            int AddTranslationPoint(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn, bool a_easeOut, InterpolationMode a_interpolationMode);
-            int AddTranslationPointAtRef(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, float a_time, RE::TESObjectREFR* a_reference, float a_offsetX, float a_offsetY, float a_offsetZ, bool a_isOffsetRelative, bool a_easeIn, bool a_easeOut, InterpolationMode a_interpolationMode);
-            int AddRotationPointAtCamera(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, float a_time, bool a_easeIn, bool a_easeOut, InterpolationMode a_interpolationMode);
-            int AddRotationPoint(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, float a_time, float a_pitch, float a_yaw, bool a_easeIn, bool a_easeOut, InterpolationMode a_interpolationMode);
-            int AddRotationPointAtRef(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, float a_time, RE::TESObjectREFR* a_reference, float a_offsetPitch, float a_offsetYaw, bool a_isOffsetRelative, bool a_easeIn, bool a_easeOut, InterpolationMode a_interpolationMode);
+            int AddTranslationPointAtCamera(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, float a_time, bool a_easeIn, bool a_easeOut, InterpolationMode a_interpolationMode);
+            int AddTranslationPoint(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, float a_time, float a_posX, float a_posY, float a_posZ, bool a_easeIn, bool a_easeOut, InterpolationMode a_interpolationMode);
+            int AddTranslationPointAtRef(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, float a_time, RE::TESObjectREFR* a_reference, float a_offsetX, float a_offsetY, float a_offsetZ, bool a_isOffsetRelative, bool a_easeIn, bool a_easeOut, InterpolationMode a_interpolationMode);
+            int AddRotationPointAtCamera(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, float a_time, bool a_easeIn, bool a_easeOut, InterpolationMode a_interpolationMode);
+            int AddRotationPoint(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, float a_time, float a_pitch, float a_yaw, bool a_easeIn, bool a_easeOut, InterpolationMode a_interpolationMode);
+            int AddRotationPointAtRef(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, float a_time, RE::TESObjectREFR* a_reference, float a_offsetPitch, float a_offsetYaw, bool a_isOffsetRelative, bool a_easeIn, bool a_easeOut, InterpolationMode a_interpolationMode);
             
-            bool RemoveTranslationPoint(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, size_t a_index);
-            bool RemoveRotationPoint(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, size_t a_index);
+            bool RemoveTranslationPoint(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, size_t a_index);
+            bool RemoveRotationPoint(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, size_t a_index);
 
-            bool ClearTimeline(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, bool a_notifyUser = true);
+            bool ClearTimeline(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, bool a_notifyUser = true);
             
-            int GetTranslationPointCount(size_t a_timelineID) const;
-            int GetRotationPointCount(size_t a_timelineID) const;
+            int GetTranslationPointCount(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID) const;
+            int GetRotationPointCount(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID) const;
             
-            bool StartPlayback(size_t a_timelineID, float a_speed = 1.0f, bool a_globalEaseIn = false, bool a_globalEaseOut = false, bool a_useDuration = false, float a_duration = 0.0f);
-            bool StopPlayback(size_t a_timelineID);
-            bool SwitchPlayback(size_t a_fromTimelineID, size_t a_toTimelineID, SKSE::PluginHandle a_pluginHandle);
-            bool IsPlaybackRunning(size_t a_timelineID) const;
-            bool IsRecording(size_t a_timelineID) const;
-            bool PausePlayback(size_t a_timelineID);
-            bool ResumePlayback(size_t a_timelineID);
-            bool IsPlaybackPaused(size_t a_timelineID) const;
+            bool StartPlayback(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, float a_speed = 1.0f, bool a_globalEaseIn = false, bool a_globalEaseOut = false, bool a_useDuration = false, float a_duration = 0.0f);
+            bool StopPlayback(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID);
+            bool SwitchPlayback(SKSE::PluginHandle a_pluginHandle, size_t a_fromTimelineID, size_t a_toTimelineID);
+            bool IsPlaybackRunning(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID) const;
+            bool IsRecording(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID) const;
+            bool PausePlayback(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID);
+            bool ResumePlayback(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID);
+            bool IsPlaybackPaused(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID) const;
             void SetUserTurning(bool a_turning);
-            bool AllowUserRotation(size_t a_timelineID, bool a_allow);
+            bool AllowUserRotation(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, bool a_allow);
+            bool IsUserRotationAllowed(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID) const;
+            bool SetPlaybackMode(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, int a_playbackMode);
+            
+            // Overloads for internal use (no ownership validation - for hooks)
+            bool IsPlaybackRunning(size_t a_timelineID) const;
             bool IsUserRotationAllowed(size_t a_timelineID) const;
-            bool SetPlaybackMode(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, int a_playbackMode);
             size_t GetActiveTimelineID() const { return m_activeTimelineID; }    
                                     
-            bool AddTimelineFromFile(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle, const char* a_filePath, float a_timeOffset = 0.0f); // Requires ownership
-            bool ExportTimeline(size_t a_timelineID, const char* a_filePath) const;
+            bool AddTimelineFromFile(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, const char* a_filePath, float a_timeOffset = 0.0f); // Requires ownership
+            bool ExportTimeline(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID, const char* a_filePath) const;
 
             size_t RegisterTimeline(SKSE::PluginHandle a_pluginHandle);
-            bool UnregisterTimeline(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle);
+            bool UnregisterTimeline(SKSE::PluginHandle a_pluginHandle, size_t a_timelineID);
             
             // Papyrus event registration
             void RegisterForTimelineEvents(RE::TESForm* a_form);
@@ -96,9 +100,6 @@ namespace FCSE {
             void RecordTimeline(TimelineState* a_state);
             void PlayTimeline(TimelineState* a_state);
 
-            TimelineState* GetTimeline(size_t a_timelineID);
-            const TimelineState* GetTimeline(size_t a_timelineID) const;
-            
             TimelineState* GetTimeline(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle);
             const TimelineState* GetTimeline(size_t a_timelineID, SKSE::PluginHandle a_pluginHandle) const;
 

@@ -131,14 +131,16 @@ bool Function FCSE_RemoveRotationPoint(string modName, int timelineID, int index
 bool Function FCSE_ClearTimeline(string modName, int timelineID, bool notifyUser = true) global native
 
 ; Get the number of translation points in the timeline
+; modName: name of your mod's ESP/ESL file (e.g., "MyMod.esp")
 ; timelineID: timeline ID to query
 ; Returns: number of translation points, or -1 if timeline not found
-int Function FCSE_GetTranslationPointCount(int timelineID) global native
+int Function FCSE_GetTranslationPointCount(string modName, int timelineID) global native
 
 ; Get the number of rotation points in the timeline
+; modName: name of your mod's ESP/ESL file (e.g., "MyMod.esp")
 ; timelineID: timeline ID to query
 ; Returns: number of rotation points, or -1 if timeline not found
-int Function FCSE_GetRotationPointCount(int timelineID) global native
+int Function FCSE_GetRotationPointCount(string modName, int timelineID) global native
 
 ; Start playback with advanced options
 ; speed: playback speed multiplier (only used if useDuration=false)
@@ -188,19 +190,22 @@ bool Function FCSE_PausePlayback(string modName, int timelineID) global native
 bool Function FCSE_ResumePlayback(string modName, int timelineID) global native
 
 ; Check if a timeline is currently playing back
+; modName: name of your mod's ESP/ESL file (e.g., "MyMod.esp")
 ; timelineID: timeline ID to check
 ; Returns: true if playing, false otherwise
-bool Function FCSE_IsPlaybackRunning(int timelineID) global native
+bool Function FCSE_IsPlaybackRunning(string modName, int timelineID) global native
 
 ; Check if a timeline is currently recording
+; modName: name of your mod's ESP/ESL file (e.g., "MyMod.esp")
 ; timelineID: timeline ID to check
 ; Returns: true if recording, false otherwise
-bool Function FCSE_IsRecording(int timelineID) global native
+bool Function FCSE_IsRecording(string modName, int timelineID) global native
 
 ; Check if timeline playback is currently paused
+; modName: name of your mod's ESP/ESL file (e.g., "MyMod.esp")
 ; timelineID: timeline ID to check
 ; Returns: true if paused, false otherwise
-bool Function FCSE_IsPlaybackPaused(int timelineID) global native
+bool Function FCSE_IsPlaybackPaused(string modName, int timelineID) global native
 
 ; Get the ID of the currently active timeline (recording or playing)
 ; Returns: timeline ID if active (>0), or 0 if no timeline is active
@@ -214,9 +219,10 @@ int Function FCSE_GetActiveTimelineID() global native
 Function FCSE_AllowUserRotation(string modName, int timelineID, bool allow) global native
 
 ; Check if user rotation is currently allowed for a specific timeline
+; modName: name of your mod's ESP/ESL file (e.g., "MyMod.esp")
 ; timelineID: timeline ID to check
 ; Returns: true if user can control rotation, false otherwise
-bool Function FCSE_IsUserRotationAllowed(int timelineID) global native
+bool Function FCSE_IsUserRotationAllowed(string modName, int timelineID) global native
 
 ; Set the playback mode for a timeline
 ; This determines what happens when the timeline reaches its end
