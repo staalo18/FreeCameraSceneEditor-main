@@ -1,9 +1,9 @@
 #include "ControlsManager.h"
 #include "TimelineManager.h"
+#include "APIManager.h"
+#include "Offsets.h"
 
 namespace FCSE {
-
-size_t timelineID = 0;
 
     RE::BSEventNotifyControl ControlsManager::ProcessEvent(RE::InputEvent* const* a_event, RE::BSTEventSource<RE::InputEvent*>*) {
 
@@ -17,90 +17,114 @@ size_t timelineID = 0;
                 if (!buttonEvent || !buttonEvent->IsDown()) {
                     continue;
                 }
-//continue;                
-                const char* relativePath = "SKSE/Plugins/FCSE_CameraPath.ini";
+                
+                int ret;
 
-                // Register timeline once for all operations
-                auto& tm = FCSE::TimelineManager::GetSingleton();
+                const char* relativePath = "SKSE/Plugins/FCSE_CameraPath.yaml";
+
                 SKSE::PluginHandle handle = SKSE::GetPluginHandle();
-                if (timelineID == 0) {
-                    timelineID = tm.RegisterTimeline(handle);
-                }
+                auto timelineID = TimelineManager::GetSingleton().GetTimelineID();
 
                 const uint32_t key = buttonEvent->GetIDCode();
                 if (key == 2) {
-                    if (tm.IsPlaybackPaused(handle, timelineID)) {
-                        tm.ResumePlayback(handle, timelineID);
+                    if (APIs::FCFW->IsPlaybackPaused(handle, timelineID)) {
+                        ret = APIs::FCFW->ResumePlayback(handle, timelineID);
                     } else {
-                        tm.PausePlayback(handle, timelineID);
+                        ret = APIs::FCFW->PausePlayback(handle, timelineID);
                     }
                 } else if (key == 3) {
-                    tm.StopPlayback(handle, timelineID);
+                    ret = APIs::FCFW->StopPlayback(handle, timelineID);
                 } else if (key == 4) {
-                    tm.AllowUserRotation(handle, timelineID, !tm.IsUserRotationAllowed(handle, timelineID));
+                    APIs::FCFW->AllowUserRotation(handle, timelineID, !APIs::FCFW->IsUserRotationAllowed(handle, timelineID));
                 } else if (key == 5) {
                     RE::TESObjectREFR* reference = nullptr;
                     auto* form = RE::TESForm::LookupByID(0xd8c58);
                     reference = form ? form->As<RE::TESObjectREFR>() : nullptr;
                     if (reference) {
                         bool isOffsetRelative = true;
-                        
-                        // Calculate offsets
-                        float offsetX = 0, offsetY = 0, offsetZ = 0;
-                        auto headPos = FCSE::GetTargetPoint(reference->As<RE::Actor>());
+
+                        auto headPos = GetTargetPoint(reference->As<RE::Actor>());
+                        RE::NiPoint3 offset;
                         if (headPos) {
-                            offsetX = headPos->world.translate.x - reference->GetPosition().x;
-                            offsetY = headPos->world.translate.y - reference->GetPosition().y + 20.f;
-                            offsetZ = headPos->world.translate.z - reference->GetPosition().z;
+                            offset = headPos->world.translate - reference->GetPosition();
+                            offset.y += 20.f;
                         }
-                        log::info("Calculated offsets: X = {}, Y = {}, Z = {}", offsetX, offsetY, offsetZ);
-                        
-                        // Build timeline with exact same structure as original
-                        tm.AddTranslationPointAtCamera(handle, timelineID, 0.0f, true, true, InterpolationMode::kCubicHermite);
-                        tm.AddRotationPointAtCamera(handle, timelineID, 0.f, true, true, InterpolationMode::kCubicHermite);
-                        tm.AddRotationPointAtRef(handle, timelineID, 0.5f, reference, 0.0f, 0.f, false, true, true, InterpolationMode::kCubicHermite);
-                        tm.AddRotationPointAtRef(handle, timelineID, 1.5f, reference, 0.0f, 0.f, false, true, true, InterpolationMode::kCubicHermite);
-                        tm.AddTranslationPointAtRef(handle, timelineID, 2.f, reference, offsetX, offsetY, offsetZ, isOffsetRelative, true, true, InterpolationMode::kCubicHermite);
-                        tm.AddRotationPointAtRef(handle, timelineID, 2.f, reference, 0.0f, 0.f, isOffsetRelative, true, true, InterpolationMode::kCubicHermite);
-                        tm.AddTranslationPointAtRef(handle, timelineID, 8.f, reference, offsetX, offsetY, offsetZ, isOffsetRelative, true, true, InterpolationMode::kCubicHermite);
-                        tm.AddRotationPointAtRef(handle, timelineID, 8.f, reference, 0.0f, 0.f, isOffsetRelative, true, true, InterpolationMode::kCubicHermite);
-                        tm.AddRotationPointAtRef(handle, timelineID, 9.f, RE::PlayerCharacter::GetSingleton(), 0.0f, 0.f, false, true, true, InterpolationMode::kCubicHermite);
-                        tm.AddTranslationPointAtCamera(handle, timelineID, 10.0f, true, true, InterpolationMode::kCubicHermite);
-                        tm.AddRotationPointAtCamera(handle, timelineID, 10.f, true, true, InterpolationMode::kCubicHermite);
+                        RE::BSTPoint2<float> rotOffset = {0.f, 0.f};
+
+                        ret = APIs::FCFW->AddTranslationPointAtCamera(handle, timelineID, 0.0f, true, true);
+                        ret = APIs::FCFW->AddRotationPointAtCamera(handle, timelineID, 0.f, true, true);
+                        ret = APIs::FCFW->AddRotationPointAtRef(handle, timelineID, 0.5f, reference, rotOffset, false, true, true);
+                        ret = APIs::FCFW->AddRotationPointAtRef(handle, timelineID, 1.5f, reference, rotOffset, false, true, true);
+                        ret = APIs::FCFW->AddTranslationPointAtRef(handle, timelineID, 2.f, reference, offset, isOffsetRelative, true, true);
+                        ret = APIs::FCFW->AddRotationPointAtRef(handle, timelineID, 2.f, reference, rotOffset, isOffsetRelative, true, true);
+                        ret = APIs::FCFW->AddTranslationPointAtRef(handle, timelineID, 8.f, reference, offset, isOffsetRelative, true, true);
+                        ret = APIs::FCFW->AddRotationPointAtRef(handle, timelineID, 8.f, reference, rotOffset, isOffsetRelative, true, true);
+                        ret = APIs::FCFW->AddRotationPointAtRef(handle, timelineID, 9.f, RE::PlayerCharacter::GetSingleton(), rotOffset, false, true, true);
+                        ret = APIs::FCFW->AddTranslationPointAtCamera(handle, timelineID, 10.0f, true, true);
+                        ret = APIs::FCFW->AddRotationPointAtCamera(handle, timelineID, 10.f, true, true);
                         
                         log::info("Created timeline {} with reference tracking", timelineID);
-                        tm.StartPlayback(handle, timelineID, 1.0f, false, false, false, 0.0f);
+                        ret = APIs::FCFW->StartPlayback(handle, timelineID, 1.0f, false, false, false, 0.0f);
                     }
                 } else if (key == 6) {
-                    tm.ClearTimeline(handle, timelineID, false);
+                    ret = APIs::FCFW->ClearTimeline(handle, timelineID);
                 } else if (key == 7) {
-                    tm.StartPlayback(handle, timelineID, 1.0f, false, false, false, 0.0f);
+                    ret = APIs::FCFW->StartPlayback(handle, timelineID, 1.0f, false, false, false, 0.0f);
                 } else if (key == 8) {
-                    tm.StartRecording(handle, timelineID);
+                    ret = APIs::FCFW->StartRecording(handle, timelineID);
                 } else if (key == 9) {
-                    tm.StopRecording(handle, timelineID);
+                    ret = APIs::FCFW->StopRecording(handle, timelineID);
                 } else if (key == 10) {
                     RE::DebugNotification("Exporting camera path...");
-                    tm.ExportTimeline(handle, timelineID, relativePath);
+                    ret = APIs::FCFW->ExportTimeline(handle, timelineID, relativePath);
                 } else if (key == 11) {
                     RE::DebugNotification("Importing camera path...");
-                    tm.AddTimelineFromFile(handle, timelineID, relativePath);
+                    ret = APIs::FCFW->AddTimelineFromFile(handle, timelineID, relativePath);
                 } else if (key == 20) { // T
-                    timelineID = tm.RegisterTimeline(handle);
+                    ret = TimelineManager::GetSingleton().RegisterTimeline();
                 } else if (key == 21) { // Y
-                    tm.UnregisterTimeline(handle, timelineID);
-                    timelineID -= 1;
-                    if (timelineID < 0) { timelineID = 0;}
+                    ret = TimelineManager::GetSingleton().UnregisterTimeline();
                 } else if (key == 22) { // U
-                    timelineID += 1;
+                    ret = TimelineManager::GetSingleton().CycleUp();
                 } else if (key == 35) { // H
-                    if (timelineID > 1) {
-                        timelineID -= 1;
-                    }
+                    ret = TimelineManager::GetSingleton().CycleDown();
                 }
             }
         }
 
         return RE::BSEventNotifyControl::kContinue;
+    }
+
+    RE::NiPointer<RE::NiAVObject> ControlsManager::GetTargetPoint(RE::Actor* a_actor) {
+        RE::NiPointer<RE::NiAVObject> targetPoint = nullptr;
+
+        if (!a_actor) {
+            return nullptr;
+        }
+
+        auto race = a_actor->GetRace();
+        if (!race) {
+            return nullptr;
+        }
+
+        RE::BGSBodyPartData* bodyPartData = race->bodyPartData;
+        if (!bodyPartData) {
+            return nullptr;
+        }
+
+        auto actor3D = a_actor->Get3D2();
+        if (!actor3D) {
+            return nullptr;
+        }
+    
+        RE::BGSBodyPart* bodyPart = bodyPartData->parts[RE::BGSBodyPartDefs::LIMB_ENUM::kHead];
+        if (!bodyPart) {
+            bodyPart = bodyPartData->parts[RE::BGSBodyPartDefs::LIMB_ENUM::kTotal];
+        }
+        if (bodyPart) {
+            targetPoint = RE::NiPointer<RE::NiAVObject>(NiAVObject_LookupBoneNodeByName(actor3D, bodyPart->targetName, true));
+        }
+
+        return targetPoint;
     }
 } // namespace FCSE

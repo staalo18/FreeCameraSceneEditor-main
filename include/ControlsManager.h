@@ -43,5 +43,7 @@ namespace FCSE {
     private:
         ControlsManager() = default;
         ~ControlsManager() = default;
+        
+        RE::NiPointer<RE::NiAVObject> GetTargetPoint(RE::Actor* a_actor);
     }; // class ControlsManager
 } // namespace FCSE
