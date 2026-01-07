@@ -2,7 +2,6 @@
 
 #include "RE/Skyrim.h"
 #include "SKSE/SKSE.h"
-#include "ModAPI.h"
 
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/msvc_sink.h>
